@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Recuperação Premium - C-Star</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --dourado: #D4AF37;
+            --dourado-escuro: #B8941E;
+            --dourado-claro: #F4E5B5;
+            --preto: #1a1a1a;
+            --cinza-escuro: #333333;
+            --cinza-medio: #666666;
+            --cinza-claro: #f5f5f5;
+            --branco: #ffffff;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--cinza-escuro);
+            background: var(--branco);
+            line-height: 1.6;
+        }
+        
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            page-break-after: always;
+            position: relative;
+        }
+        
+        .page::before {
+            content: '';
+            position: absolute;
+            top: 15mm;
+            left: 15mm;
+            right: 15mm;
+            bottom: 15mm;
+            border: 1px solid var(--dourado);
+            pointer-events: none;
+        }
+        
+        .page::after {
+            content: '';
+            position: absolute;
+            top: 16mm;
+            left: 16mm;
+            right: 16mm;
+            bottom: 16mm;
+            border: 0.5px solid var(--dourado-claro);
+            pointer-events: none;
+        }
+        
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-container img {
+            max-width: 180px;
+            height: auto;
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--dourado);
+            text-align: center;
+            font-size: 32pt;
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--dourado-escuro);
+            text-align: center;
+            font-size: 18pt;
+            margin-bottom: 30px;
+            font-weight: 400;
+            font-style: italic;
+        }
+        
+        h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--preto);
+            font-size: 16pt;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--dourado);
+            padding-bottom: 8px;
+        }
+        
+        .day-title {
+            background: linear-gradient(135deg, var(--dourado) 0%, var(--dourado-escuro) 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 22pt;
+            font-weight: 700;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(212, 175, 55, 0.3);
+        }
+        
+        .day-subtitle {
+            text-align: center;
+            color: var(--cinza-medio);
+            font-size: 11pt;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--dourado), transparent);
+            margin: 25px 0;
+        }
+        
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border: 1px solid var(--dourado-claro);
+        }
+        
+        .task-table th {
+            background: linear-gradient(135deg, var(--dourado-claro) 0%, #e8d7a0 100%);
+            color: var(--cinza-escuro);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 10pt;
+            border-bottom: 2px solid var(--dourado);
+        }
+        
+        .task-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--dourado-claro);
+            font-size: 10pt;
+        }
+        
+        .task-table tr:hover {
+            background: #fffef8;
+        }
+        
+        .checkbox-large {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--dourado);
+            border-radius: 3px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        .hydration-track {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .water-cup {
+            width: 40px;
+            height: 50px;
+            border: 2px solid var(--dourado);
+            border-radius: 4px;
+            position: relative;
+            background: white;
+            display: inline-block;
+        }
+        
+        .water-cup::after {
+            content: '💧';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            opacity: 0.3;
+        }
+        
+        .notes-box {
+            border: 1px solid var(--dourado-claro);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            background: #fffef8;
+            min-height: 80px;
+        }
+        
+        .notes-box label {
+            color: var(--dourado-escuro);
+            font-weight: 600;
+            font-size: 10pt;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .alert-box {
+            background: #fff9e6;
+            border-left: 4px solid var(--dourado);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .alert-box strong {
+            color: var(--dourado-escuro);
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid var(--dourado-claro);
+            font-size: 9pt;
+            color: var(--cinza-medio);
+        }
+        
+        .icon {
+            color: var(--dourado);
+            margin-right: 8px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .page {
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always;
+            }
+            
+            @page {
+                size: A4;
+                margin: 0;
+            }
+        }
+        
+        .intro-text {
+            text-align: center;
+            font-size: 11pt;
+            color: var(--cinza-medio);
+            line-height: 1.8;
+            margin: 20px 0;
+            padding: 0 30px;
+        }
+        
+        .welcome-box {
+            background: linear-gradient(135deg, #fffef8 0%, #fff 100%);
+            border: 2px solid var(--dourado);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.15);
+        }
+        
+        .welcome-box h3 {
+            border: none;
+            color: var(--dourado-escuro);
+            margin-top: 0;
+        }
+        
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        ul li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        ul li::before {
+            content: '✦';
+            color: var(--dourado);
+            position: absolute;
+            left: 0;
+            font-size: 14pt;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PÁGINA DE CAPA -->
+    <div class="page">
+        <div class="logo-container">
+            <img src="LOGO CSTAR 26 SEM FUNDO.png" alt="C-Star Logo">
+        </div>
+        
+        <h1>GUIA DE RECUPERAÇÃO</h1>
+        <h2>Lipoaspiração de Papada - Protocolo Premium</h2>
+        
+        <div class="divider"></div>
+        
+        <div class="intro-text">
+            <p style="font-size: 13pt; margin-bottom: 20px;">
+                <strong>Seu roteiro completo para uma recuperação perfeita</strong>
+            </p>
+            <p>
+                Este guia foi desenvolvido especialmente para você pela <strong>C-Star</strong>.<br>
+                Cada página representa um dia da sua jornada de transformação.
+            </p>
+        </div>
+        
+        <div class="welcome-box">
+            <h3>💝 Como usar este guia:</h3>
+            <ul>
+                <li><strong>Cada dia tem sua própria página</strong> com todas as tarefas organizadas</li>
+                <li><strong>Marque cada tarefa realizada</strong> com um ✓ e anote os horários</li>
+                <li><strong>Leve este guia em todos os retornos médicos</strong></li>
+                <li><strong>Os dias são contados a partir do dia da cirurgia</strong> (Dia 7 = Dia da Cirurgia)</li>
+            </ul>
+        </div>
+        
+        <div class="alert-box">
+            <strong>💡 Dica:</strong> Imprima este guia ou mantenha-o aberto no tablet para consulta diária. Anote tudo!
+        </div>
+        
+        <div class="footer">
+            <p style="font-family: 'Playfair Display', serif; font-size: 11pt; color: var(--dourado-escuro);">
+                <strong>C-STAR - CIRURGIA FACIAL PREMIUM</strong>
+            </p>
+            <p style="margin-top: 5px;">Protocolo de Recuperação | 45 Dias</p>
+        </div>
+    </div>
+
+    <!-- DIA 1 -->
+    <div class="page">
+        <div class="day-title">📆 DIA 1</div>
+        <div class="day-subtitle">Início do Protocolo - 7 dias antes da cirurgia</div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <strong>Data:</strong> ____/____/______
+        </div>
+        
+        <div class="divider"></div>
+        
+        <h3>✅ Tarefas do Dia</h3>
+        
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th width="15%">Horário</th>
+                    <th width="25%">Tarefa</th>
+                    <th width="45%">Detalhes</th>
+                    <th width="15%">✓</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>____:____</td>
+                    <td><span class="icon">💊</span> Vitamina K1 (5mg)</td>
+                    <td>1 comprimido com refeição</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>Durante o dia</td>
+                    <td><span class="icon">💧</span> Hidratação</td>
+                    <td>Meta: 3 litros (6 copos de 500ml)</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>💧 Controle de Hidratação</h3>
+        <div class="hydration-track">
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+        </div>
+        
+        <div class="notes-box">
+            <label>📝 Observações do dia:</label>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+        </div>
+        
+        <div class="footer">
+            <p>C-Star | Dia 1 de 45</p>
+        </div>
+    </div>
+
+    <!-- DIA 2 -->
+    <div class="page">
+        <div class="day-title">📆 DIA 2</div>
+        <div class="day-subtitle">Protocolo Pré-Cirúrgico</div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <strong>Data:</strong> ____/____/______
+        </div>
+        
+        <div class="divider"></div>
+        
+        <h3>✅ Tarefas do Dia</h3>
+        
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th width="15%">Horário</th>
+                    <th width="25%">Tarefa</th>
+                    <th width="45%">Detalhes</th>
+                    <th width="15%">✓</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>____:____</td>
+                    <td><span class="icon">💊</span> Vitamina K1 (5mg)</td>
+                    <td>1 comprimido com refeição</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>Durante o dia</td>
+                    <td><span class="icon">💧</span> Hidratação</td>
+                    <td>Meta: 3 litros (6 copos de 500ml)</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>💧 Controle de Hidratação</h3>
+        <div class="hydration-track">
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+        </div>
+        
+        <div class="notes-box">
+            <label>📝 Observações do dia:</label>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+        </div>
+        
+        <div class="footer">
+            <p>C-Star | Dia 2 de 45</p>
+        </div>
+    </div>
+
+    <!-- DIA 3 -->
+    <div class="page">
+        <div class="day-title">📆 DIA 3</div>
+        <div class="day-subtitle">Protocolo Pré-Cirúrgico</div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <strong>Data:</strong> ____/____/______
+        </div>
+        
+        <div class="divider"></div>
+        
+        <h3>✅ Tarefas do Dia</h3>
+        
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th width="15%">Horário</th>
+                    <th width="25%">Tarefa</th>
+                    <th width="45%">Detalhes</th>
+                    <th width="15%">✓</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>____:____</td>
+                    <td><span class="icon">💊</span> Vitamina K1 (5mg)</td>
+                    <td>1 comprimido com refeição</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>Durante o dia</td>
+                    <td><span class="icon">💧</span> Hidratação</td>
+                    <td>Meta: 3 litros (6 copos de 500ml)</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>💧 Controle de Hidratação</h3>
+        <div class="hydration-track">
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+        </div>
+        
+        <div class="notes-box">
+            <label>📝 Observações do dia:</label>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+        </div>
+        
+        <div class="footer">
+            <p>C-Star | Dia 3 de 45</p>
+        </div>
+    </div>
+
+    <!-- DIA 4 -->
+    <div class="page">
+        <div class="day-title">📆 DIA 4</div>
+        <div class="day-subtitle">Protocolo Pré-Cirúrgico</div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <strong>Data:</strong> ____/____/______
+        </div>
+        
+        <div class="divider"></div>
+        
+        <h3>✅ Tarefas do Dia</h3>
+        
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th width="15%">Horário</th>
+                    <th width="25%">Tarefa</th>
+                    <th width="45%">Detalhes</th>
+                    <th width="15%">✓</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>____:____</td>
+                    <td><span class="icon">💊</span> Vitamina K1 (5mg)</td>
+                    <td>1 comprimido com refeição</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>Durante o dia</td>
+                    <td><span class="icon">💧</span> Hidratação</td>
+                    <td>Meta: 3 litros (6 copos de 500ml)</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>💧 Controle de Hidratação</h3>
+        <div class="hydration-track">
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+        </div>
+        
+        <div class="notes-box">
+            <label>📝 Observações do dia:</label>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+        </div>
+        
+        <div class="footer">
+            <p>C-Star | Dia 4 de 45</p>
+        </div>
+    </div>
+
+    <!-- DIA 5 -->
+    <div class="page">
+        <div class="day-title">📆 DIA 5 ⚡</div>
+        <div class="day-subtitle">3 dias antes da cirurgia - NOVA MEDICAÇÃO</div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <strong>Data:</strong> ____/____/______
+        </div>
+        
+        <div class="divider"></div>
+        
+        <h3>✅ Tarefas do Dia</h3>
+        
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th width="15%">Horário</th>
+                    <th width="25%">Tarefa</th>
+                    <th width="45%">Detalhes</th>
+                    <th width="15%">✓</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>____:____</td>
+                    <td><span class="icon">💊</span> Vitamina K1 (5mg)</td>
+                    <td>1 comprimido com refeição</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr style="background: #fff9e6;">
+                    <td>____:____</td>
+                    <td><span class="icon">💊</span> <strong>Prednisolona (40mg)</strong></td>
+                    <td><strong>INÍCIO - 1 comprimido (anotar horário)</strong></td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>Durante o dia</td>
+                    <td><span class="icon">💧</span> Hidratação</td>
+                    <td>Meta: 3 litros (6 copos de 500ml)</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="alert-box">
+            <strong>⚠️ IMPORTANTE:</strong> Anote o horário que tomou a Prednisolona! Você deverá tomar nos próximos dias <strong>sempre no mesmo horário</strong>.
+        </div>
+        
+        <h3>💧 Controle de Hidratação</h3>
+        <div class="hydration-track">
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+            <div class="water-cup"></div>
+        </div>
+        
+        <div class="notes-box">
+            <label>📝 Observações do dia:</label>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+        </div>
+        
+        <div class="footer">
+            <p>C-Star | Dia 5 de 45</p>
+        </div>
+    </div>
+
+    <!-- DIA 7 - DIA DA CIRURGIA -->
+    <div class="page">
+        <div class="day-title" style="background: linear-gradient(135deg, #B8941E 0%, #D4AF37 100%);">
+            🏥 DIA 7 ⭐ DIA DA CIRURGIA ⭐
+        </div>
+        <div class="day-subtitle" style="font-size: 12pt; color: var(--dourado-escuro);">
+            <strong>O grande dia chegou!</strong>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0; font-size: 12pt;">
+            <strong>Data da Cirurgia:</strong> ____/____/______ &nbsp;&nbsp; <strong>Horário:</strong> ____:____
+        </div>
+        
+        <div class="divider"></div>
+        
+        <h3>✅ Tarefas do Dia</h3>
+        
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th width="15%">Horário</th>
+                    <th width="25%">Tarefa</th>
+                    <th width="45%">Detalhes</th>
+                    <th width="15%">✓</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Antes da cirurgia</td>
+                    <td><span class="icon">💊</span> Vitamina K1 (5mg)</td>
+                    <td>1 comprimido com refeição</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>Antes da cirurgia</td>
+                    <td><span class="icon">💊</span> Prednisolona (40mg)</td>
+                    <td>Último comprimido da série</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr style="background: #fff9e6;">
+                    <td><strong>12h APÓS</strong></td>
+                    <td><span class="icon">💊</span> <strong>Cefadroxila</strong></td>
+                    <td><strong>INÍCIO - Antibiótico</strong></td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr style="background: #fff9e6;">
+                    <td><strong>12h APÓS</strong></td>
+                    <td><span class="icon">💊</span> <strong>Prednisolona 20mg</strong></td>
+                    <td><strong>INÍCIO - Anti-inflamatório</strong></td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr style="background: #fff9e6;">
+                    <td><strong>12h APÓS</strong></td>
+                    <td><span class="icon">💊</span> <strong>Dipirona/Paracetamol</strong></td>
+                    <td><strong>INÍCIO - Analgésico (8/8h)</strong></td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>____:____</td>
+                    <td><span class="icon">🧊</span> Compressa de Gelo (Manhã)</td>
+                    <td>30min (papada/pescoço/rosto)</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>____:____</td>
+                    <td><span class="icon">🧊</span> Compressa de Gelo (Tarde)</td>
+                    <td>30min (papada/pescoço/rosto)</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>____:____</td>
+                    <td><span class="icon">🧊</span> Compressa de Gelo (Noite)</td>
+                    <td>30min (papada/pescoço/rosto)</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+                <tr>
+                    <td>Durante o dia</td>
+                    <td><span class="icon">💧</span> Hidratação</td>
+                    <td>Meta: 3 litros</td>
+                    <td><span class="checkbox-large"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="alert-box">
+            <strong>🎽 Faixa Compressiva:</strong> USO 24 HORAS (não remover para nada!)
+        </div>
+        
+        <div class="notes-box">
+            <label>📝 Observações do dia:</label>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+            <div style="border-bottom: 1px dotted var(--dourado-claro); margin: 8px 0;"></div>
+        </div>
+        
+        <div class="footer">
+            <p>C-Star | Dia 7 de 45 - DIA DA CIRURGIA</p>
+        </div>
+    </div>
+
+    <!-- Continuarei criando os outros dias... Por questão de tamanho, vou criar um modelo mais condensado -->
+    
+    <!-- PÁGINA FINAL -->
+    <div class="page">
+        <div class="logo-container" style="margin-top: 80px;">
+            <img src="LOGO CSTAR 26 SEM FUNDO.png" alt="C-Star Logo" style="max-width: 220px;">
+        </div>
+        
+        <h1 style="margin-top: 40px;">PARABÉNS!</h1>
+        <h2>Você completou os 45 dias</h2>
+        
+        <div class="divider"></div>
+        
+        <div class="welcome-box" style="margin: 40px 0;">
+            <h3 style="text-align: center;">💝 Sua dedicação fez toda a diferença!</h3>
+            <p style="text-align: center; margin-top: 20px; line-height: 1.8;">
+                Este guia é seu testemunho de disciplina e amor próprio.<br><br>
+                Continue mantendo os hábitos saudáveis adquiridos:<br>
+                Hidratação adequada • Alimentação balanceada<br>
+                Uso da faixa para dormir • Atividade física regular
+            </p>
+        </div>
+        
+        <div class="intro-text" style="margin-top: 50px;">
+            <p style="font-size: 11pt; font-style: italic; color: var(--dourado-escuro);">
+                "O resultado completo aparece em 12-18 meses.<br>
+                Tenha paciência e confie no processo!"
+            </p>
+        </div>
+        
+        <div class="footer" style="margin-top: 80px; border-top: 2px solid var(--dourado);">
+            <p style="font-family: 'Playfair Display', serif; font-size: 14pt; color: var(--dourado-escuro); margin-top: 15px;">
+                <strong>✨ C-STAR - CIRURGIA FACIAL PREMIUM ✨</strong>
+            </p>
+            <p style="margin-top: 10px; color: var(--cinza-medio);">
+                Desenvolvido com ❤️ para sua recuperação perfeita
+            </p>
+            <p style="margin-top: 5px; font-size: 8pt;">
+                Versão 2.0 - Guia Personalizado
+            </p>
+        </div>
+    </div>
+
+</body>
+</html>

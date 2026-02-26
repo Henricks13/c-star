@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep plane - Lift facial e pescoço completo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --dourado: #C8A675;
+            --dourado-escuro: #B8941E;
+            --dourado-claro: #F4E5B5;
+            --azul-navy: #1B3B5F;
+            --azul-escuro: #2C4A6B;
+            --cinza-claro: #9B9B9B;
+            --cinza-medio: #666666;
+            --cinza-escuro: #333333;
+            --preto: #1a1a1a;
+            --branco: #ffffff;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--cinza-escuro);
+            background: var(--branco);
+            line-height: 1.6;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 18mm;
+            margin: 0 auto;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 246, 243, 0.8) 100%),
+                repeating-linear-gradient(45deg, transparent, transparent 25px, rgba(200, 166, 117, 0.2) 25px, rgba(200, 166, 117, 0.2) 50px),
+                repeating-linear-gradient(-45deg, transparent, transparent 25px, rgba(155, 155, 155, 0.13) 25px, rgba(155, 155, 155, 0.13) 50px),
+                linear-gradient(135deg, #ebe8e3 0%, #ffffff 50%, #ebe8e3 100%);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .page::before {
+            content: '';
+            position: absolute;
+            top: 13mm;
+            left: 13mm;
+            right: 13mm;
+            bottom: 13mm;
+            border: 2px solid var(--dourado);
+            pointer-events: none;
+        }
+
+        .page::after {
+            content: '';
+            position: absolute;
+            top: 15mm;
+            left: 15mm;
+            right: 15mm;
+            bottom: 15mm;
+            border: 0.5px solid var(--dourado-claro);
+            pointer-events: none;
+        }
+
+        .day-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .day-watermark img {
+            width: 400px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-top: 18px;
+        }
+
+        .logo-container img {
+            max-width: 170px;
+            height: auto;
+        }
+
+        .doctor-section {
+            margin: 6px 0 8px;
+            text-align: center;
+        }
+
+        .doctor-photo {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            border: 6px solid var(--dourado);
+            box-shadow: 0 12px 28px rgba(212, 175, 55, 0.4);
+            object-fit: cover;
+            margin: 0 auto 10px;
+            display: block;
+        }
+
+        .doctor-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 14pt;
+            color: var(--dourado-escuro);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .doctor-title {
+            font-size: 9.5pt;
+            color: var(--cinza-medio);
+            font-weight: 300;
+            margin-top: 2px;
+        }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--dourado), transparent);
+            margin: 10px 0;
+        }
+
+        .offer-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--azul-navy);
+            font-size: 22pt;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        .offer-subtitle {
+            font-family: 'Playfair Display', serif;
+            color: var(--dourado);
+            font-size: 12pt;
+            text-align: center;
+            margin-top: 4px;
+            margin-bottom: 10px;
+        }
+
+        .offer-list {
+            text-align: left;
+            margin: 8px auto 0;
+            padding-left: 20px;
+            font-size: 9.5pt;
+            max-width: 150mm;
+        }
+
+        .offer-list li {
+            margin: 6px 0;
+        }
+
+        .offer-highlight {
+            background: #fff7e6;
+            border: 1px solid var(--dourado-claro);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 14px auto 0;
+            max-width: 160mm;
+            font-size: 10pt;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .offer-highlight strong {
+            color: var(--dourado-escuro);
+        }
+
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            html,
+            body {
+                background: white;
+                width: 210mm;
+                height: 297mm;
+            }
+
+            .page {
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always;
+                break-after: page;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            @page {
+                size: A4;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="day-watermark"><img src="LOGO CSTAR 26 SEM FUNDO.png" alt="C-Star Logo"></div>
+
+        <div class="doctor-section">
+            <img src="dra-carolina-real.jpg" alt="Dra. Carolina" class="doctor-photo">
+            <div class="doctor-name">Dra. Carol Pinheiro</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="offer-title">Deep plane - Lift facial e pescoço completo</div>
+        <div class="offer-subtitle">Incluso:</div>
+
+        <ul class="offer-list">
+            <li>sessões de drenagem linfática a domicílio</li>
+            <li>1 sessão de câmara Hiperbarica</li>
+            <li>Visita em casa da Enfermeira para checagem da recuperação e curativos</li>
+            <li>Sessões de Laserterapia</li>
+            <li>Medicação entregue em casa antes da cirurgia: vitaminas, antibiótico, anti inflamatórios, meia compressiva anti trombose, guia de recuperação impresso</li>
+            <li>Sedação oral, oxigênio e monitoramento cirúrgico.</li>
+            <li>Faixa modeladora de papada</li>
+            <li>Retornos ilimitados 3 meses para alta</li>
+            <li>Procedimento cirúrgico Lipoaspiração papada e pescoço</li>
+            <li>Procedimento cirúrgico lipoaspiração de gordura do contorno facial</li>
+            <li>Procedimento cirúrgico de Lift facial e cervical deep plane</li>
+            <li>Internação e anestesista geral no hospital São Mateus: 10.000,00</li>
+        </ul>
+
+        <div class="offer-highlight">
+            <p>Todos esses benefícios para seu <strong>CONFORTO</strong> e <strong>SEGURANÇA</strong> você pagaria:<br>
+                <strong>R$80900,00</strong></p>
+            <p style="margin-top: 8px;"><strong>Mas você vai pagar</strong>, com tudo isso incluso por até <strong>24x de 2290,00</strong></p>
+            <p style="margin-top: 6px;">ou <strong>45.000,00 a vista</strong></p>
+        </div>
+
+        <div class="logo-container">
+            <img src="LOGO CSTAR 26 SEM FUNDO.png" alt="C-Star Logo">
+        </div>
+    </div>
+</body>
+
+</html>

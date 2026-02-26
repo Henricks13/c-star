@@ -1,0 +1,21 @@
+# IntelliJ / VS Code
+.idea/
+.vscode/
+
+# Node
+node_modules/
+dist/
+
+# Java
+target/
+*.log
+/repository-c-star/
+!/repository-c-star/.gitkeep
+
+# Env files
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db

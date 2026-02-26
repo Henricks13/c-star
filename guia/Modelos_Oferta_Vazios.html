@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelos de Oferta Vazios</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --dourado: #C8A675;
+            --dourado-escuro: #B8941E;
+            --dourado-claro: #F4E5B5;
+            --azul-navy: #1B3B5F;
+            --azul-escuro: #2C4A6B;
+            --branco: #ffffff;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--branco);
+            line-height: 1.6;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 18mm;
+            margin: 0 auto;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .page--azul {
+            background:
+                linear-gradient(135deg, rgba(235, 241, 248, 0.92) 0%, rgba(214, 226, 240, 0.9) 100%),
+                repeating-linear-gradient(45deg, transparent, transparent 25px, rgba(27, 59, 95, 0.24) 25px, rgba(27, 59, 95, 0.24) 50px),
+                repeating-linear-gradient(-45deg, transparent, transparent 25px, rgba(44, 74, 107, 0.18) 25px, rgba(44, 74, 107, 0.18) 50px),
+                linear-gradient(135deg, #cfdced 0%, #f3f7fb 50%, #cfdced 100%);
+        }
+
+        .page--dourado {
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 246, 243, 0.8) 100%),
+                repeating-linear-gradient(45deg, transparent, transparent 25px, rgba(200, 166, 117, 0.2) 25px, rgba(200, 166, 117, 0.2) 50px),
+                repeating-linear-gradient(-45deg, transparent, transparent 25px, rgba(155, 155, 155, 0.13) 25px, rgba(155, 155, 155, 0.13) 50px),
+                linear-gradient(135deg, #ebe8e3 0%, #ffffff 50%, #ebe8e3 100%);
+        }
+
+        .page--azul::before,
+        .page--dourado::before {
+            content: '';
+            position: absolute;
+            top: 13mm;
+            left: 13mm;
+            right: 13mm;
+            bottom: 13mm;
+            pointer-events: none;
+            border: 2px solid transparent;
+        }
+
+        .page--azul::before {
+            border-color: var(--azul-navy);
+        }
+
+        .page--dourado::before {
+            border-color: var(--dourado);
+        }
+
+        .page--azul::after,
+        .page--dourado::after {
+            content: '';
+            position: absolute;
+            top: 15mm;
+            left: 15mm;
+            right: 15mm;
+            bottom: 15mm;
+            pointer-events: none;
+            border: 0.5px solid transparent;
+        }
+
+        .page--azul::after {
+            border-color: rgba(27, 59, 95, 0.35);
+        }
+
+        .page--dourado::after {
+            border-color: var(--dourado-claro);
+        }
+
+        .offer-highlight {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 16px;
+            margin: 205mm auto 0;
+            max-width: 160mm;
+            min-height: 34mm;
+            border: 1px solid rgba(27, 59, 95, 0.25);
+        }
+
+        .page--dourado .offer-highlight {
+            border-color: var(--dourado-claro);
+        }
+
+        .page--sem-quadro .offer-highlight {
+            display: none;
+        }
+
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            html,
+            body {
+                background: white;
+                width: 210mm;
+                height: 297mm;
+            }
+
+            .page {
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always;
+                break-after: page;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            @page {
+                size: A4;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page page--azul">
+        <div class="offer-highlight"></div>
+    </div>
+
+    <div class="page page--dourado">
+        <div class="offer-highlight"></div>
+    </div>
+
+    <div class="page page--azul page--sem-quadro">
+        <div class="offer-highlight"></div>
+    </div>
+
+    <div class="page page--dourado page--sem-quadro">
+        <div class="offer-highlight"></div>
+    </div>
+</body>
+
+</html>
