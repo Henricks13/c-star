@@ -195,3 +195,21 @@ curl http://localhost/actuator/health
 Se o health retornar `UP`, acesse no navegador:
 
 - `http://SEU_IP_PUBLICO`
+
+### 6) Acompanhar se homolog já foi implantada
+
+Após merge/push em `homolog`, rode no seu Windows PowerShell:
+
+```powershell
+cd c:\Temp\Projects\c-star
+.\scripts\check-homolog.ps1
+```
+
+O script mostra:
+
+- commit atual de `origin/homolog`
+- commit atual no servidor
+- status dos containers
+- health endpoint público
+
+Se o commit remoto e o commit do servidor forem iguais, o deploy da homolog já foi aplicado.
