@@ -130,3 +130,55 @@ No repositório GitHub, em `Settings > Secrets and variables > Actions`, criar:
 - Docker + Docker Compose instalados
 - Porta 80 liberada (frontend)
 - Porta 8080 liberada apenas se quiser expor backend direto
+
+## Deploy manual na AWS EC2 (recomendado para primeira subida)
+
+### 1) Conectar no servidor
+
+```bash
+ssh -i "caminho/da/sua-chave.pem" ubuntu@SEU_IP_PUBLICO
+```
+
+### 2) Instalar Docker no servidor
+
+```bash
+sudo mkdir -p /opt/c-star
+sudo chown -R $USER:$USER /opt/c-star
+cd /opt/c-star
+git clone <URL_DO_SEU_REPO> .
+bash infra/scripts/bootstrap-ubuntu.sh
+exit
+```
+
+Conecte novamente por SSH após o `exit`.
+
+### 3) Configurar variáveis de produção
+
+```bash
+cd /opt/c-star
+cp infra/.env.server.example infra/.env.server
+nano infra/.env.server
+```
+
+Defina:
+
+- `POSTGRES_PASSWORD` forte
+- `JWT_SECRET` com alta entropia (mínimo 32 caracteres)
+
+### 4) Subir aplicação
+
+```bash
+cd /opt/c-star
+bash infra/scripts/deploy-ec2.sh
+```
+
+### 5) Validar
+
+```bash
+docker compose --env-file infra/.env -f infra/docker-compose.server.yml ps
+curl http://localhost/actuator/health
+```
+
+Se o health retornar `UP`, acesse no navegador:
+
+- `http://SEU_IP_PUBLICO`
