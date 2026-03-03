@@ -7,8 +7,9 @@
 
 // BLUE Primary Color
 
-$blue-700: #1c76da;
-$purple-500: #673ab7;
+$blue-500: #ad9720;
+$blue-700: #ad9720;
+$purple-500: #FFD700;
 $purple-700: #542ca7;
 
 $yellow-100: #ffecb5;
@@ -375,7 +376,7 @@ $theme-font-color: #888;
 $theme-heading-color: #111;
 
 $form-bg: #f0f3f6;
-$theme-color: linear-gradient(-135deg, #673ab7 0%, #673ab7 100%);
+$theme-color: linear-gradient(-135deg, #FFD700 0%, #FFD700 100%);
 $theme-color2: linear-gradient(-135deg, #899fd4 0%, #a389d4 100%);
 
 $theme-colors: map-merge(

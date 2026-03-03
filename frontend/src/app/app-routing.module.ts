@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from './core/auth/auth.guard';
 import { AdminComponent } from './theme/layout/admin/admin.component';
 import { GuestComponent } from './theme/layout/guest/guest.component';
 
@@ -7,6 +8,7 @@ const routes: Routes = [
   {
     path: '',
     component: AdminComponent,
+    canActivate: [AuthGuard],
     children: [
       {
         path: '',
@@ -42,6 +44,10 @@ const routes: Routes = [
       {
         path: 'register',
         loadComponent: () => import('./demo/pages/authentication/register/register.component').then((c) => c.RegisterComponent)
+      },
+      {
+        path: 'access-denied',
+        loadComponent: () => import('./demo/pages/authentication/access-denied/access-denied.component').then((c) => c.AccessDeniedComponent)
       }
     ]
   }

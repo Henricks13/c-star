@@ -1,32 +1,34 @@
 // angular import
 import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
-
-import { email, Field, form, minLength, required } from '@angular/forms/signals';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { finalize } from 'rxjs';
+import { AuthService } from 'src/app/core/auth/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [RouterModule, Field],
+  imports: [RouterModule, FormsModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent {
   private cd = inject(ChangeDetectorRef);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   submitted = signal(false);
   error = signal('');
+  loading = signal(false);
+  rememberMe = signal(false);
 
   loginModal = signal<{ email: string; password: string }>({
-    email: 'info@coddedtheme.com',
-    password: '123456'
+    email: '',
+    password: ''
   });
 
-  loginForm = form(this.loginModal, (schemaPath) => {
-    required(schemaPath.email, { message: 'Email is required' });
-    email(schemaPath.email, { message: 'Enter a valid email address' });
-    required(schemaPath.password, { message: 'Password is required' });
-    minLength(schemaPath.password, 8, { message: 'Password must be at least 8 characters' });
-  });
+  updateLoginField(field: 'email' | 'password', value: string) {
+    this.loginModal.update((current) => ({ ...current, [field]: value }));
+  }
 
   onSubmit(event: Event) {
     this.submitted.set(true);
@@ -34,7 +36,32 @@ export class LoginComponent {
 
     event.preventDefault();
     const credentials = this.loginModal();
-    console.log('login user logged in with:', credentials);
-    this.cd.detectChanges();
+
+    if (!credentials.email || !credentials.password) {
+      this.error.set('Informe e-mail e senha.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.authService
+      .login(credentials, this.rememberMe())
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: () => {
+          this.router.navigateByUrl('/default');
+        },
+        error: (err) => {
+          if (err?.status === 0) {
+            this.error.set('Não foi possível conectar ao servidor. Verifique se o backend está no ar.');
+          } else if (err?.status === 401) {
+            this.error.set('Senha incorreta. Tente novamente.');
+          } else if (err?.status === 404) {
+            this.error.set('Usuário não encontrado.');
+          } else {
+            this.error.set(err?.error?.message ?? 'Falha ao autenticar. Tente novamente.');
+          }
+          this.cd.detectChanges();
+        }
+      });
   }
 }

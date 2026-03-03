@@ -48,7 +48,7 @@ export class BarChartComponent {
         },
         background: 'transparent'
       },
-      colors: ['#d3eafd', '#2196f3', '#673ab7', '#ede7f6'],
+      colors: ['#d3eafd', '#ad9720', '#FFD700', '#ede7f6'],
       responsive: [
         {
           breakpoint: 480,

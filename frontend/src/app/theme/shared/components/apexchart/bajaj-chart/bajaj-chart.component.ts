@@ -53,7 +53,7 @@ export class BajajChartComponent {
           show: false
         }
       },
-      colors: ['#673ab7']
+      colors: ['#FFD700']
     };
   }
 }
