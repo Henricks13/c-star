@@ -136,7 +136,8 @@ No repositório GitHub, em `Settings > Secrets and variables > Actions`, criar:
 - `VPS_USER` (usuário SSH)
 - `VPS_SSH_KEY` (chave privada SSH)
 - `VPS_PORT` (normalmente 22)
-- `DEPLOY_PATH` (ex: `/opt/c-star`)
+
+> O deploy automático usa caminho fixo no servidor: `/opt/c-star`.
 
 ### 5) Pré-requisitos no servidor
 
