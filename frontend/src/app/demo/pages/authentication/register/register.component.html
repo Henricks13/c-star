@@ -1,0 +1,112 @@
+<div class="auth-main">
+  <div class="auth-wrapper v3">
+    <div class="auth-form">
+      <div class="card mt-5">
+        <div class="card-body">
+          <form (ngSubmit)="onSubmit($event)">
+            <a href="javascript:" class="d-flex justify-content-center mt-3">
+              <img src="assets/images/logo-dark.svg" alt="logo" />
+            </a>
+            <div class="row">
+              <div class="d-flex justify-content-center">
+                <div class="auth-header">
+                  <h2 class="text-secondary mt-5"><b>Criar conta</b></h2>
+                  <p class="fs-4 mt-2">Cadastre-se para acessar o sistema</p>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn mt-2 btn-light-primary bg-light text-muted" style="width: 100%">
+              <img src="assets/images/authentication/google-icon.svg" alt="google" />
+              Cadastrar com Google
+            </button>
+            <div class="saprator mt-3">
+              <span>ou</span>
+            </div>
+            <h5 class="my-4 d-flex justify-content-center">Cadastrar com e-mail</h5>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-floating mb-3">
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="floatingInput"
+                    placeholder="Seu nome"
+                    name="firstName"
+                    [ngModel]="registerModel().firstName"
+                    (ngModelChange)="updateRegisterField('firstName', $event)"
+                  />
+                  <label for="floatingInput">Nome</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating mb-3">
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="floatingInput"
+                    placeholder="Seu sobrenome"
+                    name="lastName"
+                    [ngModel]="registerModel().lastName"
+                    (ngModelChange)="updateRegisterField('lastName', $event)"
+                  />
+                  <label for="floatingInput">Sobrenome</label>
+                </div>
+              </div>
+            </div>
+            <div class="form-floating mb-3">
+              <input
+                type="email"
+                class="form-control"
+                id="floatingInput"
+                placeholder="Seu e-mail"
+                name="email"
+                [ngModel]="registerModel().email"
+                (ngModelChange)="updateRegisterField('email', $event)"
+              />
+              <label for="floatingInput">E-mail</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input
+                type="password"
+                id="password"
+                class="form-control"
+                placeholder="Senha (mín. 8 caracteres)"
+                name="password"
+                [ngModel]="registerModel().password"
+                (ngModelChange)="updateRegisterField('password', $event)"
+              />
+              <label for="password">Senha</label>
+            </div>
+            <div class="form-check mt-3s">
+              <input class="form-check-input input-primary" type="checkbox" id="customCheckc1" checked />
+              <label class="form-check-label" for="customCheckc1">
+                <h5>
+                  Concordo com
+                  <span>os Termos e Condições.</span>
+                </h5>
+              </label>
+            </div>
+            @if (error()) {
+              <div class="alert alert-danger mt-3" role="alert">
+                {{ error() }}
+              </div>
+            }
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-secondary p-2" [disabled]="loading()">
+                @if (loading()) {
+                  Cadastrando...
+                } @else {
+                  Cadastrar
+                }
+              </button>
+            </div>
+          </form>
+          <hr />
+          <h5 class="d-flex justify-content-center">
+            <a [routerLink]="['/login']">Já tem conta?</a>
+          </h5>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

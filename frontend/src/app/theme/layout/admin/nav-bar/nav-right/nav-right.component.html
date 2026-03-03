@@ -1,0 +1,50 @@
+<div class="ms-auto">
+  <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
+    <li>
+      <div class="dropdown pc-h-item">
+        <a
+          class="pc-head-link head-link-primary arrow-none me-0"
+          href="https://github.com/codedthemes/berry-free-angular-admin-template/"
+          target="_blank"
+        >
+          <i class="ti ti-brand-github"></i>
+        </a>
+      </div>
+    </li>
+
+    <li>
+      <div class="dropdown pc-h-item header-user-profile" ngbDropdown>
+        <a
+          class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
+          data-bs-toggle="dropdown"
+          href="javascript:"
+          ngbDropdownToggle
+        >
+          <img src="assets/images/user/avatar-2.jpg" alt="user-image" class="user-avtar" />
+          <span>
+            <i class="ti ti-settings"></i>
+          </span>
+        </a>
+
+        <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown" ngbDropdownMenu>
+          <div class="dropdown-header">
+            <h4>
+              Olá,
+              <span class="small text-muted">{{ authService.currentUser()?.fullName || 'User' }}</span>
+            </h4>
+            <p class="text-muted">{{ authService.currentUser()?.roles?.join(', ') || 'Sem perfil' }}</p>
+            <hr />
+            <a [routerLink]="['/register']" class="dropdown-item">
+              <i class="ti ti-settings"></i>
+              <span>Conta</span>
+            </a>
+            <a href="javascript:" class="dropdown-item" (click)="logout()">
+              <i class="ti ti-logout"></i>
+              <span>Logout</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>
