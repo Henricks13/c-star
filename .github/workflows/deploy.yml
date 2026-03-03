@@ -25,8 +25,11 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            set -e
+            set -euxo pipefail
+            echo "Deploy user: $(whoami)"
             mkdir -p ${{ secrets.DEPLOY_PATH }}
+            sudo chown -R $(whoami):$(whoami) ${{ secrets.DEPLOY_PATH }} || true
+            git config --global --add safe.directory ${{ secrets.DEPLOY_PATH }} || true
             if [ ! -d "${{ secrets.DEPLOY_PATH }}/.git" ]; then
               git clone --branch homolog https://github.com/${{ github.repository }}.git ${{ secrets.DEPLOY_PATH }}
             fi
