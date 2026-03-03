@@ -25,20 +25,22 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            set -euxo pipefail
-            echo "Deploy user: $(whoami)"
-            mkdir -p ${{ secrets.DEPLOY_PATH }}
-            sudo chown -R $(whoami):$(whoami) ${{ secrets.DEPLOY_PATH }} || true
-            git config --global --add safe.directory ${{ secrets.DEPLOY_PATH }} || true
-            if [ ! -d "${{ secrets.DEPLOY_PATH }}/.git" ]; then
-              git clone --branch homolog https://github.com/${{ github.repository }}.git ${{ secrets.DEPLOY_PATH }}
-            fi
-            cd ${{ secrets.DEPLOY_PATH }}
-            git fetch origin
-            git checkout homolog
-            git reset --hard ${{ github.sha }}
-            if [ ! -f infra/.env.server ]; then
-              echo "Arquivo infra/.env.server não encontrado no servidor."
-              exit 1
-            fi
-            bash infra/scripts/deploy-ec2.sh ${{ secrets.DEPLOY_PATH }}
+            bash -lc '
+              set -euo pipefail
+              echo "Deploy user: $(whoami)"
+              mkdir -p ${{ secrets.DEPLOY_PATH }}
+              sudo chown -R $(whoami):$(whoami) ${{ secrets.DEPLOY_PATH }} || true
+              git config --global --add safe.directory ${{ secrets.DEPLOY_PATH }} || true
+              if [ ! -d "${{ secrets.DEPLOY_PATH }}/.git" ]; then
+                git clone --branch homolog https://github.com/${{ github.repository }}.git ${{ secrets.DEPLOY_PATH }}
+              fi
+              cd ${{ secrets.DEPLOY_PATH }}
+              git fetch origin
+              git checkout homolog
+              git reset --hard ${{ github.sha }}
+              if [ ! -f infra/.env.server ]; then
+                echo "Arquivo infra/.env.server não encontrado no servidor."
+                exit 1
+              fi
+              bash infra/scripts/deploy-ec2.sh ${{ secrets.DEPLOY_PATH }}
+            '
