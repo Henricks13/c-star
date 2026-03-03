@@ -87,6 +87,18 @@ App:
 
 ## Git + CI/CD
 
+### Fluxo de branches
+
+- `main`: produção estável
+- `develop`: integração de desenvolvimento
+- `homolog`: validação/homologação com deploy automático no servidor
+
+Fluxo recomendado:
+
+1. criar feature a partir de `develop`
+2. abrir PR para `develop`
+3. quando quiser publicar em homologação, fazer merge de `develop` -> `homolog`
+
 ### 1) Subir no GitHub
 
 ```bash
@@ -110,10 +122,11 @@ Executa em push/PR:
 
 Arquivo: `.github/workflows/deploy.yml`
 
-Executa em `main` e manualmente (`workflow_dispatch`):
+Executa em `homolog` e manualmente (`workflow_dispatch`):
 
 - copia o projeto para servidor via SSH
-- executa `docker compose -f infra/docker-compose.server.yml up -d --build`
+- executa `bash infra/scripts/deploy-ec2.sh` no servidor
+- usa `infra/.env.server` já existente no servidor
 
 ### 4) Secrets do GitHub necessários
 
