@@ -3,7 +3,11 @@ name: Deploy Server
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ["homolog"]
+
+concurrency:
+  group: deploy-homolog
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -26,7 +30,7 @@ jobs:
           overwrite: true
           strip_components: 0
 
-      - name: Run docker compose on server
+      - name: Run deploy on server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -35,5 +39,9 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            cd ${{ secrets.DEPLOY_PATH }}/infra
-            docker compose -f docker-compose.server.yml up -d --build
+            cd ${{ secrets.DEPLOY_PATH }}
+            if [ ! -f infra/.env.server ]; then
+              echo "Arquivo infra/.env.server não encontrado no servidor."
+              exit 1
+            fi
+            bash infra/scripts/deploy-ec2.sh ${{ secrets.DEPLOY_PATH }}
