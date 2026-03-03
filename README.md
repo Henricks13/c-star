@@ -124,7 +124,7 @@ Arquivo: `.github/workflows/deploy.yml`
 
 Executa em `homolog` e manualmente (`workflow_dispatch`):
 
-- copia o projeto para servidor via SSH
+- sincroniza o código no servidor via `git fetch/reset` para o commit do workflow
 - executa `bash infra/scripts/deploy-ec2.sh` no servidor
 - usa `infra/.env.server` já existente no servidor
 
