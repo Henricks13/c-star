@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, linux, x64, cstar-homolog]
+    runs-on: [self-hosted, linux, cstar-homolog]
 
     steps:
       - name: Checkout
