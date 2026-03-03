@@ -24,6 +24,22 @@ Print-Title "Homolog Monitor"
 Write-Host "Host: $ServerHost"
 Write-Host "Branch: $Branch"
 
+Print-Title "0) Último deploy no GitHub Actions"
+try {
+  $runs = Invoke-RestMethod -Uri "https://api.github.com/repos/Henricks13/c-star/actions/runs?branch=$Branch&per_page=10" -TimeoutSec 20
+  $deployRun = $runs.workflow_runs | Where-Object { $_.name -eq "Deploy Server" } | Select-Object -First 1
+  if ($null -eq $deployRun) {
+    Write-Host "deploy run: não encontrado"
+  } else {
+    $shaShort = $deployRun.head_sha.Substring(0, 7)
+    Write-Host "deploy run: #$($deployRun.run_number) | status=$($deployRun.status) | conclusion=$($deployRun.conclusion) | sha=$shaShort"
+    Write-Host "url: $($deployRun.html_url)"
+  }
+} catch {
+  Write-Host "deploy run: falha ao consultar GitHub Actions"
+  Write-Host $_.Exception.Message
+}
+
 if (-not (Test-Path $KeyPath)) {
   throw "Chave SSH não encontrada em: $KeyPath"
 }
