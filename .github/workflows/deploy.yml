@@ -11,37 +11,33 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, cstar-homolog]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Upload project to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "."
-          target: ${{ secrets.DEPLOY_PATH }}
-          rm: false
-          overwrite: true
-          strip_components: 0
+      - name: Run deploy on self-hosted server
+        run: |
+          set -euo pipefail
+          DEPLOY_PATH="/opt/c-star"
 
-      - name: Run deploy on server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            set -e
-            cd ${{ secrets.DEPLOY_PATH }}
-            if [ ! -f infra/.env.server ]; then
-              echo "Arquivo infra/.env.server não encontrado no servidor."
-              exit 1
-            fi
-            bash infra/scripts/deploy-ec2.sh ${{ secrets.DEPLOY_PATH }}
+          sudo mkdir -p "$DEPLOY_PATH"
+          sudo chown -R "$USER":"$USER" "$DEPLOY_PATH"
+          git config --global --add safe.directory "$DEPLOY_PATH" || true
+
+          if [ ! -d "$DEPLOY_PATH/.git" ]; then
+            git clone --branch homolog "https://github.com/${GITHUB_REPOSITORY}.git" "$DEPLOY_PATH"
+          fi
+
+          cd "$DEPLOY_PATH"
+          git fetch origin
+          git checkout homolog
+          git reset --hard "$GITHUB_SHA"
+
+          if [ ! -f infra/.env.server ]; then
+            echo "Arquivo infra/.env.server não encontrado no servidor."
+            exit 1
+          fi
+
+          bash infra/scripts/deploy-ec2.sh "$DEPLOY_PATH"
