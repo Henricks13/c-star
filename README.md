@@ -124,20 +124,33 @@ Arquivo: `.github/workflows/deploy.yml`
 
 Executa em `homolog` e manualmente (`workflow_dispatch`):
 
-- sincroniza o código no servidor via `git fetch/reset` para o commit do workflow
-- executa `bash infra/scripts/deploy-ec2.sh` no servidor
+- roda em `self-hosted runner` na própria EC2 (sem SSH externo)
+- sincroniza o código em `/opt/c-star` para o commit do workflow
+- executa `bash infra/scripts/deploy-ec2.sh /opt/c-star`
 - usa `infra/.env.server` já existente no servidor
 
 ### 4) Secrets do GitHub necessários
 
-No repositório GitHub, em `Settings > Secrets and variables > Actions`, criar:
+Para o deploy automático com self-hosted runner, não é necessário secret SSH.
 
-- `VPS_HOST` (IP ou domínio do servidor)
-- `VPS_USER` (usuário SSH)
-- `VPS_SSH_KEY` (chave privada SSH)
-- `VPS_PORT` (normalmente 22)
+### 4.1) Configurar self-hosted runner na EC2
 
-> O deploy automático usa caminho fixo no servidor: `/opt/c-star`.
+No GitHub, em `Settings > Actions > Runners > New self-hosted runner`, copie o token de registro.
+
+No servidor EC2, rode:
+
+```bash
+cd /opt/c-star
+bash infra/scripts/setup-self-hosted-runner.sh \
+	https://github.com/Henricks13/c-star \
+	TOKEN_DO_RUNNER \
+	cstar-homolog \
+	cstar-ec2-runner
+```
+
+No workflow, o `runs-on` usa o label `cstar-homolog`.
+
+Depois disso, push em `homolog` faz deploy automático sem expor porta 22 para internet.
 
 ### 5) Pré-requisitos no servidor
 
