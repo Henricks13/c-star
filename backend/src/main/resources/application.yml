@@ -29,6 +29,14 @@ app:
   security:
     jwt-secret: ${JWT_SECRET:change-me-change-me-change-me-change-me-1234567890}
     jwt-expiration-minutes: ${JWT_EXP_MIN:60}
+  whatsapp:
+    provider: ${WHATSAPP_PROVIDER:evolution}
+    instance-prefix: ${WHATSAPP_INSTANCE_PREFIX:cstar}
+    public-base-url: ${WHATSAPP_PUBLIC_BASE_URL:http://localhost:8080}
+    webhook-secret: ${WHATSAPP_WEBHOOK_SECRET:change-me-webhook-secret}
+    evolution:
+      base-url: ${EVOLUTION_BASE_URL:http://localhost:8088}
+      api-key: ${EVOLUTION_API_KEY:}
   multi-tenancy:
     enabled: ${MULTI_TENANCY_ENABLED:false}
     strategy: ${MULTI_TENANCY_STRATEGY:schema}

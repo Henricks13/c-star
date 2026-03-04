@@ -12,7 +12,7 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: '/default',
+        redirectTo: '/contacts',
         pathMatch: 'full'
       },
       {
@@ -30,6 +30,14 @@ const routes: Routes = [
       {
         path: 'sample-page',
         loadComponent: () => import('./demo/other/sample-page/sample-page.component').then((c) => c.SamplePageComponent)
+      },
+      {
+        path: 'contacts',
+        loadComponent: () => import('./demo/pages/contacts/contacts.component').then((c) => c.ContactsComponent)
+      },
+      {
+        path: 'whatsapp',
+        loadComponent: () => import('./demo/pages/whatsapp/whatsapp.component').then((c) => c.WhatsappComponent)
       }
     ]
   },

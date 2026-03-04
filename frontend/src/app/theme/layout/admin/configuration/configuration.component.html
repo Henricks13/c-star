@@ -1,57 +1,28 @@
 <div id="styleSelector" class="menu-styler" [ngClass]="{ open: styleSelectorToggle }">
-  <div class="pct-c-btn" ngbTooltip="Live Customize">
+  <div class="pct-c-btn" ngbTooltip="Tema">
     <a href="javascript:" (click)="styleSelectorToggle = !styleSelectorToggle">
       <i class="ph-duotone ph-gear-six"></i>
     </a>
   </div>
   <div class="style-block">
     <div class="customize-header">
-      <h5>Theme Customization</h5>
+      <h5>Tema</h5>
       <div class="d-inline-flex align-items-center gap-2">
         <button type="button" class="btn-close ms-1" aria-label="Close" (click)="styleSelectorToggle = !styleSelectorToggle"></button>
       </div>
     </div>
     <ul class="list-group list-group-flush">
       <li class="list-group-item">
-        <h5 class="mb-1 text-uppercase">Font Style</h5>
-        <p class="text-muted text-sm">Choose theme font</p>
-        <div class="theme-color theme-font-style">
+        <h5 class="mb-1 text-uppercase">Modo de visualização</h5>
+        <p class="text-muted text-sm">Escolha entre claro e escuro</p>
+        <div class="theme-color">
           <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="layout_font"
-              id="layoutfontRoboto"
-              checked
-              [checked]="setFontFamily === 'Roboto'"
-              (click)="fontFamily('Roboto')"
-              ngbTooltip="Roboto"
-            />
-            <label class="form-check-label" for="layoutfontRoboto">Roboto</label>
+            <input class="form-check-input" type="radio" name="theme_mode" id="themelight" [checked]="themeMode === 'light'" (click)="setTheme('light')" />
+            <label class="form-check-label" for="themelight">Claro</label>
           </div>
           <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="layout_font"
-              id="layoutfontPoppins"
-              [checked]="setFontFamily === 'Poppins'"
-              (click)="fontFamily('Poppins')"
-              ngbTooltip="Poppins"
-            />
-            <label class="form-check-label" for="layoutfontPoppins">Poppins</label>
-          </div>
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="layout_font"
-              id="layoutfontInter"
-              [checked]="setFontFamily === 'Inter'"
-              (click)="fontFamily('Inter')"
-              ngbTooltip="Inter"
-            />
-            <label class="form-check-label" for="layoutfontInter">Inter</label>
+            <input class="form-check-input" type="radio" name="theme_mode" id="themedark" [checked]="themeMode === 'dark'" (click)="setTheme('dark')" />
+            <label class="form-check-label" for="themedark">Escuro</label>
           </div>
         </div>
       </li>
