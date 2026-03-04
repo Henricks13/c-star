@@ -1,0 +1,270 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010-create-contacts
+      author: cstar
+      changes:
+        - createTable:
+            tableName: contacts
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: whatsapp_phone_e164
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: full_name
+                  type: VARCHAR(160)
+              - column:
+                  name: stage
+                  type: VARCHAR(30)
+                  defaultValue: LEAD
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source
+                  type: VARCHAR(50)
+                  defaultValue: whatsapp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_inbound_at
+                  type: TIMESTAMP
+              - column:
+                  name: last_inbound_at
+                  type: TIMESTAMP
+              - column:
+                  name: last_outbound_at
+                  type: TIMESTAMP
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: |
+              ALTER TABLE contacts
+              ADD CONSTRAINT ck_contacts_stage
+              CHECK (stage IN ('LEAD', 'QUALIFIED', 'PROPOSAL', 'CLIENT', 'LOST'));
+
+  - changeSet:
+      id: 011-create-conversation-summaries
+      author: cstar
+      changes:
+        - createTable:
+            tableName: conversation_summaries
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: contact_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: channel
+                  type: VARCHAR(20)
+                  defaultValue: whatsapp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: OPEN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unread_count
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_message_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_message_direction
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_message_preview
+                  type: VARCHAR(500)
+              - column:
+                  name: last_inbound_at
+                  type: TIMESTAMP
+              - column:
+                  name: last_outbound_at
+                  type: TIMESTAMP
+              - column:
+                  name: assigned_to_user_id
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: conversation_summaries
+            baseColumnNames: contact_id
+            referencedTableName: contacts
+            referencedColumnNames: id
+            constraintName: fk_conv_summary_contact
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: conversation_summaries
+            columnNames: contact_id, channel
+            constraintName: uk_conv_summary_contact_channel
+        - sql:
+            sql: |
+              ALTER TABLE conversation_summaries
+              ADD CONSTRAINT ck_conv_summary_status
+              CHECK (status IN ('OPEN', 'PENDING', 'RESOLVED'));
+        - sql:
+            sql: |
+              ALTER TABLE conversation_summaries
+              ADD CONSTRAINT ck_conv_summary_direction
+              CHECK (last_message_direction IN ('INBOUND', 'OUTBOUND'));
+        - sql:
+            sql: |
+              ALTER TABLE conversation_summaries
+              ADD CONSTRAINT ck_conv_summary_unread_non_negative
+              CHECK (unread_count >= 0);
+
+  - changeSet:
+      id: 012-create-messages
+      author: cstar
+      changes:
+        - createTable:
+            tableName: messages
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: conversation_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: wa_message_id
+                  type: VARCHAR(120)
+                  constraints:
+                    unique: true
+              - column:
+                  name: direction
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: body
+                  type: TEXT
+              - column:
+                  name: sent_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: delivered_at
+                  type: TIMESTAMP
+              - column:
+                  name: read_at
+                  type: TIMESTAMP
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: messages
+            baseColumnNames: conversation_id
+            referencedTableName: conversation_summaries
+            referencedColumnNames: id
+            constraintName: fk_messages_conversation
+            onDelete: CASCADE
+        - sql:
+            sql: |
+              ALTER TABLE messages
+              ADD CONSTRAINT ck_messages_direction
+              CHECK (direction IN ('INBOUND', 'OUTBOUND'));
+
+  - changeSet:
+      id: 013-indexes-contacts-conversations-messages
+      author: cstar
+      changes:
+        - createIndex:
+            tableName: contacts
+            indexName: idx_contacts_stage
+            columns:
+              - column:
+                  name: stage
+        - createIndex:
+            tableName: contacts
+            indexName: idx_contacts_last_inbound
+            columns:
+              - column:
+                  name: last_inbound_at
+        - createIndex:
+            tableName: conversation_summaries
+            indexName: idx_conv_summary_unread_last_msg
+            columns:
+              - column:
+                  name: unread_count
+              - column:
+                  name: last_message_at
+        - createIndex:
+            tableName: conversation_summaries
+            indexName: idx_conv_summary_status_last_msg
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: last_message_at
+        - createIndex:
+            tableName: conversation_summaries
+            indexName: idx_conv_summary_rescue
+            columns:
+              - column:
+                  name: last_outbound_at
+              - column:
+                  name: last_inbound_at
+              - column:
+                  name: status
+        - createIndex:
+            tableName: messages
+            indexName: idx_messages_conversation_sent_at
+            columns:
+              - column:
+                  name: conversation_id
+              - column:
+                  name: sent_at
