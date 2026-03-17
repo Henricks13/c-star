@@ -1,1 +1,6 @@
-// This file is intentionally left empty to allow customers to add custom CSS if needed.
+.brand-title {
+	font-weight: 700;
+	font-size: 1rem;
+	color: var(--pc-sidebar-active-color);
+	white-space: nowrap;
+}

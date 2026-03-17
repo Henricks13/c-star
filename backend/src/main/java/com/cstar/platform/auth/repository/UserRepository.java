@@ -12,5 +12,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @EntityGraph(attributePaths = {"roles", "roles.permissions"})
     Optional<User> findByEmailIgnoreCase(String email);
 
+    @EntityGraph(attributePaths = {"roles"})
+    java.util.List<User> findAllWithRolesByOrderByFullNameAsc();
+
+    @EntityGraph(attributePaths = {"roles"})
+    Optional<User> findWithRolesById(UUID id);
+
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, UUID id);
 }
