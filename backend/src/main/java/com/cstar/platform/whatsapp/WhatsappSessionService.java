@@ -187,6 +187,7 @@ public class WhatsappSessionService {
                 state.connected,
                 state.displayName,
                 state.phoneNumber,
+                null,
                 PROVIDER_NAME,
                 state.connectedAt,
                 state.lastSyncAt
@@ -228,15 +229,16 @@ public class WhatsappSessionService {
 
         return new WhatsappSessionInfoResponse(
                 connected,
-            displayName,
-            phoneNumber,
+                displayName,
+                phoneNumber,
+                instanceInfo.profilePicUrl(),
                 "evolution",
                 connected ? Instant.now() : null,
                 Instant.now()
         );
     }
 
-        private EvolutionInstanceInfo resolveEvolutionInstanceInfo(String instanceName) {
+    private EvolutionInstanceInfo resolveEvolutionInstanceInfo(String instanceName) {
         List<Map<String, Object>> instances = evolutionApiClient.fetchInstances();
         if (instances.isEmpty()) {
             return EvolutionInstanceInfo.empty();
@@ -247,10 +249,11 @@ public class WhatsappSessionService {
             .findFirst()
             .map(instance -> new EvolutionInstanceInfo(
                 asString(instance.get("profileName")),
-                normalizeFromJid(asString(instance.get("ownerJid")))
+                normalizeFromJid(asString(instance.get("ownerJid"))),
+                asString(instance.get("profilePicUrl"))
             ))
             .orElse(EvolutionInstanceInfo.empty());
-        }
+    }
 
     private String resolveState(Map<String, Object> response) {
         Object instance = response.get("instance");
@@ -370,9 +373,9 @@ public class WhatsappSessionService {
     private record QrSnapshot(String base64, Instant expiresAt) {
     }
 
-    private record EvolutionInstanceInfo(String displayName, String phoneNumber) {
+    private record EvolutionInstanceInfo(String displayName, String phoneNumber, String profilePicUrl) {
         private static EvolutionInstanceInfo empty() {
-            return new EvolutionInstanceInfo(null, null);
+            return new EvolutionInstanceInfo(null, null, null);
         }
     }
 

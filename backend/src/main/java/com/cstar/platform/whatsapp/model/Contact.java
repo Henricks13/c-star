@@ -123,4 +123,12 @@ public class Contact {
         this.fullName = fullName;
         this.updatedAt = Instant.now();
     }
+
+    public void setStage(ContactStage stage) {
+        if (stage == null) {
+            return;
+        }
+        this.stage = stage;
+        this.updatedAt = Instant.now();
+    }
 }

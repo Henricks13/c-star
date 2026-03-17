@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/002-auth-rbac-foundation.yaml
   - include:
       file: db/changelog/003-contacts-whatsapp-foundation.yaml
+  - include:
+      file: db/changelog/004-contacts-stage-workflow-update.yaml

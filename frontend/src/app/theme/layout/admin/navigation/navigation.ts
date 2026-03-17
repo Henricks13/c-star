@@ -25,19 +25,46 @@ export const NavigationItems: NavigationItem[] = [
       {
         id: 'contacts',
         title: 'Contatos',
-        type: 'item',
-        classes: 'nav-item',
-        url: '/contacts',
+        type: 'collapse',
         icon: 'ti ti-users',
-        breadcrumbs: false
+        breadcrumbs: false,
+        children: [
+          {
+            id: 'contacts-geral',
+            title: 'Geral',
+            type: 'item',
+            url: '/contacts/geral',
+            breadcrumbs: false
+          },
+          {
+            id: 'contacts-nao-lidas',
+            title: 'Não Lidas',
+            type: 'item',
+            url: '/contacts/nao-lidas',
+            breadcrumbs: false
+          },
+          {
+            id: 'contacts-em-andamento',
+            title: 'Em Andamento',
+            type: 'item',
+            url: '/contacts/em-andamento',
+            breadcrumbs: false
+          }
+        ]
       },
       {
         id: 'whatsapp',
         title: 'WhatsApp',
         type: 'item',
         url: '/whatsapp',
-        classes: 'nav-item',
         icon: 'ti ti-brand-whatsapp'
+      },
+      {
+        id: 'users',
+        title: 'Usuários',
+        type: 'item',
+        url: '/users',
+        icon: 'ti ti-users-group'
       }
     ]
   }

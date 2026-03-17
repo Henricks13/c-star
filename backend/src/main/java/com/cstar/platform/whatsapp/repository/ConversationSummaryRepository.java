@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface ConversationSummaryRepository extends JpaRepository<ConversationSummary, UUID> {
 
     Optional<ConversationSummary> findByContactAndChannel(Contact contact, String channel);
+
+    Optional<ConversationSummary> findByContactIdAndChannel(UUID contactId, String channel);
 }

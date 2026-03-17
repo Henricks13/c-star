@@ -10,7 +10,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,14 +64,20 @@ public class EvolutionApiClient {
         String url = properties.getEvolution().getBaseUrl() + "/instance/fetchInstances";
         HttpEntity<Void> request = new HttpEntity<>(headers());
         try {
-            ResponseEntity<Map[]> response = restTemplate.exchange(url, HttpMethod.GET, request, Map[].class);
-            if (response.getBody() == null) {
-                return List.of();
+            ResponseEntity<Object> response = restTemplate.exchange(url, HttpMethod.GET, request, Object.class);
+            Object body = response.getBody();
+            if (body instanceof List<?> list) {
+                return list.stream()
+                        .filter(item -> item instanceof Map<?, ?>)
+                        .map(item -> (Map<String, Object>) item)
+                        .toList();
             }
-            return Arrays.stream(response.getBody())
-                    .filter(map -> map != null)
-                    .map(map -> (Map<String, Object>) map)
-                    .toList();
+
+            if (body instanceof Map<?, ?> map) {
+                return List.of((Map<String, Object>) map);
+            }
+
+            return List.of();
         } catch (HttpClientErrorException | HttpServerErrorException ex) {
             return List.of();
         }
@@ -88,11 +93,38 @@ public class EvolutionApiClient {
         return post(url, Map.of("number", number, "text", text));
     }
 
+    public Map<String, Object> findChats(String instanceName, int limit) {
+        String url = properties.getEvolution().getBaseUrl() + "/chat/findChats/" + instanceName;
+        int safeLimit = Math.max(1, Math.min(limit, 500));
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("page", 1);
+        payload.put("limit", safeLimit);
+        return post(url, payload);
+    }
+
+    public Map<String, Object> findMessages(String instanceName, String remoteJid, int limit) {
+        String url = properties.getEvolution().getBaseUrl() + "/chat/findMessages/" + instanceName;
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+
+        Map<String, Object> keyFilter = new HashMap<>();
+        keyFilter.put("remoteJid", remoteJid);
+
+        Map<String, Object> where = new HashMap<>();
+        where.put("key", keyFilter);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("where", where);
+        payload.put("page", 1);
+        payload.put("limit", safeLimit);
+
+        return post(url, payload);
+    }
+
     private Map<String, Object> get(String url) {
         HttpEntity<Void> request = new HttpEntity<>(headers());
         try {
-            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
-            return response.getBody() == null ? Map.of() : response.getBody();
+            ResponseEntity<Object> response = restTemplate.exchange(url, HttpMethod.GET, request, Object.class);
+            return normalizeBody(response.getBody());
         } catch (HttpClientErrorException | HttpServerErrorException ex) {
             return Map.of();
         }
@@ -101,11 +133,28 @@ public class EvolutionApiClient {
     private Map<String, Object> post(String url, Object body) {
         HttpEntity<Object> request = new HttpEntity<>(body, headers());
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-            return response.getBody() == null ? Map.of() : response.getBody();
+            ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
+            return normalizeBody(response.getBody());
         } catch (HttpClientErrorException | HttpServerErrorException ex) {
             return Map.of();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> normalizeBody(Object body) {
+        if (body == null) {
+            return Map.of();
+        }
+
+        if (body instanceof Map<?, ?> map) {
+            return (Map<String, Object>) map;
+        }
+
+        if (body instanceof List<?> list) {
+            return Map.of("records", list);
+        }
+
+        return Map.of("value", body);
     }
 
     private HttpHeaders headers() {

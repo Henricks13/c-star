@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/min';
 
+import { AuthService } from 'src/app/core/auth/auth.service';
 import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
 import { ContactsService } from 'src/app/core/contacts/contacts.service';
-import { ContactView } from 'src/app/core/contacts/contacts.types';
+import { ContactMessage, ContactView } from 'src/app/core/contacts/contacts.types';
 
 
 
@@ -13,24 +16,429 @@ import { ContactView } from 'src/app/core/contacts/contacts.types';
   templateUrl: './contacts.component.html',
   styleUrls: ['./contacts.component.scss']
 })
-export class ContactsComponent {
 export class ContactsComponent implements OnInit {
-  contacts: ContactView[] = [];
+  viewMode: 'geral' | 'nao-lidas' | 'em-andamento' = 'geral';
 
-  constructor(private readonly contactsService: ContactsService) {}
+  contacts: ContactView[] = [];
+  currentPage = 0;
+  pageSize = 20;
+  totalElements = 0;
+  totalPages = 0;
+  selectedStageDraft = 'ALL';
+  selectedStage = 'ALL';
+  selectedUnreadPeriodDraft = 'ALL';
+  selectedUnreadPeriod = 'ALL';
+  readonly stageOptions: Array<{ value: string; label: string }> = [
+    { value: 'ALL', label: 'Todos' },
+    { value: 'LEAD', label: 'Lead' },
+    { value: 'RESCUING', label: 'Resgatando' },
+    { value: 'RECENTLY_RESCUED', label: 'Resgatado recentemente' },
+    { value: 'QUALIFIED', label: 'Qualificado' },
+    { value: 'PROPOSAL', label: 'Proposta' },
+    { value: 'CLIENT', label: 'Cliente' },
+    { value: 'LOST', label: 'Perdido' }
+  ];
+  readonly unreadPeriodOptions: Array<{ value: string; label: string }> = [
+    { value: 'ALL', label: 'Todos os períodos' },
+    { value: 'OLDER_THAN_WEEK', label: 'Não lidos há mais de 1 semana' },
+    { value: 'UP_TO_WEEK', label: 'Não lidos há até 1 semana' },
+    { value: 'OLDER_THAN_MONTH', label: 'Não lidos há mais de 1 mês' },
+    { value: 'UP_TO_MONTH', label: 'Não lidos há até 1 mês' }
+  ];
+
+  loading = false;
+  syncing = false;
+  errorMessage: string | null = null;
+  infoMessage: string | null = null;
+  canManualSync = false;
+  resetting = false;
+  confirmResetOpen = false;
+
+  messagesModalOpen = false;
+  modalLoading = false;
+  modalError: string | null = null;
+  selectedContact: ContactView | null = null;
+  selectedMessages: ContactMessage[] = [];
+
+  constructor(
+    private readonly contactsService: ContactsService,
+    private readonly authService: AuthService,
+    private readonly activatedRoute: ActivatedRoute,
+    private readonly router: Router
+  ) {}
 
   ngOnInit(): void {
+    this.resolveManualSyncPermission();
+    this.resolveViewModeFromRoute();
+
+    this.activatedRoute.url.subscribe(() => {
+      this.resolveViewModeFromRoute();
+      this.currentPage = 0;
+      this.errorMessage = null;
+      this.infoMessage = null;
+      this.loadContacts();
+    });
+
     this.loadContacts();
   }
 
   private loadContacts(): void {
-    this.contactsService.list().subscribe({
-      next: (contacts) => {
-        this.contacts = contacts;
+    this.loading = true;
+    const stageFilter = this.viewMode === 'geral' ? this.selectedStage : undefined;
+    const unreadPeriodFilter = this.viewMode === 'nao-lidas' ? this.selectedUnreadPeriod : undefined;
+
+    this.contactsService.listPaged(this.currentPage, this.pageSize, this.viewMode, stageFilter, unreadPeriodFilter).subscribe({
+      next: (response) => {
+        this.contacts = response.content;
+        this.currentPage = response.page;
+        this.pageSize = response.size;
+        this.totalPages = response.totalPages;
+        this.totalElements = response.totalElements;
+        this.loading = false;
       },
       error: () => {
         this.contacts = [];
+        this.totalPages = 0;
+        this.totalElements = 0;
+        this.loading = false;
       }
     });
   }
+
+  goToPage(page: number): void {
+    if (this.loading || this.syncing) {
+      return;
+    }
+
+    if (page < 0 || page >= this.totalPages || page === this.currentPage) {
+      return;
+    }
+
+    this.currentPage = page;
+    this.loadContacts();
+  }
+
+  get visiblePages(): number[] {
+    if (this.totalPages <= 0) {
+      return [];
+    }
+
+    const maxButtons = 5;
+    const start = Math.max(0, this.currentPage - Math.floor(maxButtons / 2));
+    const end = Math.min(this.totalPages - 1, start + maxButtons - 1);
+    const adjustedStart = Math.max(0, end - maxButtons + 1);
+
+    return Array.from({ length: end - adjustedStart + 1 }, (_, index) => adjustedStart + index);
+  }
+
+  get pageStartItem(): number {
+    if (this.totalElements === 0) {
+      return 0;
+    }
+    return this.currentPage * this.pageSize + 1;
+  }
+
+  get pageEndItem(): number {
+    if (this.totalElements === 0) {
+      return 0;
+    }
+    return Math.min((this.currentPage + 1) * this.pageSize, this.totalElements);
+  }
+
+  syncUnread(): void {
+    if (!this.canManualSync) {
+      return;
+    }
+
+    this.syncing = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.contactsService.syncUnread().subscribe({
+      next: (result) => {
+        this.infoMessage = `Sincronização concluída: ${result.conversationsSynced} conversa(s) e ${result.messagesProcessed} mensagem(ns) processada(s).`;
+        this.syncing = false;
+        this.currentPage = 0;
+        this.loadContacts();
+      },
+      error: () => {
+        this.errorMessage = 'Não foi possível sincronizar conversas não lidas agora.';
+        this.syncing = false;
+      }
+    });
+  }
+
+  openResetConfirm(): void {
+    if (!this.canManualSync || this.loading || this.syncing || this.resetting) {
+      return;
+    }
+
+    this.confirmResetOpen = true;
+  }
+
+  closeResetConfirm(): void {
+    this.confirmResetOpen = false;
+  }
+
+  confirmResetAll(): void {
+    if (!this.canManualSync || this.resetting) {
+      return;
+    }
+
+    this.confirmResetOpen = false;
+    this.resetting = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.contactsService.resetAll().subscribe({
+      next: (result) => {
+        this.infoMessage = `Limpeza concluída: ${result.contactsDeleted} contato(s), ${result.conversationsDeleted} conversa(s) e ${result.messagesDeleted} mensagem(ns) removida(s).`;
+        this.resetting = false;
+        this.currentPage = 0;
+        this.contacts = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
+        this.loadContacts();
+      },
+      error: () => {
+        this.errorMessage = 'Não foi possível limpar os contatos agora.';
+        this.resetting = false;
+      }
+    });
+  }
+
+  openMessages(contact: ContactView): void {
+    this.selectedContact = contact;
+    this.selectedMessages = [];
+    this.modalError = null;
+    this.modalLoading = true;
+    this.messagesModalOpen = true;
+
+    this.contactsService.getMessages(contact.id, 5).subscribe({
+      next: (messages) => {
+        this.selectedMessages = messages;
+        this.modalLoading = false;
+      },
+      error: () => {
+        this.modalError = 'Não foi possível carregar as mensagens deste contato.';
+        this.modalLoading = false;
+      }
+    });
+  }
+
+  closeMessagesModal(): void {
+    this.messagesModalOpen = false;
+    this.selectedContact = null;
+    this.selectedMessages = [];
+    this.modalError = null;
+  }
+
+  openWhatsapp(contact: ContactView | null): void {
+    if (!contact?.phone) {
+      return;
+    }
+
+    const digits = this.getWhatsappDigits(contact.phone);
+    if (!digits) {
+      return;
+    }
+
+    this.contactsService.markAsRescuing(contact.id).subscribe({
+      next: () => {
+        window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer');
+        this.currentPage = 0;
+        this.loadContacts();
+      },
+      error: () => {
+        window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer');
+      }
+    });
+  }
+
+  onStageChange(stage: string): void {
+    this.selectedStage = stage;
+    this.currentPage = 0;
+    this.loadContacts();
+  }
+
+  searchStage(): void {
+    this.onStageChange(this.selectedStageDraft || 'ALL');
+  }
+
+  clearStageFilter(): void {
+    this.selectedStageDraft = 'ALL';
+    this.onStageChange('ALL');
+  }
+
+  searchUnreadPeriod(): void {
+    this.selectedUnreadPeriod = this.selectedUnreadPeriodDraft || 'ALL';
+    this.currentPage = 0;
+    this.loadContacts();
+  }
+
+  clearUnreadPeriodFilter(): void {
+    this.selectedUnreadPeriodDraft = 'ALL';
+    this.selectedUnreadPeriod = 'ALL';
+    this.currentPage = 0;
+    this.loadContacts();
+  }
+
+  getStageLabel(stage: string | null | undefined): string {
+    const value = (stage || '').trim().toUpperCase();
+
+    const fromOptions = this.stageOptions.find((item) => item.value === value);
+    if (fromOptions) {
+      return fromOptions.label;
+    }
+
+    return stage || 'Não informado';
+  }
+
+  getUnreadPeriodLabel(period: string | null | undefined): string {
+    const value = (period || '').trim().toUpperCase();
+    const found = this.unreadPeriodOptions.find((item) => item.value === value);
+    return found?.label || 'Todos os períodos';
+  }
+
+  get viewTitle(): string {
+    if (this.viewMode === 'nao-lidas') {
+      return 'Não Lidas';
+    }
+
+    if (this.viewMode === 'em-andamento') {
+      return 'Em Andamento';
+    }
+
+    return 'Geral';
+  }
+
+  private resolveViewModeFromRoute(): void {
+    const currentUrl = this.router.url.toLowerCase();
+
+    if (currentUrl.includes('/contacts/nao-lidas')) {
+      this.viewMode = 'nao-lidas';
+      return;
+    }
+
+    if (currentUrl.includes('/contacts/em-andamento')) {
+      this.viewMode = 'em-andamento';
+      return;
+    }
+
+    this.viewMode = 'geral';
+  }
+
+  private resolveManualSyncPermission(): void {
+    const user = this.authService.currentUser();
+    if (!user) {
+      this.canManualSync = false;
+      return;
+    }
+
+    const email = (user.email || '').trim().toLowerCase();
+    const roles = (user.roles || []).map((role) => (role || '').trim().toUpperCase());
+
+    this.canManualSync = email === 'carol@gmail.com' || roles.includes('DEV_SUPORTE') || roles.includes('MASTER_ADMIN');
+  }
+
+  getDirectionLabel(direction: string): string {
+    return (direction || '').toUpperCase() === 'OUTBOUND' ? 'Você' : 'Contato';
+  }
+
+  getDirectionClass(direction: string): string {
+    return (direction || '').toUpperCase() === 'OUTBOUND' ? 'msg-outbound' : 'msg-inbound';
+  }
+
+  trackByPhone(_: number, contact: ContactView) {
+    return contact.phone;
+  }
+
+  getInitials(name: string | null): string {
+    if (!name || !name.trim()) {
+      return 'CT';
+    }
+
+    const parts = name
+      .trim()
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2);
+
+    return parts.map((part) => part[0].toUpperCase()).join('');
+  }
+
+  getStageClass(stage: string): string {
+    const value = (stage || '').toLowerCase();
+
+    if (value.includes('rescuing')) {
+      return 'stage-negotiation';
+    }
+
+    if (value.includes('recently_rescued')) {
+      return 'stage-customer';
+    }
+
+    if (value.includes('lead')) {
+      return 'stage-lead';
+    }
+
+    if (value.includes('negocia') || value.includes('proposta') || value.includes('proposal')) {
+      return 'stage-negotiation';
+    }
+
+    if (value.includes('cliente') || value.includes('fechado') || value.includes('won') || value.includes('client')) {
+      return 'stage-customer';
+    }
+
+    return 'stage-default';
+  }
+
+  formatPhone(phone: string | null | undefined): string {
+    if (!phone) {
+      return 'Não informado';
+    }
+
+    const normalized = phone.trim();
+    if (!normalized) {
+      return 'Não informado';
+    }
+
+    try {
+      const parsed = parsePhoneNumberFromString(normalized.startsWith('+') ? normalized : `+${normalized.replace(/\D/g, '')}`);
+      if (parsed?.isValid()) {
+        return parsed.formatInternational();
+      }
+    } catch {
+      // Fallback abaixo
+    }
+
+    const digits = normalized.replace(/\D/g, '');
+    if (digits.length >= 10) {
+      const fallbackParsed = parsePhoneNumberFromString(`+${digits}`, 'BR');
+      if (fallbackParsed?.isValid()) {
+        return fallbackParsed.formatInternational();
+      }
+    }
+
+    return normalized;
+  }
+
+  private getWhatsappDigits(phone: string): string {
+    const normalized = (phone || '').trim();
+    if (!normalized) {
+      return '';
+    }
+
+    try {
+      const parsed = parsePhoneNumberFromString(normalized.startsWith('+') ? normalized : `+${normalized.replace(/\D/g, '')}`);
+      if (parsed?.isValid()) {
+        return parsed.number.replace(/\D/g, '');
+      }
+    } catch {
+      // Fallback abaixo
+    }
+
+    return normalized.replace(/\D/g, '');
+  }
+
 }

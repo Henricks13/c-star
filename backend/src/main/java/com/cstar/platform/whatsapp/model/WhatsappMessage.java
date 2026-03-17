@@ -75,4 +75,16 @@ public class WhatsappMessage {
     public String getWaMessageId() {
         return waMessageId;
     }
+
+    public MessageDirection getDirection() {
+        return direction;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
+    public Instant getSentAt() {
+        return sentAt;
+    }
 }

@@ -33,11 +33,28 @@ const routes: Routes = [
       },
       {
         path: 'contacts',
+        redirectTo: '/contacts/geral',
+        pathMatch: 'full'
+      },
+      {
+        path: 'contacts/geral',
+        loadComponent: () => import('./demo/pages/contacts/contacts.component').then((c) => c.ContactsComponent)
+      },
+      {
+        path: 'contacts/nao-lidas',
+        loadComponent: () => import('./demo/pages/contacts/contacts.component').then((c) => c.ContactsComponent)
+      },
+      {
+        path: 'contacts/em-andamento',
         loadComponent: () => import('./demo/pages/contacts/contacts.component').then((c) => c.ContactsComponent)
       },
       {
         path: 'whatsapp',
         loadComponent: () => import('./demo/pages/whatsapp/whatsapp.component').then((c) => c.WhatsappComponent)
+      },
+      {
+        path: 'users',
+        loadComponent: () => import('./demo/pages/users/users.component').then((c) => c.UsersComponent)
       }
     ]
   },

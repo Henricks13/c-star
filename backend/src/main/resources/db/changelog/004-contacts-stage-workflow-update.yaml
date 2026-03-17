@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 014-update-contacts-stage-check-constraint
+      author: cstar
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE contacts
+              DROP CONSTRAINT IF EXISTS ck_contacts_stage;
+
+              UPDATE contacts
+              SET stage = 'RESCUING'
+              WHERE stage = 'RESGATANDO';
+
+              UPDATE contacts
+              SET stage = 'RECENTLY_RESCUED'
+              WHERE stage = 'RESGATADO_RECENTEMENTE';
+
+              ALTER TABLE contacts
+              ADD CONSTRAINT ck_contacts_stage
+              CHECK (stage IN ('LEAD', 'RESCUING', 'RECENTLY_RESCUED', 'QUALIFIED', 'PROPOSAL', 'CLIENT', 'LOST'));

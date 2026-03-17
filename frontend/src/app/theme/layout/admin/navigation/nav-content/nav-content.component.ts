@@ -8,6 +8,7 @@ import { environment } from 'src/environments/environment';
 
 // project import
 import { NavigationItem, NavigationItems } from '../navigation';
+import { AuthService } from 'src/app/core/auth/auth.service';
 
 import { NavCollapseComponent } from './nav-collapse/nav-collapse.component';
 import { NavGroupComponent } from './nav-group/nav-group.component';
@@ -24,6 +25,7 @@ import { SharedModule } from 'src/app/theme/shared/shared.module';
 })
 export class NavContentComponent implements OnInit {
   private location = inject(Location);
+  private authService = inject(AuthService);
 
   // public props
   NavCollapsedMob = output();
@@ -38,7 +40,7 @@ export class NavContentComponent implements OnInit {
 
   // Constructor
   constructor() {
-    this.navigations = NavigationItems;
+    this.navigations = this.filterNavigationByAccess(NavigationItems);
     this.windowWidth = window.innerWidth;
   }
 
@@ -77,5 +79,38 @@ export class NavContentComponent implements OnInit {
         last_parent.classList.add('active');
       }
     }
+  }
+
+  private filterNavigationByAccess(items: NavigationItem[]): NavigationItem[] {
+    const canManageUsers = this.canManageUsers();
+
+    return items
+      .map((item) => ({
+        ...item,
+        children: item.children ? this.filterNavigationByAccess(item.children) : undefined
+      }))
+      .filter((item) => {
+        if (item.id === 'users') {
+          return canManageUsers;
+        }
+
+        if (item.type === 'collapse' && item.children && item.children.length === 0) {
+          return false;
+        }
+
+        return true;
+      });
+  }
+
+  private canManageUsers(): boolean {
+    const user = this.authService.currentUser();
+    if (!user) {
+      return false;
+    }
+
+    const email = (user.email || '').trim().toLowerCase();
+    const roles = (user.roles || []).map((role) => (role || '').trim().toUpperCase());
+
+    return email === 'carol@gmail.com' || roles.includes('DEV_SUPORTE') || roles.includes('MASTER_ADMIN');
   }
 }
