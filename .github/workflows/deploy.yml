@@ -12,10 +12,18 @@ concurrency:
 jobs:
   deploy:
     runs-on: [self-hosted, linux, cstar-homolog]
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Runner preflight
+        run: |
+          set -euo pipefail
+          echo "Runner: $(hostname)"
+          free -h || true
+          df -h / || true
 
       - name: Run deploy on self-hosted server
         run: |
@@ -23,7 +31,7 @@ jobs:
           DEPLOY_PATH="/opt/c-star"
 
           sudo mkdir -p "$DEPLOY_PATH"
-          sudo chown -R "$USER":"$USER" "$DEPLOY_PATH"
+          sudo chown "$USER":"$USER" "$DEPLOY_PATH"
           git config --global --add safe.directory "$DEPLOY_PATH" || true
 
           if [ ! -d "$DEPLOY_PATH/.git" ]; then
