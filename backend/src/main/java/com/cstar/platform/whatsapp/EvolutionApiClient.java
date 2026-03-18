@@ -6,9 +6,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,8 @@ import java.util.Map;
 
 @Component
 public class EvolutionApiClient {
+
+    private static final Logger log = LoggerFactory.getLogger(EvolutionApiClient.class);
 
     private final WhatsappProperties properties;
     private final RestTemplate restTemplate;
@@ -78,7 +81,8 @@ public class EvolutionApiClient {
             }
 
             return List.of();
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
+        } catch (RestClientException ex) {
+            log.warn("Evolution API fetchInstances failed: {}", url, ex);
             return List.of();
         }
     }
@@ -125,7 +129,8 @@ public class EvolutionApiClient {
         try {
             ResponseEntity<Object> response = restTemplate.exchange(url, HttpMethod.GET, request, Object.class);
             return normalizeBody(response.getBody());
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
+        } catch (RestClientException ex) {
+            log.warn("Evolution API GET failed: {}", url, ex);
             return Map.of();
         }
     }
@@ -135,7 +140,8 @@ public class EvolutionApiClient {
         try {
             ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
             return normalizeBody(response.getBody());
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
+        } catch (RestClientException ex) {
+            log.warn("Evolution API POST failed: {}", url, ex);
             return Map.of();
         }
     }

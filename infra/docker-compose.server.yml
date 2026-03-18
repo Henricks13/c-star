@@ -15,6 +15,41 @@ services:
       timeout: 5s
       retries: 5
 
+  evolution-postgres:
+    image: postgres:16-alpine
+    container_name: cstar-evolution-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: ${EVOLUTION_POSTGRES_PASSWORD}
+    volumes:
+      - evolution_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution -d evolution"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  evolution:
+    image: atendai/evolution-api:v2.2.3
+    container_name: cstar-evolution
+    restart: unless-stopped
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+    environment:
+      SERVER_URL: ${WHATSAPP_PUBLIC_BASE_URL}
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
+      CONFIG_SESSION_PHONE_VERSION: 2.3000.1034469067
+      LOG_LEVEL: INFO
+      WEBSOCKET_ENABLED: "true"
+      WEBSOCKET_GLOBAL_EVENTS: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:${EVOLUTION_POSTGRES_PASSWORD}@evolution-postgres:5432/evolution?schema=public
+      CACHE_REDIS_ENABLED: "false"
+
   backend:
     build:
       context: ../backend
@@ -27,9 +62,17 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       PORT: 8080
+      WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER}
+      WHATSAPP_INSTANCE_PREFIX: ${WHATSAPP_INSTANCE_PREFIX}
+      WHATSAPP_PUBLIC_BASE_URL: ${WHATSAPP_PUBLIC_BASE_URL}
+      WHATSAPP_WEBHOOK_SECRET: ${WHATSAPP_WEBHOOK_SECRET}
+      EVOLUTION_BASE_URL: ${EVOLUTION_BASE_URL}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
+      evolution:
+        condition: service_started
 
   frontend:
     build:
@@ -44,3 +87,4 @@ services:
 
 volumes:
   postgres_data:
+  evolution_postgres_data:

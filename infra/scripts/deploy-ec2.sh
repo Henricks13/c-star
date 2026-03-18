@@ -60,7 +60,7 @@ export DOCKER_BUILDKIT=1
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull || true
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build --pull backend
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build --pull frontend
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d postgres backend frontend
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d postgres evolution-postgres evolution backend frontend
 
 echo "Deploy concluído."
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
