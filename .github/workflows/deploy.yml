@@ -3,37 +3,63 @@ name: Deploy Server
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ["homolog"]
+
+concurrency:
+  group: deploy-homolog
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    if: github.ref_name == 'homolog'
+    runs-on: [self-hosted, linux, cstar-homolog]
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Upload project to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "."
-          target: ${{ secrets.DEPLOY_PATH }}
-          rm: false
-          overwrite: true
-          strip_components: 0
+      - name: Runner preflight
+        run: |
+          set -euo pipefail
+          echo "Runner: $(hostname)"
+          free -h || true
+          df -h / || true
 
-      - name: Run docker compose on server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            set -e
-            cd ${{ secrets.DEPLOY_PATH }}/infra
-            docker compose -f docker-compose.server.yml up -d --build
+      - name: Run deploy on self-hosted server
+        run: |
+          set -euo pipefail
+          DEPLOY_PATH="/opt/c-star"
+          PREVIOUS_SHA=""
+
+          sudo mkdir -p "$DEPLOY_PATH"
+          sudo chown "$USER":"$USER" "$DEPLOY_PATH"
+          git config --global --add safe.directory "$DEPLOY_PATH" || true
+
+          if [ ! -d "$DEPLOY_PATH/.git" ]; then
+            git clone --branch homolog "https://github.com/${GITHUB_REPOSITORY}.git" "$DEPLOY_PATH"
+          fi
+
+          cd "$DEPLOY_PATH"
+          PREVIOUS_SHA="$(git rev-parse HEAD || true)"
+
+          git fetch origin
+          git checkout homolog
+          git reset --hard "$GITHUB_SHA"
+
+          if [ ! -f infra/.env.server ]; then
+            echo "Arquivo infra/.env.server não encontrado no servidor."
+            exit 1
+          fi
+
+          if ! bash infra/scripts/deploy-ec2.sh "$DEPLOY_PATH"; then
+            echo "Deploy falhou no commit ${GITHUB_SHA}. Iniciando rollback automático..."
+            if [ -n "$PREVIOUS_SHA" ]; then
+              git reset --hard "$PREVIOUS_SHA"
+              bash infra/scripts/deploy-ec2.sh "$DEPLOY_PATH" || true
+              echo "Rollback executado para commit ${PREVIOUS_SHA}."
+            else
+              echo "Sem commit anterior para rollback automático."
+            fi
+            exit 1
+          fi
