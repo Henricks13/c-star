@@ -53,6 +53,36 @@ export const NavigationItems: NavigationItem[] = [
         ]
       },
       {
+        id: 'clients',
+        title: 'Clientes',
+        type: 'item',
+        url: '/clients',
+        icon: 'ti ti-user-check'
+      },
+      {
+        id: 'products',
+        title: 'Produtos',
+        type: 'collapse',
+        icon: 'ti ti-package',
+        breadcrumbs: false,
+        children: [
+          {
+            id: 'products-list',
+            title: 'Produtos',
+            type: 'item',
+            url: '/products',
+            breadcrumbs: false
+          },
+          {
+            id: 'products-types',
+            title: 'Tipos de Produto',
+            type: 'item',
+            url: '/products/types',
+            breadcrumbs: false
+          }
+        ]
+      },
+      {
         id: 'whatsapp',
         title: 'WhatsApp',
         type: 'item',

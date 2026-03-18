@@ -55,6 +55,18 @@ const routes: Routes = [
       {
         path: 'users',
         loadComponent: () => import('./demo/pages/users/users.component').then((c) => c.UsersComponent)
+      },
+      {
+        path: 'clients',
+        loadComponent: () => import('./demo/pages/clients/clients.component').then((c) => c.ClientsComponent)
+      },
+      {
+        path: 'products',
+        loadComponent: () => import('./demo/pages/products/products.component').then((c) => c.ProductsComponent)
+      },
+      {
+        path: 'products/types',
+        loadComponent: () => import('./demo/pages/product-types/product-types.component').then((c) => c.ProductTypesComponent)
       }
     ]
   },

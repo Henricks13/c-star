@@ -1,18 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/min';
 
 import { AuthService } from 'src/app/core/auth/auth.service';
 import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
+import { ClientsService } from 'src/app/core/clients/clients.service';
+import { CLIENT_ORIGIN_OPTIONS, CreateClientRequest } from 'src/app/core/clients/clients.types';
 import { ContactsService } from 'src/app/core/contacts/contacts.service';
 import { ContactMessage, ContactView } from 'src/app/core/contacts/contacts.types';
+import { WhatsappService } from 'src/app/core/whatsapp/whatsapp.service';
 
 
 
 @Component({
   selector: 'app-contacts',
-  imports: [CommonModule, CardComponent],
+  imports: [CommonModule, FormsModule, CardComponent],
   templateUrl: './contacts.component.html',
   styleUrls: ['./contacts.component.scss']
 })
@@ -51,8 +55,16 @@ export class ContactsComponent implements OnInit {
   errorMessage: string | null = null;
   infoMessage: string | null = null;
   canManualSync = false;
+  whatsappConnected = false;
+  whatsappStatusChecked = false;
   resetting = false;
   confirmResetOpen = false;
+
+  clientModalOpen = false;
+  clientSaving = false;
+  convertingContact: ContactView | null = null;
+  readonly clientOriginOptions = CLIENT_ORIGIN_OPTIONS;
+  clientForm: CreateClientRequest = this.createDefaultClientForm();
 
   messagesModalOpen = false;
   modalLoading = false;
@@ -62,7 +74,9 @@ export class ContactsComponent implements OnInit {
 
   constructor(
     private readonly contactsService: ContactsService,
+    private readonly clientsService: ClientsService,
     private readonly authService: AuthService,
+    private readonly whatsappService: WhatsappService,
     private readonly activatedRoute: ActivatedRoute,
     private readonly router: Router
   ) {}
@@ -70,6 +84,7 @@ export class ContactsComponent implements OnInit {
   ngOnInit(): void {
     this.resolveManualSyncPermission();
     this.resolveViewModeFromRoute();
+    this.refreshWhatsappConnectionStatus();
 
     this.activatedRoute.url.subscribe(() => {
       this.resolveViewModeFromRoute();
@@ -80,6 +95,23 @@ export class ContactsComponent implements OnInit {
     });
 
     this.loadContacts();
+  }
+
+  get canShowManualActions(): boolean {
+    return this.canManualSync && this.whatsappConnected;
+  }
+
+  private refreshWhatsappConnectionStatus(): void {
+    this.whatsappService.getSessionStatus().subscribe({
+      next: (session) => {
+        this.whatsappConnected = !!session?.connected;
+        this.whatsappStatusChecked = true;
+      },
+      error: () => {
+        this.whatsappConnected = false;
+        this.whatsappStatusChecked = true;
+      }
+    });
   }
 
   private loadContacts(): void {
@@ -146,7 +178,8 @@ export class ContactsComponent implements OnInit {
   }
 
   syncUnread(): void {
-    if (!this.canManualSync) {
+    if (!this.canShowManualActions) {
+      this.errorMessage = 'Conecte um WhatsApp para sincronizar novas conversas.';
       return;
     }
 
@@ -169,7 +202,7 @@ export class ContactsComponent implements OnInit {
   }
 
   openResetConfirm(): void {
-    if (!this.canManualSync || this.loading || this.syncing || this.resetting) {
+    if (!this.canShowManualActions || this.loading || this.syncing || this.resetting) {
       return;
     }
 
@@ -181,7 +214,7 @@ export class ContactsComponent implements OnInit {
   }
 
   confirmResetAll(): void {
-    if (!this.canManualSync || this.resetting) {
+    if (!this.canShowManualActions || this.resetting) {
       return;
     }
 
@@ -203,6 +236,74 @@ export class ContactsComponent implements OnInit {
       error: () => {
         this.errorMessage = 'Não foi possível limpar os contatos agora.';
         this.resetting = false;
+      }
+    });
+  }
+
+  openCreateClientFromContact(contact: ContactView): void {
+    if (!contact) {
+      return;
+    }
+
+    this.convertingContact = contact;
+    this.clientForm = {
+      fullName: (contact.fullName || '').trim(),
+      phone: (contact.phone || '').trim(),
+      cpf: '',
+      email: '',
+      origin: 'RESGATE',
+      sourceContactId: contact.id,
+      notes: ''
+    };
+    this.clientModalOpen = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeClientModal(): void {
+    if (this.clientSaving) {
+      return;
+    }
+
+    this.clientModalOpen = false;
+    this.convertingContact = null;
+    this.clientForm = this.createDefaultClientForm();
+  }
+
+  createClientFromContact(): void {
+    if (this.clientSaving) {
+      return;
+    }
+
+    const payload: CreateClientRequest = {
+      fullName: (this.clientForm.fullName || '').trim(),
+      phone: (this.clientForm.phone || '').trim(),
+      cpf: (this.clientForm.cpf || '').trim() || null,
+      email: (this.clientForm.email || '').trim().toLowerCase() || null,
+      origin: 'RESGATE',
+      sourceContactId: this.clientForm.sourceContactId || this.convertingContact?.id || null,
+      notes: (this.clientForm.notes || '').trim() || null
+    };
+
+    if (!payload.fullName || !payload.phone) {
+      this.errorMessage = 'Preencha nome e número para tornar este contato um cliente.';
+      return;
+    }
+
+    this.clientSaving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.clientsService.create(payload).subscribe({
+      next: () => {
+        this.clientSaving = false;
+        this.closeClientModal();
+        this.infoMessage = 'Cliente criado com sucesso a partir do contato em andamento.';
+        this.loadContacts();
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível tornar este contato um cliente.';
+        this.clientSaving = false;
       }
     });
   }
@@ -439,6 +540,18 @@ export class ContactsComponent implements OnInit {
     }
 
     return normalized.replace(/\D/g, '');
+  }
+
+  private createDefaultClientForm(): CreateClientRequest {
+    return {
+      fullName: '',
+      phone: '',
+      cpf: '',
+      email: '',
+      origin: 'RESGATE',
+      sourceContactId: null,
+      notes: ''
+    };
   }
 
 }

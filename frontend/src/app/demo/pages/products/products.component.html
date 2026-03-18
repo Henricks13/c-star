@@ -1,0 +1,174 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Produtos">
+      <div class="products-toolbar mb-3">
+        <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+          <i class="ti ti-plus me-1"></i>
+          Cadastrar
+        </button>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando produtos...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && products.length === 0">
+        <div class="empty-state">
+          <p class="mb-2">Nenhum produto cadastrado.</p>
+          <small class="text-muted">Cadastre produtos para iniciar o controle básico de estoque.</small>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && products.length > 0">
+        <div class="table-responsive products-table-wrapper">
+          <table class="table table-hover align-middle products-table mb-0">
+            <thead class="products-thead">
+              <tr>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Preços</th>
+                <th>Estoque</th>
+                <th>Validade</th>
+                <th>Status</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of products">
+                <td>
+                  <div class="fw-semibold">{{ product.name }}</div>
+                  <small class="text-muted">SKU: {{ product.sku || '—' }}</small>
+                </td>
+                <td>{{ product.productTypeName }}</td>
+                <td>
+                  <div>Compra: {{ product.purchasePrice | currency: 'BRL' }}</div>
+                  <div>Venda: {{ product.salePrice | currency: 'BRL' }}</div>
+                </td>
+                <td>
+                  <span [ngClass]="isLowStock(product) ? 'text-danger fw-semibold' : ''">{{ product.stockQuantity }}</span>
+                  <small class="text-muted d-block">Mínimo: {{ product.minimumStock }}</small>
+                </td>
+                <td>
+                  <span *ngIf="product.perishable; else notPerishable">{{ product.expirationDate ? (product.expirationDate | date: 'dd/MM/yyyy') : 'Sem data' }}</span>
+                  <ng-template #notPerishable>Não perecível</ng-template>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="product.active ? 'text-bg-success' : 'text-bg-secondary'">
+                    {{ product.active ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="product-actions">
+                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(product)" title="Editar" aria-label="Editar">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteProduct(product)" title="Excluir" aria-label="Excluir">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="createModalOpen">
+  <div class="products-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-product-title">
+    <div class="products-modal">
+      <h6 id="create-product-title" class="mb-3">Cadastrar produto</h6>
+      <ng-container *ngTemplateOutlet="productFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createProduct()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="editModalOpen">
+  <div class="products-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-product-title">
+    <div class="products-modal">
+      <h6 id="edit-product-title" class="mb-3">Editar produto</h6>
+      <ng-container *ngTemplateOutlet="productFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateProduct()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #productFormTemplate let-formModel="formModel" let-editing="editing">
+  <div class="d-flex flex-column gap-2">
+    <div>
+      <label class="form-label">Nome</label>
+      <input class="form-control" [(ngModel)]="formModel.name" />
+    </div>
+
+    <div>
+      <label class="form-label">SKU (opcional)</label>
+      <input class="form-control" [(ngModel)]="formModel.sku" />
+    </div>
+
+    <div>
+      <label class="form-label">Tipo de produto</label>
+      <select class="form-select" [(ngModel)]="formModel.productTypeId">
+        <option *ngFor="let type of productTypes" [value]="type.id">{{ type.name }}</option>
+      </select>
+    </div>
+
+    <div class="row g-2">
+      <div class="col-sm-6">
+        <label class="form-label">Preço de compra</label>
+        <input type="number" step="0.01" class="form-control" [(ngModel)]="formModel.purchasePrice" />
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label">Preço de venda</label>
+        <input type="number" step="0.01" class="form-control" [(ngModel)]="formModel.salePrice" />
+      </div>
+    </div>
+
+    <div class="row g-2">
+      <div class="col-sm-6">
+        <label class="form-label">Estoque atual</label>
+        <input type="number" step="0.001" class="form-control" [(ngModel)]="formModel.stockQuantity" />
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label">Estoque mínimo</label>
+        <input type="number" step="0.001" class="form-control" [(ngModel)]="formModel.minimumStock" />
+      </div>
+    </div>
+
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" [id]="editing ? 'edit-perishable' : 'create-perishable'" [(ngModel)]="formModel.perishable" />
+      <label class="form-check-label" [for]="editing ? 'edit-perishable' : 'create-perishable'">Produto perecível</label>
+    </div>
+
+    <div *ngIf="formModel.perishable">
+      <label class="form-label">Data de validade</label>
+      <input type="date" class="form-control" [(ngModel)]="formModel.expirationDate" />
+    </div>
+
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" [id]="editing ? 'edit-active' : 'create-active'" [(ngModel)]="formModel.active" />
+      <label class="form-check-label" [for]="editing ? 'edit-active' : 'create-active'">Produto ativo</label>
+    </div>
+
+    <div>
+      <label class="form-label">Observações (opcional)</label>
+      <textarea class="form-control" rows="2" [(ngModel)]="formModel.notes"></textarea>
+    </div>
+  </div>
+</ng-template>

@@ -65,13 +65,19 @@
         <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
       </ng-container>
 
+      <ng-container *ngIf="whatsappStatusChecked && !whatsappConnected">
+        <div class="alert alert-warning" role="alert">
+          WhatsApp desconectado no momento. Você pode consultar os contatos já coletados, mas a sincronização e a limpeza total ficam disponíveis apenas após reconectar.
+        </div>
+      </ng-container>
+
       <ng-container *ngIf="loading">
         <p class="mb-2">Carregando contatos...</p>
       </ng-container>
 
       <div class="contacts-toolbar" *ngIf="!loading">
         <div class="contacts-toolbar-right">
-          <div class="contact-admin-actions" *ngIf="canManualSync">
+          <div class="contact-admin-actions" *ngIf="canShowManualActions">
             <button
               class="btn btn-sm btn-primary btn-sync-compact"
               type="button"
@@ -167,6 +173,16 @@
                       >
                         <i class="ti ti-brand-whatsapp"></i>
                       </button>
+                      <button
+                        class="btn btn-sm btn-outline-warning"
+                        type="button"
+                        *ngIf="viewMode === 'em-andamento'"
+                        (click)="openCreateClientFromContact(contact)"
+                        title="Tornar cliente"
+                        aria-label="Tornar cliente"
+                      >
+                        <i class="ti ti-user-check"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -216,6 +232,15 @@
               <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openWhatsapp(contact)">
                 <i class="ti ti-brand-whatsapp me-1"></i>
                 Abrir WhatsApp
+              </button>
+              <button
+                class="btn btn-sm btn-outline-warning w-100"
+                type="button"
+                *ngIf="viewMode === 'em-andamento'"
+                (click)="openCreateClientFromContact(contact)"
+              >
+                <i class="ti ti-user-check me-1"></i>
+                Tornar cliente
               </button>
             </div>
           </div>
@@ -283,6 +308,59 @@
 
       <div class="messages-modal-actions d-flex justify-content-end gap-2 mt-3">
         <button class="btn btn-outline-success" type="button" (click)="openWhatsapp(selectedContact)">Abrir no WhatsApp</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="clientModalOpen">
+  <div class="messages-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="client-title">
+    <div class="messages-modal">
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+        <div>
+          <h6 id="client-title" class="mb-1">Tornar cliente</h6>
+          <small class="text-muted">
+            Este cliente será criado com origem <strong>Resgate</strong> e vínculo com o contato selecionado.
+          </small>
+        </div>
+      </div>
+
+      <div class="d-flex flex-column gap-2">
+        <div>
+          <label class="form-label" for="clientFromContactName">Nome completo</label>
+          <input id="clientFromContactName" class="form-control" [(ngModel)]="clientForm.fullName" />
+        </div>
+
+        <div>
+          <label class="form-label" for="clientFromContactPhone">Número</label>
+          <input id="clientFromContactPhone" class="form-control" [(ngModel)]="clientForm.phone" />
+        </div>
+
+        <div>
+          <label class="form-label" for="clientFromContactCpf">CPF (opcional)</label>
+          <input id="clientFromContactCpf" class="form-control" [(ngModel)]="clientForm.cpf" />
+        </div>
+
+        <div>
+          <label class="form-label" for="clientFromContactEmail">E-mail (opcional)</label>
+          <input id="clientFromContactEmail" type="email" class="form-control" [(ngModel)]="clientForm.email" />
+        </div>
+
+        <div>
+          <label class="form-label" for="clientFromContactNotes">Observações (opcional)</label>
+          <textarea id="clientFromContactNotes" class="form-control" rows="2" [(ngModel)]="clientForm.notes"></textarea>
+        </div>
+      </div>
+
+      <div class="reset-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="clientSaving" (click)="closeClientModal()">Cancelar</button>
+        <button class="btn btn-warning" type="button" [disabled]="clientSaving" (click)="createClientFromContact()">
+          <span *ngIf="!clientSaving">Salvar cliente</span>
+          <span *ngIf="clientSaving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
       </div>
     </div>
   </div>

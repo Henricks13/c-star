@@ -7,3 +7,7 @@ databaseChangeLog:
       file: db/changelog/003-contacts-whatsapp-foundation.yaml
   - include:
       file: db/changelog/004-contacts-stage-workflow-update.yaml
+  - include:
+      file: db/changelog/005-clients-foundation.yaml
+  - include:
+      file: db/changelog/006-products-foundation.yaml

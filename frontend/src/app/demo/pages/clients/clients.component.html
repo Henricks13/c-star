@@ -1,0 +1,207 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Clientes">
+      <div class="clients-toolbar mb-3">
+        <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+          <i class="ti ti-plus me-1"></i>
+          Cadastrar
+        </button>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando clientes...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && clients.length === 0">
+        <div class="empty-state">
+          <p class="mb-2">Nenhum cliente cadastrado.</p>
+          <small class="text-muted">Cadastre clientes manualmente ou converta contatos em andamento.</small>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && clients.length > 0">
+        <div class="desktop-list d-none d-md-block">
+          <div class="table-responsive clients-table-wrapper">
+            <table class="table table-hover align-middle clients-table mb-0">
+              <thead class="clients-thead">
+                <tr>
+                  <th>Nome</th>
+                  <th>Número</th>
+                  <th>CPF</th>
+                  <th>E-mail</th>
+                  <th>Origem</th>
+                  <th>Vínculo</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let client of clients">
+                  <td>{{ client.fullName }}</td>
+                  <td>{{ client.phone }}</td>
+                  <td>{{ client.cpf || '—' }}</td>
+                  <td>{{ client.email || '—' }}</td>
+                  <td>{{ getOriginLabel(client.origin) }}</td>
+                  <td>{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</td>
+                  <td>
+                    <div class="client-actions">
+                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openDetailsModal(client)" title="Ver detalhes" aria-label="Ver detalhes">
+                        <i class="ti ti-eye"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-list d-block d-md-none">
+          <div class="mobile-client-card" *ngFor="let client of clients">
+            <div class="mobile-client-row">
+              <span class="mobile-label">Nome</span>
+              <span>{{ client.fullName }}</span>
+            </div>
+            <div class="mobile-client-row">
+              <span class="mobile-label">Número</span>
+              <span>{{ client.phone }}</span>
+            </div>
+            <div class="mobile-client-row">
+              <span class="mobile-label">CPF</span>
+              <span>{{ client.cpf || '—' }}</span>
+            </div>
+            <div class="mobile-client-row">
+              <span class="mobile-label">E-mail</span>
+              <span>{{ client.email || '—' }}</span>
+            </div>
+            <div class="mobile-client-row">
+              <span class="mobile-label">Origem</span>
+              <span>{{ getOriginLabel(client.origin) }}</span>
+            </div>
+            <div class="mobile-client-row">
+              <span class="mobile-label">Vínculo</span>
+              <span>{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</span>
+            </div>
+            <div class="mobile-client-row">
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openDetailsModal(client)">
+                <i class="ti ti-eye me-1"></i>
+                Ver detalhes
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="modalOpen">
+  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-client-title">
+    <div class="clients-modal">
+      <h6 id="create-client-title" class="mb-3">Cadastrar cliente</h6>
+
+      <div class="d-flex flex-column gap-2">
+        <div>
+          <label class="form-label" for="clientFullName">Nome completo</label>
+          <input id="clientFullName" class="form-control" [(ngModel)]="form.fullName" />
+        </div>
+
+        <div>
+          <label class="form-label" for="clientPhone">Número</label>
+          <input id="clientPhone" class="form-control" [(ngModel)]="form.phone" />
+        </div>
+
+        <div>
+          <label class="form-label" for="clientCpf">CPF (opcional)</label>
+          <input id="clientCpf" class="form-control" [(ngModel)]="form.cpf" />
+        </div>
+
+        <div>
+          <label class="form-label" for="clientEmail">E-mail (opcional)</label>
+          <input id="clientEmail" type="email" class="form-control" [(ngModel)]="form.email" />
+        </div>
+
+        <div *ngIf="!originLocked">
+          <label class="form-label" for="clientOrigin">Origem</label>
+          <select id="clientOrigin" class="form-select" [(ngModel)]="form.origin">
+            <option *ngFor="let option of originOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label" for="clientNotes">Observações (opcional)</label>
+          <textarea id="clientNotes" class="form-control" rows="2" [(ngModel)]="form.notes"></textarea>
+        </div>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createClient()">
+          <span *ngIf="!saving">Cadastrar</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="detailsModalOpen && detailClient">
+  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="client-details-title">
+    <div class="clients-modal">
+      <h6 id="client-details-title" class="mb-3">Detalhes do cliente</h6>
+
+      <div class="details-grid">
+        <div class="details-item">
+          <span class="details-label">Nome</span>
+          <span>{{ detailClient.fullName }}</span>
+        </div>
+        <div class="details-item">
+          <span class="details-label">Número</span>
+          <span>{{ detailClient.phone }}</span>
+        </div>
+        <div class="details-item">
+          <span class="details-label">CPF</span>
+          <span>{{ detailClient.cpf || '—' }}</span>
+        </div>
+        <div class="details-item">
+          <span class="details-label">E-mail</span>
+          <span>{{ detailClient.email || '—' }}</span>
+        </div>
+        <div class="details-item">
+          <span class="details-label">Origem</span>
+          <span>{{ getOriginLabel(detailClient.origin) }}</span>
+        </div>
+        <div class="details-item">
+          <span class="details-label">Vínculo com contato</span>
+          <span>{{ detailClient.sourceContactId || 'Sem vínculo' }}</span>
+        </div>
+        <div class="details-item details-item-full">
+          <span class="details-label">Observações</span>
+          <span>{{ detailClient.notes || 'Sem observações' }}</span>
+        </div>
+        <div class="details-item">
+          <span class="details-label">Criado em</span>
+          <span>{{ detailClient.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <div class="details-item">
+          <span class="details-label">Atualizado em</span>
+          <span>{{ detailClient.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" (click)="closeDetailsModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>

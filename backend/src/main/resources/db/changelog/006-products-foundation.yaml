@@ -1,0 +1,169 @@
+databaseChangeLog:
+  - changeSet:
+      id: 016-create-product-types
+      author: cstar
+      changes:
+        - createTable:
+            tableName: product_types
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: description
+                  type: VARCHAR(400)
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 017-create-products
+      author: cstar
+      changes:
+        - createTable:
+            tableName: products
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sku
+                  type: VARCHAR(60)
+              - column:
+                  name: product_type_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: purchase_price
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sale_price
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stock_quantity
+                  type: DECIMAL(15,3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: minimum_stock
+                  type: DECIMAL(15,3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: perishable
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiration_date
+                  type: DATE
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: products
+            baseColumnNames: product_type_id
+            referencedTableName: product_types
+            referencedColumnNames: id
+            constraintName: fk_products_type
+            onDelete: RESTRICT
+
+        - addUniqueConstraint:
+            tableName: products
+            columnNames: sku
+            constraintName: uk_products_sku
+
+        - createIndex:
+            tableName: products
+            indexName: idx_products_type
+            columns:
+              - column:
+                  name: product_type_id
+
+        - createIndex:
+            tableName: products
+            indexName: idx_products_active
+            columns:
+              - column:
+                  name: active
+
+        - sql:
+            sql: |
+              ALTER TABLE products
+              ADD CONSTRAINT ck_products_purchase_non_negative
+              CHECK (purchase_price >= 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE products
+              ADD CONSTRAINT ck_products_sale_non_negative
+              CHECK (sale_price >= 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE products
+              ADD CONSTRAINT ck_products_stock_non_negative
+              CHECK (stock_quantity >= 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE products
+              ADD CONSTRAINT ck_products_min_stock_non_negative
+              CHECK (minimum_stock >= 0);
