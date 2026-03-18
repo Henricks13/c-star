@@ -29,6 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_PATH="/opt/c-star"
+          PREVIOUS_SHA=""
 
           sudo mkdir -p "$DEPLOY_PATH"
           sudo chown "$USER":"$USER" "$DEPLOY_PATH"
@@ -39,6 +40,8 @@ jobs:
           fi
 
           cd "$DEPLOY_PATH"
+          PREVIOUS_SHA="$(git rev-parse HEAD || true)"
+
           git fetch origin
           git checkout homolog
           git reset --hard "$GITHUB_SHA"
@@ -48,4 +51,14 @@ jobs:
             exit 1
           fi
 
-          bash infra/scripts/deploy-ec2.sh "$DEPLOY_PATH"
+          if ! bash infra/scripts/deploy-ec2.sh "$DEPLOY_PATH"; then
+            echo "Deploy falhou no commit ${GITHUB_SHA}. Iniciando rollback automático..."
+            if [ -n "$PREVIOUS_SHA" ]; then
+              git reset --hard "$PREVIOUS_SHA"
+              bash infra/scripts/deploy-ec2.sh "$DEPLOY_PATH" || true
+              echo "Rollback executado para commit ${PREVIOUS_SHA}."
+            else
+              echo "Sem commit anterior para rollback automático."
+            fi
+            exit 1
+          fi

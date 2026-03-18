@@ -4,6 +4,7 @@ set -euo pipefail
 PROJECT_DIR="${1:-/opt/c-star}"
 COMPOSE_FILE="infra/docker-compose.server.yml"
 ENV_FILE="infra/.env"
+HEALTH_URL="http://localhost/actuator/health"
 
 if [ ! -d "$PROJECT_DIR" ]; then
   echo "Diretório não encontrado: $PROJECT_DIR"
@@ -19,6 +20,33 @@ if [ ! -f "infra/.env.server" ]; then
 fi
 
 cp infra/.env.server infra/.env
+
+required_vars=(
+  POSTGRES_DB
+  POSTGRES_USER
+  POSTGRES_PASSWORD
+  JWT_SECRET
+  WHATSAPP_PROVIDER
+  WHATSAPP_INSTANCE_PREFIX
+  WHATSAPP_PUBLIC_BASE_URL
+  WHATSAPP_WEBHOOK_SECRET
+  EVOLUTION_BASE_URL
+  EVOLUTION_API_KEY
+  EVOLUTION_POSTGRES_PASSWORD
+)
+
+missing_vars=()
+for key in "${required_vars[@]}"; do
+  value=$(grep -E "^${key}=" "$ENV_FILE" | tail -n 1 | cut -d '=' -f2- || true)
+  if [ -z "${value//[[:space:]]/}" ]; then
+    missing_vars+=("$key")
+  fi
+done
+
+if [ "${#missing_vars[@]}" -gt 0 ]; then
+  echo "Variáveis obrigatórias ausentes ou vazias em infra/.env.server: ${missing_vars[*]}"
+  exit 1
+fi
 
 echo "[precheck] Uso de disco"
 df -h /
@@ -54,6 +82,11 @@ ensure_swap() {
 
 ensure_swap
 
+if command -v systemctl >/dev/null 2>&1; then
+  sudo systemctl enable docker || true
+  sudo systemctl start docker || true
+fi
+
 export COMPOSE_PARALLEL_LIMIT=1
 export DOCKER_BUILDKIT=1
 
@@ -64,3 +97,15 @@ docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d postgres evolutio
 
 echo "Deploy concluído."
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
+
+echo "[health] aguardando backend responder em ${HEALTH_URL}"
+for _ in $(seq 1 30); do
+  if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+    echo "[health] OK"
+    exit 0
+  fi
+  sleep 3
+done
+
+echo "[health] FALHOU: backend não respondeu em tempo hábil"
+exit 1
