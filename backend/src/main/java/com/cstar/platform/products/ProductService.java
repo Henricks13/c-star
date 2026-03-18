@@ -2,9 +2,20 @@ package com.cstar.platform.products;
 
 import com.cstar.platform.products.dto.CreateProductRequest;
 import com.cstar.platform.products.dto.ProductResponse;
+import com.cstar.platform.products.dto.StockAdjustmentRequest;
 import com.cstar.platform.products.dto.UpdateProductRequest;
 import com.cstar.platform.products.model.Product;
 import com.cstar.platform.products.model.ProductType;
+import com.cstar.platform.products.model.StockAdjustmentOperation;
+import com.cstar.platform.finance.FinanceEntryService;
+import com.cstar.platform.finance.FinanceExpenseTypeRepository;
+import com.cstar.platform.finance.FinanceIncomeTypeRepository;
+import com.cstar.platform.finance.dto.FinanceExpenseRequest;
+import com.cstar.platform.finance.dto.FinanceIncomeRequest;
+import com.cstar.platform.finance.model.FinanceExpenseType;
+import com.cstar.platform.finance.model.FinanceIncomeStatus;
+import com.cstar.platform.finance.model.FinanceIncomeType;
+import com.cstar.platform.finance.model.IncomeSource;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,10 +32,20 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductTypeRepository productTypeRepository;
+    private final FinanceEntryService financeEntryService;
+    private final FinanceIncomeTypeRepository financeIncomeTypeRepository;
+    private final FinanceExpenseTypeRepository financeExpenseTypeRepository;
 
-    public ProductService(ProductRepository productRepository, ProductTypeRepository productTypeRepository) {
+    public ProductService(ProductRepository productRepository,
+                          ProductTypeRepository productTypeRepository,
+                          FinanceEntryService financeEntryService,
+                          FinanceIncomeTypeRepository financeIncomeTypeRepository,
+                          FinanceExpenseTypeRepository financeExpenseTypeRepository) {
         this.productRepository = productRepository;
         this.productTypeRepository = productTypeRepository;
+        this.financeEntryService = financeEntryService;
+        this.financeIncomeTypeRepository = financeIncomeTypeRepository;
+        this.financeExpenseTypeRepository = financeExpenseTypeRepository;
     }
 
     @Transactional(readOnly = true)
@@ -119,6 +140,36 @@ public class ProductService {
         productRepository.delete(current);
     }
 
+    @Transactional
+    public ProductResponse adjustStock(UUID id, StockAdjustmentRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Produto não encontrado"));
+
+        BigDecimal quantity = ensurePositiveQuantity(request.quantity(), "Quantidade do ajuste");
+        StockAdjustmentOperation operation = request.operation();
+        BigDecimal unitPrice = resolveUnitPrice(product, operation, request.customUnitPrice());
+        BigDecimal totalAmount = unitPrice.multiply(quantity);
+        String notes = normalizeNotes(request.notes());
+
+        if (operation == StockAdjustmentOperation.REMOVE) {
+            if (product.getStockQuantity().compareTo(quantity) < 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Estoque insuficiente para retirada");
+            }
+
+            product.consumeStock(quantity);
+            product.registerStockAdjustment(operation, quantity);
+            productRepository.save(product);
+            createIncomeForStockRemoval(product, quantity, unitPrice, totalAmount, notes);
+        } else {
+            product.addStock(quantity);
+            product.registerStockAdjustment(operation, quantity);
+            productRepository.save(product);
+            createExpenseForStockAddition(product, quantity, unitPrice, totalAmount, notes);
+        }
+
+        return toResponse(product);
+    }
+
     private ProductResponse toResponse(Product product) {
         return new ProductResponse(
                 product.getId(),
@@ -130,6 +181,9 @@ public class ProductService {
                 product.getSalePrice(),
                 product.getStockQuantity(),
                 product.getMinimumStock(),
+                product.getLastAdjustmentOperation(),
+                product.getLastAdjustmentQuantity(),
+                product.getLastAdjustmentAt(),
                 product.isPerishable(),
                 product.getExpirationDate(),
                 product.isActive(),
@@ -182,6 +236,74 @@ public class ProductService {
         }
 
         return value;
+    }
+
+    private BigDecimal ensurePositiveQuantity(BigDecimal value, String fieldLabel) {
+        if (value == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldLabel + " é obrigatório");
+        }
+
+        if (value.signum() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldLabel + " deve ser maior que zero");
+        }
+
+        return value;
+    }
+
+    private BigDecimal resolveUnitPrice(Product product, StockAdjustmentOperation operation, BigDecimal customUnitPrice) {
+        if (customUnitPrice != null) {
+            if (customUnitPrice.signum() < 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Preço personalizado não pode ser negativo");
+            }
+            return customUnitPrice;
+        }
+
+        return operation == StockAdjustmentOperation.REMOVE ? product.getSalePrice() : product.getPurchasePrice();
+    }
+
+    private void createIncomeForStockRemoval(Product product,
+                                             BigDecimal quantity,
+                                             BigDecimal unitPrice,
+                                             BigDecimal totalAmount,
+                                             String notes) {
+        FinanceIncomeType incomeType = financeIncomeTypeRepository.findByNameIgnoreCase("Venda de Produto")
+                .orElseGet(() -> financeIncomeTypeRepository.save(
+                        FinanceIncomeType.create("Venda de Produto", "Receita originada de venda de produtos", true)
+                ));
+
+        String description = "Saída de estoque (venda) - " + product.getName() + " (" + quantity + " x " + unitPrice + ")";
+
+        financeEntryService.createIncome(new FinanceIncomeRequest(
+                incomeType.getId(),
+                IncomeSource.PRODUCT_SALE,
+                product.getId(),
+                totalAmount,
+                description,
+                notes,
+                LocalDate.now(),
+                FinanceIncomeStatus.PAGO
+        ));
+    }
+
+    private void createExpenseForStockAddition(Product product,
+                                               BigDecimal quantity,
+                                               BigDecimal unitPrice,
+                                               BigDecimal totalAmount,
+                                               String notes) {
+        FinanceExpenseType expenseType = financeExpenseTypeRepository.findByNameIgnoreCase("Compra de Produto")
+                .orElseGet(() -> financeExpenseTypeRepository.save(
+                        FinanceExpenseType.create("Compra de Produto", "Despesa originada de reposição de estoque", true)
+                ));
+
+        String description = "Entrada de estoque (compra) - " + product.getName() + " (" + quantity + " x " + unitPrice + ")";
+
+        financeEntryService.createExpense(new FinanceExpenseRequest(
+                expenseType.getId(),
+                totalAmount,
+                description,
+                notes,
+                LocalDate.now()
+        ));
     }
 
     private LocalDate normalizeExpirationDate(boolean perishable, LocalDate expirationDate) {

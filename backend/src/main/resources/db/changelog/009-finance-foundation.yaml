@@ -1,0 +1,385 @@
+databaseChangeLog:
+  - changeSet:
+      id: 024-create-finance-income-types
+      author: cstar
+      changes:
+        - createTable:
+            tableName: finance_income_types
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: description
+                  type: VARCHAR(400)
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 025-create-finance-expense-types
+      author: cstar
+      changes:
+        - createTable:
+            tableName: finance_expense_types
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: description
+                  type: VARCHAR(400)
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 026-create-finance-incomes
+      author: cstar
+      changes:
+        - createTable:
+            tableName: finance_incomes
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: income_type_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(240)
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+              - column:
+                  name: occurred_on
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reference_id
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: finance_incomes
+            baseColumnNames: income_type_id
+            referencedTableName: finance_income_types
+            referencedColumnNames: id
+            constraintName: fk_finance_incomes_type
+            onDelete: RESTRICT
+
+        - createIndex:
+            tableName: finance_incomes
+            indexName: idx_finance_incomes_occurred_on
+            columns:
+              - column:
+                  name: occurred_on
+
+        - createIndex:
+            tableName: finance_incomes
+            indexName: idx_finance_incomes_source
+            columns:
+              - column:
+                  name: source
+
+        - sql:
+            sql: |
+              ALTER TABLE finance_incomes
+              ADD CONSTRAINT ck_finance_incomes_source
+              CHECK (source IN ('MANUAL', 'PRODUCT_SALE', 'SERVICE_ORDER'));
+
+        - sql:
+            sql: |
+              ALTER TABLE finance_incomes
+              ADD CONSTRAINT ck_finance_incomes_amount_non_negative
+              CHECK (amount >= 0);
+
+  - changeSet:
+      id: 027-create-finance-expenses
+      author: cstar
+      changes:
+        - createTable:
+            tableName: finance_expenses
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: expense_type_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(240)
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+              - column:
+                  name: occurred_on
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: finance_expenses
+            baseColumnNames: expense_type_id
+            referencedTableName: finance_expense_types
+            referencedColumnNames: id
+            constraintName: fk_finance_expenses_type
+            onDelete: RESTRICT
+
+        - createIndex:
+            tableName: finance_expenses
+            indexName: idx_finance_expenses_occurred_on
+            columns:
+              - column:
+                  name: occurred_on
+
+        - sql:
+            sql: |
+              ALTER TABLE finance_expenses
+              ADD CONSTRAINT ck_finance_expenses_amount_non_negative
+              CHECK (amount >= 0);
+
+  - changeSet:
+      id: 028-create-product-sales
+      author: cstar
+      changes:
+        - createTable:
+            tableName: product_sales
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: customer_name
+                  type: VARCHAR(160)
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+              - column:
+                  name: occurred_on
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_amount
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - createIndex:
+            tableName: product_sales
+            indexName: idx_product_sales_occurred_on
+            columns:
+              - column:
+                  name: occurred_on
+
+        - sql:
+            sql: |
+              ALTER TABLE product_sales
+              ADD CONSTRAINT ck_product_sales_total_non_negative
+              CHECK (total_amount >= 0);
+
+  - changeSet:
+      id: 029-create-product-sale-items
+      author: cstar
+      changes:
+        - createTable:
+            tableName: product_sale_items
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: sale_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_name_snapshot
+                  type: VARCHAR(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: DECIMAL(15,3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unit_price
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: line_total
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: product_sale_items
+            baseColumnNames: sale_id
+            referencedTableName: product_sales
+            referencedColumnNames: id
+            constraintName: fk_product_sale_items_sale
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: product_sale_items
+            baseColumnNames: product_id
+            referencedTableName: products
+            referencedColumnNames: id
+            constraintName: fk_product_sale_items_product
+            onDelete: RESTRICT
+
+        - createIndex:
+            tableName: product_sale_items
+            indexName: idx_product_sale_items_sale
+            columns:
+              - column:
+                  name: sale_id
+
+        - sql:
+            sql: |
+              ALTER TABLE product_sale_items
+              ADD CONSTRAINT ck_product_sale_items_qty_positive
+              CHECK (quantity > 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE product_sale_items
+              ADD CONSTRAINT ck_product_sale_items_unit_non_negative
+              CHECK (unit_price >= 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE product_sale_items
+              ADD CONSTRAINT ck_product_sale_items_line_non_negative
+              CHECK (line_total >= 0);

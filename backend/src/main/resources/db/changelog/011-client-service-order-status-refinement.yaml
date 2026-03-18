@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 031-refine-client-service-order-statuses
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: client_service_orders
+            columns:
+              - column:
+                  name: paid_installment_count
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+        - sql:
+            sql: |
+              UPDATE client_service_orders
+              SET status = CASE
+                WHEN status = 'PENDING_PAYMENT' THEN 'ORCADO'
+                WHEN status = 'PAID' THEN 'PAGO'
+                ELSE status
+              END;
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              DROP CONSTRAINT IF EXISTS ck_client_service_orders_status;
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_status
+              CHECK (status IN ('ORCADO', 'AGUARDANDO_PAGAMENTO', 'PAGO'));

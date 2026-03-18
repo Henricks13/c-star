@@ -83,6 +83,64 @@ export const NavigationItems: NavigationItem[] = [
         ]
       },
       {
+        id: 'services',
+        title: 'Serviços',
+        type: 'item',
+        url: '/services',
+        icon: 'ti ti-briefcase'
+      },
+      {
+        id: 'finance',
+        title: 'Financeiro',
+        type: 'collapse',
+        icon: 'ti ti-cash',
+        breadcrumbs: false,
+        children: [
+          {
+            id: 'finance-incomes',
+            title: 'Receitas',
+            type: 'item',
+            url: '/finance/incomes',
+            breadcrumbs: false
+          },
+          {
+            id: 'finance-expenses',
+            title: 'Despesas',
+            type: 'item',
+            url: '/finance/expenses',
+            breadcrumbs: false
+          },
+          {
+            id: 'finance-product-sales',
+            title: 'Vendas Avulsas',
+            type: 'item',
+            url: '/finance/product-sales',
+            breadcrumbs: false
+          },
+          {
+            id: 'finance-report',
+            title: 'Relatório Financeiro',
+            type: 'item',
+            url: '/finance/report',
+            breadcrumbs: false
+          },
+          {
+            id: 'finance-income-types',
+            title: 'Tipos de Receita',
+            type: 'item',
+            url: '/finance/income-types',
+            breadcrumbs: false
+          },
+          {
+            id: 'finance-expense-types',
+            title: 'Tipos de Despesa',
+            type: 'item',
+            url: '/finance/expense-types',
+            breadcrumbs: false
+          }
+        ]
+      },
+      {
         id: 'whatsapp',
         title: 'WhatsApp',
         type: 'item',

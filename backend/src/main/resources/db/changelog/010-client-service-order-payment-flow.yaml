@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: 030-add-client-service-order-payment-flow-columns
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: client_service_orders
+            columns:
+              - column:
+                  name: status
+                  type: VARCHAR(40)
+                  defaultValue: PAID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payment_method
+                  type: VARCHAR(40)
+              - column:
+                  name: installment_count
+                  type: INT
+              - column:
+                  name: paid_at
+                  type: TIMESTAMP
+
+        - createIndex:
+            tableName: client_service_orders
+            indexName: idx_client_service_orders_status
+            columns:
+              - column:
+                  name: status
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_status
+              CHECK (status IN ('PENDING_PAYMENT', 'PAID'));
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_payment_method
+              CHECK (payment_method IS NULL OR payment_method IN ('PIX', 'CREDIT_CARD', 'PIX_INSTALLMENT', 'CASH', 'TRADE'));
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_installments
+              CHECK (installment_count IS NULL OR (installment_count >= 1 AND installment_count <= 24));

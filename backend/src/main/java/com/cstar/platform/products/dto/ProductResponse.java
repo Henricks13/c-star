@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.cstar.platform.products.model.StockAdjustmentOperation;
+
 public record ProductResponse(
         UUID id,
         String name,
@@ -15,6 +17,9 @@ public record ProductResponse(
         BigDecimal salePrice,
         BigDecimal stockQuantity,
         BigDecimal minimumStock,
+        StockAdjustmentOperation lastAdjustmentOperation,
+        BigDecimal lastAdjustmentQuantity,
+        Instant lastAdjustmentAt,
         boolean perishable,
         LocalDate expirationDate,
         boolean active,

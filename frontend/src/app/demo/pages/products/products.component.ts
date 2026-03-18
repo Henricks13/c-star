@@ -5,8 +5,22 @@ import { FormsModule } from '@angular/forms';
 import { ProductTypesService } from 'src/app/core/products/product-types.service';
 import { ProductTypeItem } from 'src/app/core/products/product-types.types';
 import { ProductsService } from 'src/app/core/products/products.service';
-import { CreateProductRequest, ProductItem, UpdateProductRequest } from 'src/app/core/products/products.types';
+import {
+  CreateProductRequest,
+  ProductItem,
+  StockAdjustmentOperation,
+  StockAdjustmentRequest,
+  UpdateProductRequest
+} from 'src/app/core/products/products.types';
 import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
+
+interface StockAdjustmentFormModel {
+  operation: StockAdjustmentOperation;
+  quantity: number;
+  customPriceEnabled: boolean;
+  customUnitPrice: number | null;
+  notes: string;
+}
 
 @Component({
   selector: 'app-products',
@@ -24,12 +38,17 @@ export class ProductsComponent implements OnInit {
   products: ProductItem[] = [];
   productTypes: ProductTypeItem[] = [];
   selectedProduct: ProductItem | null = null;
+  selectedProductForStock: ProductItem | null = null;
+  productPendingDelete: ProductItem | null = null;
 
   createModalOpen = false;
   editModalOpen = false;
+  stockModalOpen = false;
+  deleteModalOpen = false;
 
   createForm: CreateProductRequest = this.defaultCreateForm();
   editForm: UpdateProductRequest = this.defaultEditForm();
+  stockForm: StockAdjustmentFormModel = this.defaultStockForm();
 
   constructor(
     private readonly productsService: ProductsService,
@@ -162,27 +181,100 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  deleteProduct(product: ProductItem): void {
-    if (!confirm(`Deseja excluir o produto "${product.name}"?`)) {
+  openStockModal(product: ProductItem): void {
+    this.selectedProductForStock = product;
+    this.stockForm = this.defaultStockForm();
+    this.errorMessage = null;
+    this.infoMessage = null;
+    this.stockModalOpen = true;
+  }
+
+  closeStockModal(): void {
+    this.stockModalOpen = false;
+    this.selectedProductForStock = null;
+  }
+
+  onStockOperationChange(): void {
+    this.stockForm.customPriceEnabled = false;
+    this.stockForm.customUnitPrice = null;
+  }
+
+  applyStockAdjustment(): void {
+    if (!this.selectedProductForStock || this.saving) {
       return;
     }
 
+    const payload = this.normalizeStockPayload();
+    if (!payload) {
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+
+    this.productsService.adjustStock(this.selectedProductForStock.id, payload).subscribe({
+      next: () => {
+        this.saving = false;
+        this.closeStockModal();
+        this.infoMessage = 'Estoque ajustado e financeiro atualizado com sucesso.';
+        this.loadAll();
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível ajustar o estoque.';
+        this.saving = false;
+      }
+    });
+  }
+
+  openDeleteModal(product: ProductItem): void {
+    this.productPendingDelete = product;
+    this.errorMessage = null;
+    this.infoMessage = null;
+    this.deleteModalOpen = true;
+  }
+
+  closeDeleteModal(): void {
+    this.deleteModalOpen = false;
+    this.productPendingDelete = null;
+  }
+
+  confirmDeleteProduct(): void {
+    if (!this.productPendingDelete || this.saving) {
+      return;
+    }
+
+    this.saving = true;
     this.errorMessage = null;
     this.infoMessage = null;
 
-    this.productsService.delete(product.id).subscribe({
+    this.productsService.delete(this.productPendingDelete.id).subscribe({
       next: () => {
+        this.saving = false;
+        this.closeDeleteModal();
         this.infoMessage = 'Produto removido com sucesso.';
         this.loadAll();
       },
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Não foi possível excluir o produto.';
+        this.saving = false;
       }
     });
   }
 
   isLowStock(product: ProductItem): boolean {
     return Number(product.stockQuantity) <= Number(product.minimumStock);
+  }
+
+  adjustmentOperationLabel(operation: StockAdjustmentOperation | null): string {
+    if (operation === 'ADD') {
+      return 'Adição';
+    }
+
+    if (operation === 'REMOVE') {
+      return 'Retirada';
+    }
+
+    return 'Sem ajuste';
   }
 
   private normalizeCreatePayload(): CreateProductRequest | null {
@@ -268,6 +360,41 @@ export class ProductsComponent implements OnInit {
       perishable: false,
       expirationDate: null,
       active: true,
+      notes: ''
+    };
+  }
+
+  private normalizeStockPayload(): StockAdjustmentRequest | null {
+    const payload: StockAdjustmentRequest = {
+      operation: this.stockForm.operation,
+      quantity: Number(this.stockForm.quantity),
+      customUnitPrice: this.stockForm.customPriceEnabled ? Number(this.stockForm.customUnitPrice) : null,
+      notes: (this.stockForm.notes || '').trim() || null
+    };
+
+    if (Number.isNaN(payload.quantity) || payload.quantity <= 0) {
+      this.errorMessage = 'Informe uma quantidade válida para o ajuste.';
+      return null;
+    }
+
+    if (this.stockForm.customPriceEnabled) {
+      const customPrice = Number(payload.customUnitPrice);
+      if (Number.isNaN(customPrice) || customPrice < 0) {
+        this.errorMessage = 'Informe um preço personalizado válido.';
+        return null;
+      }
+      payload.customUnitPrice = customPrice;
+    }
+
+    return payload;
+  }
+
+  private defaultStockForm(): StockAdjustmentFormModel {
+    return {
+      operation: 'ADD',
+      quantity: 1,
+      customPriceEnabled: false,
+      customUnitPrice: null,
       notes: ''
     };
   }

@@ -1,0 +1,120 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Relatório Financeiro">
+      <div class="report-toolbar mb-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label" for="reportStartDate">Data inicial</label>
+            <input id="reportStartDate" class="form-control" type="date" [(ngModel)]="filters.startDate" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="reportEndDate">Data final</label>
+            <input id="reportEndDate" class="form-control" type="date" [(ngModel)]="filters.endDate" />
+          </div>
+          <div class="col-md-6 d-flex gap-2 justify-content-md-end">
+            <button class="btn btn-outline-secondary" type="button" (click)="clearFilters()">Limpar</button>
+            <button class="btn btn-primary" type="button" (click)="loadReport()">Gerar relatório</button>
+          </div>
+        </div>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Gerando relatório...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && report">
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="summary-card summary-income">
+              <div class="summary-label">Total de Entradas</div>
+              <div class="summary-value">{{ formatCurrency(report.totalIncomes) }}</div>
+              <small class="text-muted">{{ report.incomesCount }} lançamento(s)</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="summary-card summary-expense">
+              <div class="summary-label">Total de Saídas</div>
+              <div class="summary-value">{{ formatCurrency(report.totalExpenses) }}</div>
+              <small class="text-muted">{{ report.expensesCount }} lançamento(s)</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="summary-card" [ngClass]="report.totalProfit >= 0 ? 'summary-profit' : 'summary-loss'">
+              <div class="summary-label">Lucro Total</div>
+              <div class="summary-value">{{ formatCurrency(report.totalProfit) }}</div>
+              <small class="text-muted">Entradas - Saídas</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="detail-card">
+              <h6 class="mb-2">Entradas</h6>
+              <div class="table-responsive" *ngIf="report.entries.length > 0; else noEntries">
+                <table class="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Categoria</th>
+                      <th>Descrição</th>
+                      <th>Fonte</th>
+                      <th class="text-end">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of report.entries; trackBy: trackByItemId">
+                      <td>{{ item.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                      <td>{{ item.category }}</td>
+                      <td>{{ item.description || '—' }}</td>
+                      <td>{{ formatSource(item.source) }}</td>
+                      <td class="text-end">{{ formatCurrency(item.amount) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <ng-template #noEntries>
+                <small class="text-muted">Nenhuma entrada no período.</small>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="detail-card">
+              <h6 class="mb-2">Saídas</h6>
+              <div class="table-responsive" *ngIf="report.exits.length > 0; else noExits">
+                <table class="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Categoria</th>
+                      <th>Descrição</th>
+                      <th>Tipo</th>
+                      <th class="text-end">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of report.exits; trackBy: trackByItemId">
+                      <td>{{ item.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                      <td>{{ item.category }}</td>
+                      <td>{{ item.description || '—' }}</td>
+                      <td>{{ formatKind(item.kind) }}</td>
+                      <td class="text-end">{{ formatCurrency(item.amount) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <ng-template #noExits>
+                <small class="text-muted">Nenhuma saída no período.</small>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>

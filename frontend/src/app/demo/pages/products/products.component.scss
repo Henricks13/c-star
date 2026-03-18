@@ -54,6 +54,10 @@
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
 }
 
+.products-modal-sm {
+  max-width: 520px;
+}
+
 @media (max-width: 768px) {
   .products-toolbar {
     justify-content: stretch;

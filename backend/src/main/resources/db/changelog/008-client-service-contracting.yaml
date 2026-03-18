@@ -1,0 +1,270 @@
+databaseChangeLog:
+  - changeSet:
+      id: 020-add-clients-business-status
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: clients
+            columns:
+              - column:
+                  name: business_status
+                  type: VARCHAR(40)
+                  defaultValue: NEGOCIACAO
+                  constraints:
+                    nullable: false
+
+        - sql:
+            sql: |
+              ALTER TABLE clients
+              ADD CONSTRAINT ck_clients_business_status
+              CHECK (business_status IN ('NEGOCIACAO', 'NEGOCIO_FECHADO'));
+
+  - changeSet:
+      id: 021-create-client-service-orders
+      author: cstar
+      changes:
+        - createTable:
+            tableName: client_service_orders
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: client_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subtotal_services
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subtotal_extra_products
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: discount_amount
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: custom_total_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: custom_total_value
+                  type: DECIMAL(15,2)
+              - column:
+                  name: final_total
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: client_service_orders
+            baseColumnNames: client_id
+            referencedTableName: clients
+            referencedColumnNames: id
+            constraintName: fk_client_service_orders_client
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: client_service_orders
+            indexName: idx_client_service_orders_client
+            columns:
+              - column:
+                  name: client_id
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_subtotal_services_non_negative
+              CHECK (subtotal_services >= 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_subtotal_extra_non_negative
+              CHECK (subtotal_extra_products >= 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_discount_non_negative
+              CHECK (discount_amount >= 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_final_total_non_negative
+              CHECK (final_total >= 0);
+
+  - changeSet:
+      id: 022-create-client-service-order-services
+      author: cstar
+      changes:
+        - createTable:
+            tableName: client_service_order_services
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: service_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: service_name_snapshot
+                  type: VARCHAR(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: service_price_snapshot
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: client_service_order_services
+            baseColumnNames: order_id
+            referencedTableName: client_service_orders
+            referencedColumnNames: id
+            constraintName: fk_client_service_order_services_order
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: client_service_order_services
+            baseColumnNames: service_id
+            referencedTableName: services
+            referencedColumnNames: id
+            constraintName: fk_client_service_order_services_service
+            onDelete: RESTRICT
+
+        - createIndex:
+            tableName: client_service_order_services
+            indexName: idx_client_service_order_services_order
+            columns:
+              - column:
+                  name: order_id
+
+  - changeSet:
+      id: 023-create-client-service-order-products
+      author: cstar
+      changes:
+        - createTable:
+            tableName: client_service_order_products
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_name_snapshot
+                  type: VARCHAR(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity_used
+                  type: DECIMAL(15,3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sale_price_snapshot
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: client_service_order_products
+            baseColumnNames: order_id
+            referencedTableName: client_service_orders
+            referencedColumnNames: id
+            constraintName: fk_client_service_order_products_order
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: client_service_order_products
+            baseColumnNames: product_id
+            referencedTableName: products
+            referencedColumnNames: id
+            constraintName: fk_client_service_order_products_product
+            onDelete: RESTRICT
+
+        - createIndex:
+            tableName: client_service_order_products
+            indexName: idx_client_service_order_products_order
+            columns:
+              - column:
+                  name: order_id
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_order_products
+              ADD CONSTRAINT ck_client_service_order_products_source
+              CHECK (source IN ('SERVICE_COMPOSITION', 'EXTRA'));
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_order_products
+              ADD CONSTRAINT ck_client_service_order_products_qty_positive
+              CHECK (quantity_used > 0);

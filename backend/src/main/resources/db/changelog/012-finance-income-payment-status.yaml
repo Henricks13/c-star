@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 032-add-finance-income-payment-status
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: finance_incomes
+            columns:
+              - column:
+                  name: payment_status
+                  type: VARCHAR(40)
+                  defaultValue: PAGO
+                  constraints:
+                    nullable: false
+              - column:
+                  name: paid_at
+                  type: TIMESTAMP
+
+        - sql:
+            sql: |
+              UPDATE finance_incomes
+              SET paid_at = CURRENT_TIMESTAMP
+              WHERE payment_status = 'PAGO' AND paid_at IS NULL;
+
+        - sql:
+            sql: |
+              ALTER TABLE finance_incomes
+              ADD CONSTRAINT ck_finance_incomes_payment_status
+              CHECK (payment_status IN ('AGUARDANDO_PAGAMENTO', 'PAGO'));

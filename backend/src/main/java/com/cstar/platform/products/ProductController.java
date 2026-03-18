@@ -2,6 +2,7 @@ package com.cstar.platform.products;
 
 import com.cstar.platform.products.dto.CreateProductRequest;
 import com.cstar.platform.products.dto.ProductResponse;
+import com.cstar.platform.products.dto.StockAdjustmentRequest;
 import com.cstar.platform.products.dto.UpdateProductRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -39,6 +40,11 @@ public class ProductController {
     @PutMapping("/{id}")
     public ProductResponse update(@PathVariable UUID id, @RequestBody @Valid UpdateProductRequest request) {
         return productService.update(id, request);
+    }
+
+    @PostMapping("/{id}/stock-adjustments")
+    public ProductResponse adjustStock(@PathVariable UUID id, @RequestBody @Valid StockAdjustmentRequest request) {
+        return productService.adjustStock(id, request);
     }
 
     @DeleteMapping("/{id}")

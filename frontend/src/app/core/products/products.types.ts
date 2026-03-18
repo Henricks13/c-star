@@ -8,6 +8,9 @@ export interface ProductItem {
   salePrice: number;
   stockQuantity: number;
   minimumStock: number;
+  lastAdjustmentOperation: StockAdjustmentOperation | null;
+  lastAdjustmentQuantity: number | null;
+  lastAdjustmentAt: string | null;
   perishable: boolean;
   expirationDate: string | null;
   active: boolean;
@@ -41,5 +44,14 @@ export interface UpdateProductRequest {
   perishable?: boolean;
   expirationDate?: string | null;
   active?: boolean;
+  notes?: string | null;
+}
+
+export type StockAdjustmentOperation = 'ADD' | 'REMOVE';
+
+export interface StockAdjustmentRequest {
+  operation: StockAdjustmentOperation;
+  quantity: number;
+  customUnitPrice?: number | null;
   notes?: string | null;
 }

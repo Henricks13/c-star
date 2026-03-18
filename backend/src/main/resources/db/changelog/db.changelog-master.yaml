@@ -11,3 +11,17 @@ databaseChangeLog:
       file: db/changelog/005-clients-foundation.yaml
   - include:
       file: db/changelog/006-products-foundation.yaml
+  - include:
+      file: db/changelog/007-services-foundation.yaml
+  - include:
+      file: db/changelog/008-client-service-contracting.yaml
+  - include:
+      file: db/changelog/009-finance-foundation.yaml
+  - include:
+      file: db/changelog/010-client-service-order-payment-flow.yaml
+  - include:
+      file: db/changelog/011-client-service-order-status-refinement.yaml
+  - include:
+      file: db/changelog/012-finance-income-payment-status.yaml
+  - include:
+      file: db/changelog/013-products-last-stock-adjustment.yaml

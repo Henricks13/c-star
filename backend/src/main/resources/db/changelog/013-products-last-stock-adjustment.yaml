@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 013-products-last-stock-adjustment
+      author: copilot
+      changes:
+        - addColumn:
+            tableName: products
+            columns:
+              - column:
+                  name: last_adjustment_operation
+                  type: varchar(20)
+              - column:
+                  name: last_adjustment_quantity
+                  type: numeric(15,3)
+              - column:
+                  name: last_adjustment_at
+                  type: timestamp

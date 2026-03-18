@@ -1,4 +1,5 @@
 export type ClientOrigin = 'RESGATE' | 'CADASTRO_MANUAL' | 'CADASTRO_INDICADO' | 'OUTROS';
+export type ClientBusinessStatus = 'NEGOCIACAO' | 'NEGOCIO_FECHADO';
 
 export interface ClientOriginOption {
   value: ClientOrigin;
@@ -19,6 +20,7 @@ export interface ClientListItem {
   cpf: string | null;
   email: string | null;
   origin: ClientOrigin;
+  businessStatus: ClientBusinessStatus;
   sourceContactId: string | null;
   notes: string | null;
   createdAt: string;

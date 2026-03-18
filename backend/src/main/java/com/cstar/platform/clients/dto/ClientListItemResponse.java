@@ -10,6 +10,7 @@ public record ClientListItemResponse(
         String cpf,
         String email,
         String origin,
+        String businessStatus,
         UUID sourceContactId,
         String notes,
         Instant createdAt,

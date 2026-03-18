@@ -44,6 +44,10 @@ public class Client {
     @Column(name = "notes", length = 500)
     private String notes;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "business_status", nullable = false, length = 40)
+    private ClientBusinessStatus businessStatus;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -70,7 +74,12 @@ public class Client {
         client.origin = origin;
         client.sourceContactId = sourceContactId;
         client.notes = notes;
+        client.businessStatus = ClientBusinessStatus.NEGOCIACAO;
         return client;
+    }
+
+    public void transitionToClosedDeal() {
+        this.businessStatus = ClientBusinessStatus.NEGOCIO_FECHADO;
     }
 
     @PrePersist
@@ -115,6 +124,10 @@ public class Client {
 
     public String getNotes() {
         return notes;
+    }
+
+    public ClientBusinessStatus getBusinessStatus() {
+        return businessStatus;
     }
 
     public Instant getCreatedAt() {

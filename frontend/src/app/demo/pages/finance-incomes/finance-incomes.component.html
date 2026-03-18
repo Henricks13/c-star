@@ -1,0 +1,196 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Receitas">
+      <div class="types-toolbar mb-3">
+        <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+          <i class="ti ti-plus me-1"></i>
+          Lançar receita
+        </button>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando receitas...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && incomes.length === 0">
+        <div class="empty-state">
+          <p class="mb-2">Nenhuma receita lançada.</p>
+          <small class="text-muted">Registre as entradas financeiras da clínica.</small>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && incomes.length > 0">
+        <div class="table-responsive types-table-wrapper">
+          <table class="table table-hover align-middle types-table mb-0">
+            <thead class="types-thead">
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let income of incomes">
+                <td>{{ income.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ income.incomeTypeName }}</td>
+                <td>{{ income.description || '—' }}</td>
+                <td>{{ formatCurrency(income.amount) }}</td>
+                <td>
+                  <span class="income-status-pill" [ngClass]="getPaymentStatusClass(income.paymentStatus)">
+                    {{ getPaymentStatusLabel(income.paymentStatus) }}
+                  </span>
+                </td>
+                <td>
+                  <div class="type-actions">
+                    <button
+                      class="btn btn-sm btn-outline-success"
+                      type="button"
+                      *ngIf="income.paymentStatus === 'AGUARDANDO_PAGAMENTO'"
+                      (click)="openConfirmPaymentModal(income)"
+                    >
+                      <i class="ti ti-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(income)">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDeleteModal(income)">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="createModalOpen">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-income-title">
+    <div class="types-modal">
+      <h6 id="create-income-title" class="mb-3">Lançar receita</h6>
+
+      <div class="d-flex flex-column gap-2">
+        <div>
+          <label class="form-label" for="createIncomeTypeId">Tipo de receita</label>
+          <select id="createIncomeTypeId" class="form-select" [(ngModel)]="createForm.incomeTypeId">
+            <option *ngFor="let type of incomeTypes" [ngValue]="type.id">{{ type.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" for="createIncomePaymentStatus">Status</label>
+          <select id="createIncomePaymentStatus" class="form-select" [(ngModel)]="createForm.paymentStatus">
+            <option [ngValue]="'PAGO'">Pago</option>
+            <option [ngValue]="'AGUARDANDO_PAGAMENTO'">Aguardando pagamento</option>
+          </select>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label" for="createIncomeAmount">Valor</label>
+            <input id="createIncomeAmount" class="form-control" type="number" min="0" step="0.01" [(ngModel)]="createForm.amount" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="createIncomeDate">Data</label>
+            <input id="createIncomeDate" class="form-control" type="date" [(ngModel)]="createForm.occurredOn" />
+          </div>
+        </div>
+        <div>
+          <label class="form-label" for="createIncomeDescription">Descrição (opcional)</label>
+          <input id="createIncomeDescription" class="form-control" [(ngModel)]="createForm.description" />
+        </div>
+        <div>
+          <label class="form-label" for="createIncomeNotes">Observações (opcional)</label>
+          <textarea id="createIncomeNotes" class="form-control" rows="2" [(ngModel)]="createForm.notes"></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createIncome()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="editModalOpen">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-income-title">
+    <div class="types-modal">
+      <h6 id="edit-income-title" class="mb-3">Editar receita</h6>
+
+      <div class="d-flex flex-column gap-2">
+        <div>
+          <label class="form-label" for="editIncomeTypeId">Tipo de receita</label>
+          <select id="editIncomeTypeId" class="form-select" [(ngModel)]="editForm.incomeTypeId">
+            <option *ngFor="let type of incomeTypes" [ngValue]="type.id">{{ type.name }}</option>
+          </select>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label" for="editIncomeAmount">Valor</label>
+            <input id="editIncomeAmount" class="form-control" type="number" min="0" step="0.01" [(ngModel)]="editForm.amount" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="editIncomeDate">Data</label>
+            <input id="editIncomeDate" class="form-control" type="date" [(ngModel)]="editForm.occurredOn" />
+          </div>
+        </div>
+        <div>
+          <label class="form-label" for="editIncomeDescription">Descrição (opcional)</label>
+          <input id="editIncomeDescription" class="form-control" [(ngModel)]="editForm.description" />
+        </div>
+        <div>
+          <label class="form-label" for="editIncomeNotes">Observações (opcional)</label>
+          <textarea id="editIncomeNotes" class="form-control" rows="2" [(ngModel)]="editForm.notes"></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateIncome()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="confirmPaymentModalOpen && selectedIncome">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-income-payment-title">
+    <div class="types-modal types-modal-sm">
+      <h6 id="confirm-income-payment-title" class="mb-3">Confirmar pagamento</h6>
+      <p class="mb-3">
+        Confirmar pagamento da receita de <strong>{{ formatCurrency(selectedIncome.amount) }}</strong>?
+      </p>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeConfirmPaymentModal()">Cancelar</button>
+        <button class="btn btn-success" type="button" [disabled]="saving" (click)="confirmPayment()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="confirmDeleteModalOpen && selectedIncome">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-income-delete-title">
+    <div class="types-modal types-modal-sm">
+      <h6 id="confirm-income-delete-title" class="mb-3">Excluir receita</h6>
+      <p class="mb-3">
+        Deseja excluir a receita de <strong>{{ formatCurrency(selectedIncome.amount) }}</strong>?
+      </p>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="deleteIncome()">Excluir</button>
+      </div>
+    </div>
+  </div>
+</ng-container>

@@ -67,6 +67,39 @@ const routes: Routes = [
       {
         path: 'products/types',
         loadComponent: () => import('./demo/pages/product-types/product-types.component').then((c) => c.ProductTypesComponent)
+      },
+      {
+        path: 'services',
+        loadComponent: () => import('./demo/pages/services/services.component').then((c) => c.ServicesComponent)
+      },
+      {
+        path: 'finance',
+        redirectTo: '/finance/incomes',
+        pathMatch: 'full'
+      },
+      {
+        path: 'finance/incomes',
+        loadComponent: () => import('./demo/pages/finance-incomes/finance-incomes.component').then((c) => c.FinanceIncomesComponent)
+      },
+      {
+        path: 'finance/expenses',
+        loadComponent: () => import('./demo/pages/finance-expenses/finance-expenses.component').then((c) => c.FinanceExpensesComponent)
+      },
+      {
+        path: 'finance/income-types',
+        loadComponent: () => import('./demo/pages/finance-income-types/finance-income-types.component').then((c) => c.FinanceIncomeTypesComponent)
+      },
+      {
+        path: 'finance/expense-types',
+        loadComponent: () => import('./demo/pages/finance-expense-types/finance-expense-types.component').then((c) => c.FinanceExpenseTypesComponent)
+      },
+      {
+        path: 'finance/product-sales',
+        loadComponent: () => import('./demo/pages/finance-product-sales/finance-product-sales.component').then((c) => c.FinanceProductSalesComponent)
+      },
+      {
+        path: 'finance/report',
+        loadComponent: () => import('./demo/pages/finance-report/finance-report.component').then((c) => c.FinanceReportComponent)
       }
     ]
   },

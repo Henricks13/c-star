@@ -1,0 +1,145 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Despesas">
+      <div class="types-toolbar mb-3">
+        <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+          <i class="ti ti-plus me-1"></i>
+          Lançar despesa
+        </button>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando despesas...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && expenses.length === 0">
+        <div class="empty-state">
+          <p class="mb-2">Nenhuma despesa lançada.</p>
+          <small class="text-muted">Registre os custos e saídas financeiras da clínica.</small>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && expenses.length > 0">
+        <div class="table-responsive types-table-wrapper">
+          <table class="table table-hover align-middle types-table mb-0">
+            <thead class="types-thead">
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let expense of expenses">
+                <td>{{ expense.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ expense.expenseTypeName }}</td>
+                <td>{{ expense.description || '—' }}</td>
+                <td>{{ formatCurrency(expense.amount) }}</td>
+                <td>
+                  <div class="type-actions">
+                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(expense)">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteExpense(expense)">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="createModalOpen">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-expense-title">
+    <div class="types-modal">
+      <h6 id="create-expense-title" class="mb-3">Lançar despesa</h6>
+
+      <div class="d-flex flex-column gap-2">
+        <div>
+          <label class="form-label" for="createExpenseTypeId">Tipo de despesa</label>
+          <select id="createExpenseTypeId" class="form-select" [(ngModel)]="createForm.expenseTypeId">
+            <option *ngFor="let type of expenseTypes" [ngValue]="type.id">{{ type.name }}</option>
+          </select>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label" for="createExpenseAmount">Valor</label>
+            <input id="createExpenseAmount" class="form-control" type="number" min="0" step="0.01" [(ngModel)]="createForm.amount" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="createExpenseDate">Data</label>
+            <input id="createExpenseDate" class="form-control" type="date" [(ngModel)]="createForm.occurredOn" />
+          </div>
+        </div>
+        <div>
+          <label class="form-label" for="createExpenseDescription">Descrição (opcional)</label>
+          <input id="createExpenseDescription" class="form-control" [(ngModel)]="createForm.description" />
+        </div>
+        <div>
+          <label class="form-label" for="createExpenseNotes">Observações (opcional)</label>
+          <textarea id="createExpenseNotes" class="form-control" rows="2" [(ngModel)]="createForm.notes"></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createExpense()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="editModalOpen">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-expense-title">
+    <div class="types-modal">
+      <h6 id="edit-expense-title" class="mb-3">Editar despesa</h6>
+
+      <div class="d-flex flex-column gap-2">
+        <div>
+          <label class="form-label" for="editExpenseTypeId">Tipo de despesa</label>
+          <select id="editExpenseTypeId" class="form-select" [(ngModel)]="editForm.expenseTypeId">
+            <option *ngFor="let type of expenseTypes" [ngValue]="type.id">{{ type.name }}</option>
+          </select>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label" for="editExpenseAmount">Valor</label>
+            <input id="editExpenseAmount" class="form-control" type="number" min="0" step="0.01" [(ngModel)]="editForm.amount" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="editExpenseDate">Data</label>
+            <input id="editExpenseDate" class="form-control" type="date" [(ngModel)]="editForm.occurredOn" />
+          </div>
+        </div>
+        <div>
+          <label class="form-label" for="editExpenseDescription">Descrição (opcional)</label>
+          <input id="editExpenseDescription" class="form-control" [(ngModel)]="editForm.description" />
+        </div>
+        <div>
+          <label class="form-label" for="editExpenseNotes">Observações (opcional)</label>
+          <textarea id="editExpenseNotes" class="form-control" rows="2" [(ngModel)]="editForm.notes"></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateExpense()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>

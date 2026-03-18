@@ -1,0 +1,169 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Serviços">
+      <div class="services-toolbar mb-3">
+        <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+          <i class="ti ti-plus me-1"></i>
+          Cadastrar
+        </button>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando serviços...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && services.length === 0">
+        <div class="empty-state">
+          <p class="mb-2">Nenhum serviço cadastrado.</p>
+          <small class="text-muted">Cadastre serviços e associe os produtos usados em cada procedimento.</small>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && services.length > 0">
+        <div class="table-responsive services-table-wrapper">
+          <table class="table table-hover align-middle services-table mb-0">
+            <thead class="services-thead">
+              <tr>
+                <th>Serviço</th>
+                <th>Etapa</th>
+                <th>Preço</th>
+                <th>Produtos usados</th>
+                <th>Status</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let service of services">
+                <td>
+                  <div class="fw-semibold">{{ service.name }}</div>
+                  <small class="text-muted">
+                    Duração: {{ service.durationMinutes ? (service.durationMinutes + ' min') : 'Não informada' }}
+                  </small>
+                </td>
+                <td>{{ getStageLabel(service.stage) }}</td>
+                <td>{{ service.price | currency: 'BRL' }}</td>
+                <td>
+                  <ng-container *ngIf="service.consumedProducts.length > 0; else noProducts">
+                    <div *ngFor="let item of service.consumedProducts">
+                      {{ item.productName }} ({{ item.quantityUsed }})
+                    </div>
+                  </ng-container>
+                  <ng-template #noProducts>Sem produtos vinculados</ng-template>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="service.active ? 'text-bg-success' : 'text-bg-secondary'">
+                    {{ service.active ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="service-actions">
+                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(service)" title="Editar" aria-label="Editar">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteService(service)" title="Excluir" aria-label="Excluir">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="createModalOpen">
+  <div class="services-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-service-title">
+    <div class="services-modal">
+      <h6 id="create-service-title" class="mb-3">Cadastrar serviço</h6>
+      <ng-container *ngTemplateOutlet="serviceFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createService()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="editModalOpen">
+  <div class="services-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-service-title">
+    <div class="services-modal">
+      <h6 id="edit-service-title" class="mb-3">Editar serviço</h6>
+      <ng-container *ngTemplateOutlet="serviceFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateService()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #serviceFormTemplate let-formModel="formModel" let-editing="editing">
+  <div class="d-flex flex-column gap-2">
+    <div>
+      <label class="form-label">Nome</label>
+      <input class="form-control" [(ngModel)]="formModel.name" />
+    </div>
+
+    <div class="row g-2">
+      <div class="col-sm-6">
+        <label class="form-label">Etapa</label>
+        <select class="form-select" [(ngModel)]="formModel.stage">
+          <option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</option>
+        </select>
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label">Preço</label>
+        <input type="number" step="0.01" class="form-control" [(ngModel)]="formModel.price" />
+      </div>
+    </div>
+
+    <div class="row g-2">
+      <div class="col-sm-6">
+        <label class="form-label">Duração (minutos, opcional)</label>
+        <input type="number" step="1" class="form-control" [(ngModel)]="formModel.durationMinutes" />
+      </div>
+      <div class="col-sm-6 d-flex align-items-end">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" [id]="editing ? 'edit-service-active' : 'create-service-active'" [(ngModel)]="formModel.active" />
+          <label class="form-check-label" [for]="editing ? 'edit-service-active' : 'create-service-active'">Serviço ativo</label>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <label class="form-label">Produtos usados no serviço (opcional)</label>
+      <div class="d-flex flex-column gap-2">
+        <div class="consumed-row" *ngFor="let row of formModel.consumedProducts; let idx = index">
+          <select class="form-select" [(ngModel)]="row.productId">
+            <option value="">Selecione um produto</option>
+            <option *ngFor="let product of availableProducts" [value]="product.id">{{ product.name }}</option>
+          </select>
+          <input type="number" step="0.001" min="0.001" class="form-control" [(ngModel)]="row.quantityUsed" placeholder="Quantidade" />
+          <button class="btn btn-sm btn-outline-danger" type="button" (click)="removeConsumedProduct(formModel, idx)">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-outline-primary mt-2" type="button" (click)="addConsumedProduct(formModel)">
+        <i class="ti ti-plus me-1"></i>
+        Adicionar produto
+      </button>
+    </div>
+
+    <div>
+      <label class="form-label">Observações (opcional)</label>
+      <textarea class="form-control" rows="2" [(ngModel)]="formModel.notes"></textarea>
+    </div>
+  </div>
+</ng-template>

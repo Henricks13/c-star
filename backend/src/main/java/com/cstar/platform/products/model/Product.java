@@ -2,6 +2,8 @@ package com.cstar.platform.products.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -46,6 +48,16 @@ public class Product {
 
     @Column(name = "minimum_stock", nullable = false, precision = 15, scale = 3)
     private BigDecimal minimumStock;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "last_adjustment_operation", length = 20)
+    private StockAdjustmentOperation lastAdjustmentOperation;
+
+    @Column(name = "last_adjustment_quantity", precision = 15, scale = 3)
+    private BigDecimal lastAdjustmentQuantity;
+
+    @Column(name = "last_adjustment_at")
+    private Instant lastAdjustmentAt;
 
     @Column(name = "perishable", nullable = false)
     private boolean perishable;
@@ -140,6 +152,18 @@ public class Product {
         return minimumStock;
     }
 
+    public StockAdjustmentOperation getLastAdjustmentOperation() {
+        return lastAdjustmentOperation;
+    }
+
+    public BigDecimal getLastAdjustmentQuantity() {
+        return lastAdjustmentQuantity;
+    }
+
+    public Instant getLastAdjustmentAt() {
+        return lastAdjustmentAt;
+    }
+
     public boolean isPerishable() {
         return perishable;
     }
@@ -188,5 +212,27 @@ public class Product {
         this.expirationDate = expirationDate;
         this.active = active;
         this.notes = notes;
+    }
+
+    public void consumeStock(BigDecimal quantity) {
+        if (quantity == null || quantity.signum() <= 0) {
+            throw new IllegalArgumentException("Quantidade de consumo inválida");
+        }
+
+        this.stockQuantity = this.stockQuantity.subtract(quantity);
+    }
+
+    public void addStock(BigDecimal quantity) {
+        if (quantity == null || quantity.signum() <= 0) {
+            throw new IllegalArgumentException("Quantidade de entrada inválida");
+        }
+
+        this.stockQuantity = this.stockQuantity.add(quantity);
+    }
+
+    public void registerStockAdjustment(StockAdjustmentOperation operation, BigDecimal quantity) {
+        this.lastAdjustmentOperation = operation;
+        this.lastAdjustmentQuantity = quantity;
+        this.lastAdjustmentAt = Instant.now();
     }
 }

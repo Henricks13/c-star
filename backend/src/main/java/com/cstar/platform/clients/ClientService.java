@@ -99,6 +99,7 @@ public class ClientService {
                 client.getCpf(),
                 client.getEmail(),
                 client.getOrigin().name(),
+                client.getBusinessStatus().name(),
                 client.getSourceContactId(),
                 client.getNotes(),
                 client.getCreatedAt(),

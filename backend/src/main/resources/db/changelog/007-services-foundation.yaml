@@ -1,0 +1,159 @@
+databaseChangeLog:
+  - changeSet:
+      id: 018-create-services
+      author: cstar
+      changes:
+        - createTable:
+            tableName: services
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stage
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: DECIMAL(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duration_minutes
+                  type: INT
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: services
+            columnNames: name
+            constraintName: uk_services_name
+
+        - createIndex:
+            tableName: services
+            indexName: idx_services_stage
+            columns:
+              - column:
+                  name: stage
+
+        - sql:
+            sql: |
+              ALTER TABLE services
+              ADD CONSTRAINT ck_services_stage
+              CHECK (stage IN ('PLANEJAMENTO', 'ORCAMENTO', 'AGENDADO', 'EXECUCAO', 'POS_ATENDIMENTO', 'FINALIZADO'));
+
+        - sql:
+            sql: |
+              ALTER TABLE services
+              ADD CONSTRAINT ck_services_price_non_negative
+              CHECK (price >= 0);
+
+        - sql:
+            sql: |
+              ALTER TABLE services
+              ADD CONSTRAINT ck_services_duration_positive
+              CHECK (duration_minutes IS NULL OR duration_minutes > 0);
+
+  - changeSet:
+      id: 019-create-service-products
+      author: cstar
+      changes:
+        - createTable:
+            tableName: service_products
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: service_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity_used
+                  type: DECIMAL(15,3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: service_products
+            baseColumnNames: service_id
+            referencedTableName: services
+            referencedColumnNames: id
+            constraintName: fk_service_products_service
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: service_products
+            baseColumnNames: product_id
+            referencedTableName: products
+            referencedColumnNames: id
+            constraintName: fk_service_products_product
+            onDelete: RESTRICT
+
+        - addUniqueConstraint:
+            tableName: service_products
+            columnNames: service_id, product_id
+            constraintName: uk_service_products_unique_pair
+
+        - createIndex:
+            tableName: service_products
+            indexName: idx_service_products_service
+            columns:
+              - column:
+                  name: service_id
+
+        - createIndex:
+            tableName: service_products
+            indexName: idx_service_products_product
+            columns:
+              - column:
+                  name: product_id
+
+        - sql:
+            sql: |
+              ALTER TABLE service_products
+              ADD CONSTRAINT ck_service_products_qty_positive
+              CHECK (quantity_used > 0);

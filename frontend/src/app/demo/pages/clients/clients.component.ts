@@ -2,9 +2,25 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { ClientOrdersService } from 'src/app/core/client-orders/client-orders.service';
+import {
+  ClientServiceOrderItem,
+  ConfirmClientServiceOrderPaymentRequest,
+  CreateClientServiceOrderRequest,
+  ServicePaymentMethod
+} from 'src/app/core/client-orders/client-orders.types';
 import { ClientsService } from 'src/app/core/clients/clients.service';
 import { CLIENT_ORIGIN_OPTIONS, ClientListItem, CreateClientRequest } from 'src/app/core/clients/clients.types';
+import { ProductItem } from 'src/app/core/products/products.types';
+import { ProductsService } from 'src/app/core/products/products.service';
+import { ServiceItem } from 'src/app/core/services/services.types';
+import { ServicesService } from 'src/app/core/services/services.service';
 import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
+
+interface ExtraProductRow {
+  productId: string;
+  quantityUsed: number;
+}
 
 @Component({
   selector: 'app-clients',
@@ -26,11 +42,48 @@ export class ClientsComponent implements OnInit {
   detailsModalOpen = false;
   originLocked = false;
 
+  serviceWizardOpen = false;
+  serviceWizardStep = 1;
+  serviceWizardLoading = false;
+  selectedClientForService: ClientListItem | null = null;
+  serviceOrderId: string | null = null;
+  availableServices: ServiceItem[] = [];
+  availableProducts: ProductItem[] = [];
+  selectedServiceIds: string[] = [];
+  extraProductRows: ExtraProductRow[] = [];
+  clientServiceHistory: ClientServiceOrderItem[] = [];
+  wizardNotes = '';
+  wizardDiscountAmount = 0;
+  wizardCustomTotalEnabled = false;
+  wizardCustomTotalValue: number | null = null;
+  paymentMethod: ServicePaymentMethod = 'PIX';
+  paymentInstallmentCount = 1;
+  paymentPaid = false;
+  paymentFirstInstallmentPaid = false;
+
+  readonly paymentMethodOptions: Array<{ value: ServicePaymentMethod; label: string }> = [
+    { value: 'PIX', label: 'Pix' },
+    { value: 'CREDIT_CARD', label: 'Cartão de crédito' },
+    { value: 'PIX_INSTALLMENT', label: 'Pix parcelado' },
+    { value: 'CASH', label: 'Dinheiro' },
+    { value: 'TRADE', label: 'Troca' }
+  ];
+
+  readonly installmentOptions: Array<{ value: number; label: string }> = Array.from({ length: 12 }, (_, index) => ({
+    value: index + 1,
+    label: index === 0 ? 'a vista' : `${index + 1}x`
+  }));
+
   readonly originOptions = CLIENT_ORIGIN_OPTIONS;
 
   form: CreateClientRequest = this.createDefaultForm();
 
-  constructor(private readonly clientsService: ClientsService) {}
+  constructor(
+    private readonly clientsService: ClientsService,
+    private readonly servicesService: ServicesService,
+    private readonly productsService: ProductsService,
+    private readonly clientOrdersService: ClientOrdersService
+  ) {}
 
   ngOnInit(): void {
     this.loadClients();
@@ -116,6 +169,486 @@ export class ClientsComponent implements OnInit {
     const value = (origin || '').trim().toUpperCase();
     const found = this.originOptions.find((option) => option.value === value);
     return found?.label || origin || 'Não informado';
+  }
+
+  getBusinessStatusLabel(status: string | null | undefined): string {
+    const normalized = (status || '').trim().toUpperCase();
+    if (normalized === 'NEGOCIO_FECHADO') {
+      return 'Negócio fechado';
+    }
+
+    return 'Negociação';
+  }
+
+  openServiceWizard(client: ClientListItem): void {
+    this.selectedClientForService = client;
+    this.serviceWizardOpen = true;
+    this.serviceWizardStep = 1;
+    this.serviceWizardLoading = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+    this.serviceOrderId = null;
+    this.selectedServiceIds = [''];
+    this.extraProductRows = [];
+    this.wizardNotes = '';
+    this.wizardDiscountAmount = 0;
+    this.wizardCustomTotalEnabled = false;
+    this.wizardCustomTotalValue = null;
+    this.paymentMethod = 'PIX';
+    this.paymentInstallmentCount = 1;
+    this.paymentPaid = false;
+    this.paymentFirstInstallmentPaid = false;
+
+    this.servicesService.list().subscribe({
+      next: (services) => {
+        this.availableServices = services.filter((service) => service.active);
+        this.productsService.list().subscribe({
+          next: (products) => {
+            this.availableProducts = products.filter((product) => product.active);
+            this.clientOrdersService.listByClient(client.id).subscribe({
+              next: (history) => {
+                this.clientServiceHistory = history;
+                this.serviceWizardLoading = false;
+              },
+              error: () => {
+                this.errorMessage = 'Não foi possível carregar o histórico de serviços deste cliente.';
+                this.serviceWizardLoading = false;
+              }
+            });
+          },
+          error: () => {
+            this.errorMessage = 'Não foi possível carregar os produtos para composição de serviço.';
+            this.serviceWizardLoading = false;
+          }
+        });
+      },
+      error: () => {
+        this.errorMessage = 'Não foi possível carregar os serviços disponíveis.';
+        this.serviceWizardLoading = false;
+      }
+    });
+  }
+
+  closeServiceWizard(): void {
+    this.serviceWizardOpen = false;
+    this.selectedClientForService = null;
+    this.serviceOrderId = null;
+  }
+
+  addServiceRow(): void {
+    this.selectedServiceIds.push('');
+  }
+
+  removeServiceRow(index: number): void {
+    if (this.selectedServiceIds.length === 1) {
+      this.selectedServiceIds = [''];
+      return;
+    }
+
+    this.selectedServiceIds.splice(index, 1);
+    if (this.selectedServiceIds.length === 0) {
+      this.selectedServiceIds = [''];
+    }
+  }
+
+  onServiceSelectionChange(index: number, serviceId: string): void {
+    this.selectedServiceIds[index] = serviceId || '';
+  }
+
+  isServiceOptionDisabled(serviceId: string, currentIndex: number): boolean {
+    return this.selectedServiceIds.some((selectedId, index) => index !== currentIndex && selectedId === serviceId);
+  }
+
+  getServicePrice(serviceId: string): number {
+    if (!serviceId) {
+      return 0;
+    }
+
+    const service = this.availableServices.find((item) => item.id === serviceId);
+    return Number(service?.price || 0);
+  }
+
+  getPaymentMethodLabel(method: string | null | undefined): string {
+    const normalized = (method || '').trim().toUpperCase();
+    if (normalized === 'PIX') {
+      return 'Pix';
+    }
+    if (normalized === 'CREDIT_CARD') {
+      return 'Cartão de crédito';
+    }
+    if (normalized === 'PIX_INSTALLMENT') {
+      return 'Pix parcelado';
+    }
+    if (normalized === 'CASH') {
+      return 'Dinheiro';
+    }
+    if (normalized === 'TRADE') {
+      return 'Troca';
+    }
+    return 'Não informado';
+  }
+
+  getInstallmentLabel(installmentCount: number | null | undefined): string {
+    const count = Number(installmentCount || 1);
+    if (count <= 1) {
+      return 'À vista';
+    }
+    return `${count}x`;
+  }
+
+  getOrderStatusLabel(status: string | null | undefined): string {
+    const normalized = (status || '').trim().toUpperCase();
+    if (normalized === 'ORCADO') {
+      return 'Orçado';
+    }
+    if (normalized === 'AGUARDANDO_PAGAMENTO') {
+      return 'Aguardando pagamento';
+    }
+    if (normalized === 'PAGO') {
+      return 'Pago';
+    }
+    return 'Não informado';
+  }
+
+  canFinalizeHistoryOrder(status: string | null | undefined): boolean {
+    const normalized = (status || '').trim().toUpperCase();
+    return normalized === 'ORCADO' || normalized === 'AGUARDANDO_PAGAMENTO';
+  }
+
+  finalizeHistoryOrder(order: ClientServiceOrderItem): void {
+    this.applyOrderForPayment(order);
+    this.serviceWizardStep = 4;
+    this.infoMessage = 'Orçamento carregado. Finalize o pagamento no passo 4.';
+    this.errorMessage = null;
+  }
+
+  goToWizardStep(step: number): void {
+    if (step === 4) {
+      this.saveBudget(true);
+      return;
+    }
+
+    if (step === 2 && this.selectedServices.length === 0) {
+      this.errorMessage = 'Selecione ao menos um serviço para continuar.';
+      return;
+    }
+
+    if (step === 3) {
+      if (this.selectedServices.length === 0) {
+        this.errorMessage = 'Selecione ao menos um serviço para continuar.';
+        return;
+      }
+
+      if (!this.hasSufficientStock) {
+        this.errorMessage = 'Estoque insuficiente para fechar este orçamento.';
+        return;
+      }
+    }
+
+    this.errorMessage = null;
+    this.serviceWizardStep = step;
+  }
+
+  onPaymentMethodChange(method: ServicePaymentMethod): void {
+    this.paymentMethod = method;
+
+    if (!this.requiresInstallments) {
+      this.paymentInstallmentCount = 1;
+      this.paymentPaid = false;
+      this.paymentFirstInstallmentPaid = false;
+      return;
+    }
+
+    if (this.paymentInstallmentCount < 1 || this.paymentInstallmentCount > 12) {
+      this.paymentInstallmentCount = 1;
+    }
+
+    this.syncPaymentFlags();
+  }
+
+  onInstallmentCountChange(): void {
+    if (!this.requiresInstallments) {
+      this.paymentInstallmentCount = 1;
+      this.paymentPaid = false;
+      this.paymentFirstInstallmentPaid = false;
+      return;
+    }
+
+    if (!this.paymentInstallmentCount || this.paymentInstallmentCount < 1 || this.paymentInstallmentCount > 12) {
+      this.paymentInstallmentCount = 1;
+    }
+
+    this.syncPaymentFlags();
+  }
+
+  addExtraProductRow(): void {
+    this.extraProductRows.push({
+      productId: '',
+      quantityUsed: 1
+    });
+  }
+
+  removeExtraProductRow(index: number): void {
+    this.extraProductRows.splice(index, 1);
+  }
+
+  get selectedServices(): ServiceItem[] {
+    const selected = new Set(this.selectedServiceIds.filter((id) => !!id));
+    return this.availableServices.filter((service) => selected.has(service.id));
+  }
+
+  get requiredServiceProducts(): Array<{ product: ProductItem; requiredQty: number; availableQty: number; enough: boolean }> {
+    const requiredMap = new Map<string, number>();
+
+    for (const service of this.selectedServices) {
+      for (const productUsage of service.consumedProducts || []) {
+        const current = requiredMap.get(productUsage.productId) || 0;
+        requiredMap.set(productUsage.productId, current + Number(productUsage.quantityUsed || 0));
+      }
+    }
+
+    const allRows = Array.from(requiredMap.entries()).map(([productId, requiredQty]) => {
+      const product = this.availableProducts.find((item) => item.id === productId);
+      const availableQty = Number(product?.stockQuantity || 0);
+
+      return {
+        product: product as ProductItem,
+        requiredQty,
+        availableQty,
+        enough: !!product && availableQty >= requiredQty
+      };
+    });
+
+    return allRows.filter((row) => !!row.product);
+  }
+
+  get hasSufficientStock(): boolean {
+    if (this.requiredServiceProducts.some((row) => !row.enough)) {
+      return false;
+    }
+
+    for (const row of this.extraProductRows) {
+      if (!row.productId) {
+        continue;
+      }
+
+      const product = this.availableProducts.find((item) => item.id === row.productId);
+      if (!product) {
+        return false;
+      }
+
+      const availableQty = Number(product.stockQuantity || 0);
+      const requiredQty = Number(row.quantityUsed || 0);
+      if (requiredQty <= 0 || availableQty < requiredQty) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  get subtotalServices(): number {
+    return this.selectedServices.reduce((sum, service) => sum + Number(service.price || 0), 0);
+  }
+
+  get subtotalExtraProducts(): number {
+    return this.extraProductRows.reduce((sum, row) => {
+      if (!row.productId || !row.quantityUsed || row.quantityUsed <= 0) {
+        return sum;
+      }
+
+      const product = this.availableProducts.find((item) => item.id === row.productId);
+      if (!product) {
+        return sum;
+      }
+
+      return sum + Number(product.salePrice || 0) * Number(row.quantityUsed);
+    }, 0);
+  }
+
+  get calculatedTotal(): number {
+    if (this.wizardCustomTotalEnabled) {
+      return Number(this.wizardCustomTotalValue || 0);
+    }
+
+    const discount = Number(this.wizardDiscountAmount || 0);
+    return this.subtotalServices + this.subtotalExtraProducts - discount;
+  }
+
+  get requiresInstallments(): boolean {
+    return this.paymentMethod === 'CREDIT_CARD' || this.paymentMethod === 'PIX_INSTALLMENT';
+  }
+
+  saveBudget(moveToPaymentStep = false): void {
+    if (!this.selectedClientForService) {
+      return;
+    }
+
+    if (this.selectedServices.length === 0) {
+      this.errorMessage = 'Selecione ao menos um serviço para fechar o orçamento.';
+      return;
+    }
+
+    if (!this.hasSufficientStock) {
+      this.errorMessage = 'Estoque insuficiente para salvar este orçamento.';
+      return;
+    }
+
+    const discount = Number(this.wizardDiscountAmount || 0);
+    if (!this.wizardCustomTotalEnabled && discount < 0) {
+      this.errorMessage = 'Desconto inválido.';
+      return;
+    }
+
+    if (this.wizardCustomTotalEnabled && Number(this.wizardCustomTotalValue || 0) < 0) {
+      this.errorMessage = 'Total personalizado inválido.';
+      return;
+    }
+
+    const payload: CreateClientServiceOrderRequest = {
+      clientId: this.selectedClientForService.id,
+      serviceIds: this.selectedServices.map((service) => service.id),
+      extraProducts: this.extraProductRows
+        .filter((row) => row.productId && Number(row.quantityUsed) > 0)
+        .map((row) => ({
+          productId: row.productId,
+          quantityUsed: Number(row.quantityUsed)
+        })),
+      discountAmount: discount,
+      customTotalEnabled: this.wizardCustomTotalEnabled,
+      customTotalValue: this.wizardCustomTotalEnabled ? Number(this.wizardCustomTotalValue || 0) : null,
+      notes: (this.wizardNotes || '').trim() || null
+    };
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.clientOrdersService.create(payload).subscribe({
+      next: (order) => {
+        this.serviceOrderId = order.id;
+        this.saving = false;
+        this.errorMessage = null;
+        this.infoMessage = moveToPaymentStep ? 'Orçamento salvo. Agora finalize o pagamento.' : 'Orçamento salvo com sucesso.';
+        if (moveToPaymentStep) {
+          this.serviceWizardStep = 4;
+        }
+        this.refreshOrderHistory();
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível salvar o orçamento deste cliente.';
+        this.infoMessage = null;
+        this.saving = false;
+      }
+    });
+  }
+
+  confirmServicePayment(): void {
+    if (!this.serviceOrderId) {
+      this.errorMessage = 'Salve o orçamento antes de confirmar pagamento.';
+      return;
+    }
+
+    if (!this.paymentInstallmentCount || this.paymentInstallmentCount < 1 || this.paymentInstallmentCount > 12) {
+      this.errorMessage = 'Informe parcelas entre 1 e 12.';
+      return;
+    }
+
+    if (this.requiresInstallments && this.paymentInstallmentCount > 1 && this.paymentPaid) {
+      this.errorMessage = 'Para parcelado, não é possível marcar como pago total.';
+      return;
+    }
+
+    if (this.paymentPaid) {
+      this.paymentFirstInstallmentPaid = false;
+    }
+
+    const payload: ConfirmClientServiceOrderPaymentRequest = {
+      paymentMethod: this.paymentMethod,
+      installmentCount: this.requiresInstallments ? Number(this.paymentInstallmentCount || 1) : 1,
+      paid: this.paymentPaid,
+      firstInstallmentPaid: this.requiresInstallments && Number(this.paymentInstallmentCount || 1) > 1 && !this.paymentPaid ? this.paymentFirstInstallmentPaid : false
+    };
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.clientOrdersService.confirmPayment(this.serviceOrderId, payload).subscribe({
+      next: () => {
+        this.saving = false;
+        this.infoMessage = 'Pagamento atualizado e financeiro lançado conforme parcelas pagas.';
+        this.closeServiceWizard();
+        this.loadClients();
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível confirmar o pagamento.';
+        this.saving = false;
+      }
+    });
+  }
+
+  private applyOrderForPayment(order: ClientServiceOrderItem): void {
+    this.serviceOrderId = order.id;
+    this.selectedServiceIds = order.services.map((item) => item.serviceId);
+    if (this.selectedServiceIds.length === 0) {
+      this.selectedServiceIds = [''];
+    }
+
+    this.extraProductRows = order.products
+      .filter((item) => item.source === 'EXTRA')
+      .map((item) => ({
+        productId: item.productId,
+        quantityUsed: Number(item.quantityUsed || 0)
+      }));
+
+    this.wizardDiscountAmount = Number(order.discountAmount || 0);
+    this.wizardCustomTotalEnabled = !!order.customTotalEnabled;
+    this.wizardCustomTotalValue = order.customTotalEnabled ? Number(order.customTotalValue || 0) : null;
+    this.wizardNotes = order.notes || '';
+    this.paymentMethod = (order.paymentMethod as ServicePaymentMethod) || 'PIX';
+    this.paymentInstallmentCount = Number(order.installmentCount || 1);
+    if (this.paymentInstallmentCount < 1 || this.paymentInstallmentCount > 12) {
+      this.paymentInstallmentCount = 1;
+    }
+    this.paymentPaid = order.status === 'PAGO';
+    this.paymentFirstInstallmentPaid = !this.paymentPaid && this.paymentInstallmentCount > 1 && Number(order.paidInstallmentCount || 0) > 0;
+
+    if (!this.requiresInstallments) {
+      this.paymentInstallmentCount = 1;
+      this.paymentPaid = false;
+      this.paymentFirstInstallmentPaid = false;
+    }
+
+    this.syncPaymentFlags();
+  }
+
+  private syncPaymentFlags(): void {
+    if (!this.requiresInstallments) {
+      this.paymentPaid = false;
+      this.paymentFirstInstallmentPaid = false;
+      return;
+    }
+
+    if (this.paymentInstallmentCount > 1) {
+      this.paymentPaid = false;
+    }
+
+    if (this.paymentInstallmentCount <= 1 || this.paymentPaid) {
+      this.paymentFirstInstallmentPaid = false;
+    }
+  }
+
+  private refreshOrderHistory(): void {
+    if (!this.selectedClientForService) {
+      return;
+    }
+
+    this.clientOrdersService.listByClient(this.selectedClientForService.id).subscribe({
+      next: (history) => {
+        this.clientServiceHistory = history;
+      }
+    });
   }
 
   private createDefaultForm(): CreateClientRequest {

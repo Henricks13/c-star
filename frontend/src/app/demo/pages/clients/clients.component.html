@@ -38,6 +38,7 @@
                   <th>CPF</th>
                   <th>E-mail</th>
                   <th>Origem</th>
+                  <th>Status</th>
                   <th>Vínculo</th>
                   <th class="text-end">Ações</th>
                 </tr>
@@ -49,9 +50,13 @@
                   <td>{{ client.cpf || '—' }}</td>
                   <td>{{ client.email || '—' }}</td>
                   <td>{{ getOriginLabel(client.origin) }}</td>
+                  <td>{{ getBusinessStatusLabel(client.businessStatus) }}</td>
                   <td>{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</td>
                   <td>
                     <div class="client-actions">
+                      <button class="btn btn-sm btn-outline-success" type="button" (click)="openServiceWizard(client)" title="Serviços" aria-label="Serviços">
+                        <i class="ti ti-briefcase"></i>
+                      </button>
                       <button class="btn btn-sm btn-outline-primary" type="button" (click)="openDetailsModal(client)" title="Ver detalhes" aria-label="Ver detalhes">
                         <i class="ti ti-eye"></i>
                       </button>
@@ -86,8 +91,18 @@
               <span>{{ getOriginLabel(client.origin) }}</span>
             </div>
             <div class="mobile-client-row">
+              <span class="mobile-label">Status</span>
+              <span>{{ getBusinessStatusLabel(client.businessStatus) }}</span>
+            </div>
+            <div class="mobile-client-row">
               <span class="mobile-label">Vínculo</span>
               <span>{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</span>
+            </div>
+            <div class="mobile-client-row">
+              <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openServiceWizard(client)">
+                <i class="ti ti-briefcase me-1"></i>
+                Serviços
+              </button>
             </div>
             <div class="mobile-client-row">
               <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openDetailsModal(client)">
@@ -150,6 +165,318 @@
             Salvando...
           </span>
         </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="serviceWizardOpen && selectedClientForService">
+  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="service-wizard-title">
+    <div class="clients-modal clients-modal-wide">
+      <div class="wizard-header d-flex justify-content-between align-items-start gap-2 mb-3">
+        <div>
+          <h6 id="service-wizard-title" class="mb-1">Contratação de serviço</h6>
+          <small class="text-muted">Cliente: {{ selectedClientForService.fullName }}</small>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeServiceWizard()" [disabled]="saving">Fechar</button>
+      </div>
+
+      <div class="wizard-steps mb-3" aria-label="Etapas da contratação de serviço">
+        <button
+          class="wizard-step"
+          type="button"
+          [class.active]="serviceWizardStep === 1"
+          [class.done]="serviceWizardStep > 1"
+          [disabled]="saving || serviceWizardLoading"
+          (click)="goToWizardStep(1)"
+        >
+          <span class="wizard-step-index">1</span>
+          <span>Serviços</span>
+        </button>
+
+        <span class="wizard-step-arrow" aria-hidden="true">
+          <i class="ti ti-chevron-right"></i>
+        </span>
+
+        <button
+          class="wizard-step"
+          type="button"
+          [class.active]="serviceWizardStep === 2"
+          [class.done]="serviceWizardStep > 2"
+          [disabled]="saving || serviceWizardLoading"
+          (click)="goToWizardStep(2)"
+        >
+          <span class="wizard-step-index">2</span>
+          <span>Produtos/Estoque</span>
+        </button>
+
+        <span class="wizard-step-arrow" aria-hidden="true">
+          <i class="ti ti-chevron-right"></i>
+        </span>
+
+        <button
+          class="wizard-step"
+          type="button"
+          [class.active]="serviceWizardStep === 3"
+          [class.done]="serviceWizardStep > 3"
+          [disabled]="saving || serviceWizardLoading"
+          (click)="goToWizardStep(3)"
+        >
+          <span class="wizard-step-index">3</span>
+          <span>Orçamento</span>
+        </button>
+
+        <span class="wizard-step-arrow" aria-hidden="true">
+          <i class="ti ti-chevron-right"></i>
+        </span>
+
+        <button
+          class="wizard-step"
+          type="button"
+          [class.active]="serviceWizardStep === 4"
+          [disabled]="saving || serviceWizardLoading"
+          (click)="goToWizardStep(4)"
+        >
+          <span class="wizard-step-index">4</span>
+          <span>Pagamento</span>
+        </button>
+      </div>
+
+      <div class="wizard-meta mb-3" *ngIf="!serviceWizardLoading">
+        <small class="text-muted">Etapa {{ serviceWizardStep }} de 4</small>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger py-2 mb-3" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="serviceWizardLoading">
+        <p class="wizard-loading mb-0">Carregando dados da contratação...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!serviceWizardLoading && serviceWizardStep === 1">
+        <div class="wizard-section mb-3">
+          <div class="wizard-inline-header mb-2">
+            <label class="form-label mb-0">Selecione um ou mais serviços</label>
+            <button class="btn btn-sm btn-outline-primary" type="button" (click)="addServiceRow()">
+              <i class="ti ti-plus me-1"></i>
+              Adicionar serviço
+            </button>
+          </div>
+
+          <div class="service-list d-flex flex-column gap-2" *ngIf="availableServices.length > 0; else noServicesAvailable">
+            <div class="service-row" *ngFor="let serviceId of selectedServiceIds; let idx = index">
+              <select class="form-select" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(idx, $event)">
+                <option value="">Selecione um serviço</option>
+                <option
+                  *ngFor="let service of availableServices"
+                  [value]="service.id"
+                  [disabled]="isServiceOptionDisabled(service.id, idx)"
+                >
+                  {{ service.name }}
+                </option>
+              </select>
+
+              <div class="service-row-price" [class.is-empty]="!serviceId">
+                {{ serviceId ? (getServicePrice(serviceId) | currency: 'BRL') : '—' }}
+              </div>
+
+              <button class="btn btn-sm btn-outline-danger" type="button" (click)="removeServiceRow(idx)">
+                <i class="ti ti-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <ng-template #noServicesAvailable>
+            <div class="history-box">
+              <small class="text-muted">Nenhum serviço ativo disponível para seleção.</small>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="wizard-section">
+          <label class="form-label mb-2">Histórico de serviços deste cliente</label>
+          <div class="history-box" *ngIf="clientServiceHistory.length > 0; else noHistory">
+            <div class="history-item" *ngFor="let history of clientServiceHistory">
+              <div class="fw-semibold d-flex justify-content-between gap-2 flex-wrap align-items-center">
+                <span>{{ history.finalTotal | currency: 'BRL' }} - {{ history.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                <span
+                  class="history-status"
+                  [class.quoted]="history.status === 'ORCADO'"
+                  [class.awaiting]="history.status === 'AGUARDANDO_PAGAMENTO'"
+                  [class.paid]="history.status === 'PAGO'"
+                >
+                  {{ getOrderStatusLabel(history.status) }}
+                </span>
+              </div>
+              <div class="history-payment" *ngIf="history.paymentMethod">
+                <span class="history-payment-pill">{{ getPaymentMethodLabel(history.paymentMethod) }}</span>
+                <span class="history-payment-pill">{{ getInstallmentLabel(history.installmentCount) }}</span>
+                <span class="history-payment-pill" *ngIf="history.installmentCount && history.installmentCount > 1">
+                  {{ history.paidInstallmentCount || 0 }}/{{ history.installmentCount }} paga(s)
+                </span>
+              </div>
+              <div class="history-actions" *ngIf="canFinalizeHistoryOrder(history.status)">
+                <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="saving" (click)="finalizeHistoryOrder(history)">
+                  Finalizar
+                </button>
+              </div>
+              <small class="text-muted">Serviços: {{ history.services.length }} | Produtos: {{ history.products.length }}</small>
+            </div>
+          </div>
+          <ng-template #noHistory>
+            <div class="history-box">
+              <small class="text-muted">Nenhum serviço fechado para este cliente ainda.</small>
+            </div>
+          </ng-template>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!serviceWizardLoading && serviceWizardStep === 2">
+        <div class="wizard-section mb-3">
+          <label class="form-label mb-2">Produtos exigidos pelos serviços selecionados</label>
+          <div class="stock-box" *ngIf="requiredServiceProducts.length > 0; else noRequiredProducts">
+            <div class="stock-row" *ngFor="let row of requiredServiceProducts">
+              <span>{{ row.product.name }}</span>
+              <span>Necessário: {{ row.requiredQty }}</span>
+              <span [class.text-danger]="!row.enough">Estoque: {{ row.availableQty }}</span>
+            </div>
+          </div>
+          <ng-template #noRequiredProducts>
+            <div class="stock-box">
+              <small class="text-muted">Os serviços selecionados não possuem produtos vinculados na composição.</small>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="wizard-section">
+          <div class="wizard-inline-header mb-2">
+            <label class="form-label mb-0">Serviço personalizado (produtos extras)</label>
+            <button class="btn btn-sm btn-outline-primary" type="button" (click)="addExtraProductRow()">
+              <i class="ti ti-plus me-1"></i>
+              Adicionar produto extra
+            </button>
+          </div>
+
+          <div class="extra-row" *ngFor="let row of extraProductRows; let idx = index">
+            <select class="form-select" [(ngModel)]="row.productId">
+              <option value="">Selecione um produto</option>
+              <option *ngFor="let product of availableProducts" [value]="product.id">{{ product.name }}</option>
+            </select>
+            <input type="number" min="0.001" step="0.001" class="form-control" [(ngModel)]="row.quantityUsed" placeholder="Quantidade" />
+            <button class="btn btn-sm btn-outline-danger" type="button" (click)="removeExtraProductRow(idx)">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="wizard-stock-warning mt-2" *ngIf="!hasSufficientStock">
+          <small class="text-danger">Há produtos sem estoque suficiente para executar o serviço.</small>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!serviceWizardLoading && serviceWizardStep === 3">
+        <div class="wizard-section mb-3">
+          <div class="budget-grid mb-2">
+            <div class="budget-card">
+              <span class="details-label">Subtotal serviços</span>
+              <div>{{ subtotalServices | currency: 'BRL' }}</div>
+            </div>
+            <div class="budget-card">
+              <span class="details-label">Subtotal produtos extras</span>
+              <div>{{ subtotalExtraProducts | currency: 'BRL' }}</div>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Desconto (opcional)</label>
+            <input type="number" step="0.01" min="0" class="form-control" [(ngModel)]="wizardDiscountAmount" [disabled]="wizardCustomTotalEnabled" />
+          </div>
+
+          <div class="form-check mb-2">
+            <input id="wizardCustomTotalEnabled" class="form-check-input" type="checkbox" [(ngModel)]="wizardCustomTotalEnabled" />
+            <label class="form-check-label" for="wizardCustomTotalEnabled">Usar valor final personalizado</label>
+          </div>
+
+          <div class="mb-2" *ngIf="wizardCustomTotalEnabled">
+            <label class="form-label">Valor final personalizado</label>
+            <input type="number" step="0.01" min="0" class="form-control" [(ngModel)]="wizardCustomTotalValue" />
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Observações da negociação (opcional)</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="wizardNotes"></textarea>
+          </div>
+
+          <div class="wizard-total alert alert-secondary mb-0" role="alert">
+            <strong>Total final:</strong> {{ calculatedTotal | currency: 'BRL' }}
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!serviceWizardLoading && serviceWizardStep === 4">
+        <div class="wizard-section mb-3">
+          <div class="mb-2">
+            <label class="form-label">Forma de pagamento</label>
+            <select class="form-select" [ngModel]="paymentMethod" (ngModelChange)="onPaymentMethodChange($event)">
+              <option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</option>
+            </select>
+          </div>
+
+          <div class="mb-2" *ngIf="requiresInstallments">
+            <label class="form-label">Quantidade de parcelas</label>
+            <select class="form-select" [(ngModel)]="paymentInstallmentCount" (ngModelChange)="onInstallmentCountChange()">
+              <option *ngFor="let option of installmentOptions" [ngValue]="option.value">{{ option.label }}</option>
+            </select>
+          </div>
+
+          <div class="form-check mb-2" *ngIf="!requiresInstallments || paymentInstallmentCount === 1">
+            <input id="paymentPaid" class="form-check-input" type="checkbox" [(ngModel)]="paymentPaid" />
+            <label class="form-check-label" for="paymentPaid">Pago?</label>
+          </div>
+
+          <div class="form-check mb-2" *ngIf="requiresInstallments && paymentInstallmentCount > 1 && !paymentPaid">
+            <input id="paymentFirstInstallmentPaid" class="form-check-input" type="checkbox" [(ngModel)]="paymentFirstInstallmentPaid" />
+            <label class="form-check-label" for="paymentFirstInstallmentPaid">1ª parcela paga?</label>
+          </div>
+
+          <div class="wizard-total alert alert-success mb-0" role="alert">
+            <strong>Total a faturar:</strong> {{ calculatedTotal | currency: 'BRL' }}
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="wizard-footer create-modal-actions d-flex justify-content-between gap-2 mt-3">
+        <div>
+          <button class="btn btn-outline-secondary" type="button" [disabled]="serviceWizardStep === 1 || saving" (click)="goToWizardStep(serviceWizardStep - 1)">
+            <i class="ti ti-arrow-left me-1"></i>
+            Voltar
+          </button>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" type="button" *ngIf="serviceWizardStep < 3" [disabled]="saving" (click)="goToWizardStep(serviceWizardStep + 1)">
+            Próximo
+            <i class="ti ti-arrow-right ms-1"></i>
+          </button>
+          <button class="btn btn-outline-secondary" type="button" *ngIf="serviceWizardStep === 3" [disabled]="saving" (click)="saveBudget(false)">
+            Salvar orçamento
+          </button>
+          <button class="btn btn-success" type="button" *ngIf="serviceWizardStep === 3" [disabled]="saving" (click)="saveBudget(true)">
+            <span *ngIf="!saving">Ir para pagamento</span>
+            <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              Salvando...
+            </span>
+          </button>
+          <button class="btn btn-success" type="button" *ngIf="serviceWizardStep === 4" [disabled]="saving" (click)="confirmServicePayment()">
+            <span *ngIf="!saving">Finalizar</span>
+            <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              Processando...
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

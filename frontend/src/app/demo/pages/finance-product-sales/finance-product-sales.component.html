@@ -1,0 +1,110 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Vendas Avulsas de Produtos">
+      <div class="types-toolbar mb-3">
+        <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+          <i class="ti ti-plus me-1"></i>
+          Registrar venda avulsa
+        </button>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando vendas avulsas...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && sales.length === 0">
+        <div class="empty-state">
+          <p class="mb-2">Nenhuma venda avulsa registrada.</p>
+          <small class="text-muted">Use esta tela para vendas diretas de produtos.</small>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && sales.length > 0">
+        <div class="table-responsive types-table-wrapper">
+          <table class="table table-hover align-middle types-table mb-0">
+            <thead class="types-thead">
+              <tr>
+                <th>Data</th>
+                <th>Cliente</th>
+                <th>Itens</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let sale of sales">
+                <td>{{ sale.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ sale.customerName || 'Avulso' }}</td>
+                <td>{{ sale.items.length }}</td>
+                <td>{{ formatCurrency(sale.totalAmount) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="createModalOpen">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-product-sale-title">
+    <div class="types-modal">
+      <h6 id="create-product-sale-title" class="mb-3">Registrar venda avulsa</h6>
+
+      <div class="d-flex flex-column gap-2">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label" for="productSaleCustomer">Cliente (opcional)</label>
+            <input id="productSaleCustomer" class="form-control" [(ngModel)]="createForm.customerName" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="productSaleDate">Data</label>
+            <input id="productSaleDate" class="form-control" type="date" [(ngModel)]="createForm.occurredOn" />
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label" for="productSaleNotes">Observações (opcional)</label>
+          <textarea id="productSaleNotes" class="form-control" rows="2" [(ngModel)]="createForm.notes"></textarea>
+        </div>
+
+        <div class="items-box">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Itens</strong>
+            <button class="btn btn-sm btn-outline-primary" type="button" (click)="addLine()">Adicionar item</button>
+          </div>
+
+          <div class="row g-2 mb-2" *ngFor="let line of lineItems; let i = index">
+            <div class="col-md-7">
+              <select class="form-select" [(ngModel)]="line.productId" [ngModelOptions]="{ standalone: true }">
+                <option *ngFor="let product of products" [ngValue]="product.id">
+                  {{ product.name }} (Estoque: {{ product.stockQuantity }})
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <input class="form-control" type="number" min="0.001" step="0.001" [(ngModel)]="line.quantity" [ngModelOptions]="{ standalone: true }" />
+            </div>
+            <div class="col-md-2 d-grid">
+              <button class="btn btn-outline-danger" type="button" (click)="removeLine(i)" [disabled]="lineItems.length === 1">
+                <i class="ti ti-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createSale()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
