@@ -1,5 +1,5 @@
 export type ClientOrigin = 'RESGATE' | 'CADASTRO_MANUAL' | 'CADASTRO_INDICADO' | 'OUTROS';
-export type ClientBusinessStatus = 'NEGOCIACAO' | 'NEGOCIO_FECHADO';
+export type ClientBusinessStatus = 'NEGOCIACAO' | 'AVALIACAO_MARCADA' | 'NEGOCIO_FECHADO';
 
 export interface ClientOriginOption {
   value: ClientOrigin;

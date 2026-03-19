@@ -1,0 +1,249 @@
+.services-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.services-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.services-filters .form-control,
+.services-filters .form-select {
+  min-width: 220px;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.services-table-wrapper {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.services-table {
+  min-width: 820px;
+}
+
+.table-actions {
+  display: inline-flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.services-thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+
+.empty-state {
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.history-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.12rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid var(--bs-border-color);
+}
+
+.history-status.quoted {
+  background: var(--bs-info-bg-subtle);
+  border-color: var(--bs-info-border-subtle);
+  color: var(--bs-info-text-emphasis);
+}
+
+.history-status.awaiting {
+  background: var(--bs-warning-bg-subtle);
+  border-color: var(--bs-warning-border-subtle);
+  color: var(--bs-warning-text-emphasis);
+}
+
+.history-status.paid {
+  background: var(--bs-success-bg-subtle);
+  border-color: var(--bs-success-border-subtle);
+  color: var(--bs-success-text-emphasis);
+}
+
+.mobile-service-card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  background: var(--bs-tertiary-bg);
+}
+
+.mobile-service-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobile-label {
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+  min-width: 120px;
+}
+
+.mobile-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.app-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.app-modal {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  width: min(900px, 100%);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-modal-lg {
+  width: min(980px, 100%);
+}
+
+.app-modal-header,
+.app-modal-footer {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--bs-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app-modal-footer {
+  border-bottom: 0;
+  border-top: 1px solid var(--bs-border-color);
+  justify-content: flex-end;
+}
+
+.app-modal-body {
+  padding: 1rem;
+  overflow: auto;
+}
+
+.wizard-steps {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.service-row,
+.extra-product-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.extra-product-row {
+  grid-template-columns: 1fr 130px auto;
+}
+
+.stock-box,
+.total-box,
+.history-list {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.stock-row,
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem 0.75rem;
+}
+
+.total-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.history-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .services-toolbar {
+    align-items: stretch;
+  }
+
+  .services-filters {
+    width: 100%;
+  }
+
+  .services-filters .form-control,
+  .services-filters .form-select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-actions .btn {
+    flex: 1;
+  }
+
+  .service-row,
+  .extra-product-row {
+    grid-template-columns: 1fr;
+  }
+
+  .app-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .app-modal,
+  .app-modal-lg {
+    width: 100%;
+    max-height: 96vh;
+    border-radius: 12px 12px 0 0;
+  }
+}

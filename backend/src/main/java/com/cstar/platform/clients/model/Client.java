@@ -82,6 +82,12 @@ public class Client {
         this.businessStatus = ClientBusinessStatus.NEGOCIO_FECHADO;
     }
 
+    public void markEvaluationScheduled() {
+        if (this.businessStatus != ClientBusinessStatus.NEGOCIO_FECHADO) {
+            this.businessStatus = ClientBusinessStatus.AVALIACAO_MARCADA;
+        }
+    }
+
     @PrePersist
     void onPrePersist() {
         Instant now = Instant.now();

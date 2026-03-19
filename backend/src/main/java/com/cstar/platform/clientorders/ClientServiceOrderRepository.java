@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface ClientServiceOrderRepository extends JpaRepository<ClientServiceOrder, UUID> {
 
+    List<ClientServiceOrder> findAllByOrderByCreatedAtDesc();
+
     List<ClientServiceOrder> findByClientIdOrderByCreatedAtDesc(UUID clientId);
 
     Optional<ClientServiceOrder> findFirstByClientIdAndStatusInOrderByUpdatedAtDesc(UUID clientId, List<ClientServiceOrderStatus> statuses);

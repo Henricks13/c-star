@@ -60,12 +60,14 @@ export class ClientsComponent implements OnInit {
   deleteOrderInvoicesModalOpen = false;
   selectedClientForService: ClientListItem | null = null;
   selectedOrderForInvoiceDeletion: ClientServiceOrderItem | null = null;
+  selectedOrderForManagement: ClientServiceOrderItem | null = null;
   serviceOrderId: string | null = null;
   availableServices: ServiceItem[] = [];
   availableProducts: ProductItem[] = [];
   selectedServiceIds: string[] = [];
   extraProductRows: ExtraProductRow[] = [];
   clientServiceHistory: ClientServiceOrderItem[] = [];
+  serviceHistoryAccordionOpen = false;
   wizardNotes = '';
   wizardDiscountAmount = 0;
   wizardCustomTotalEnabled = false;
@@ -74,6 +76,9 @@ export class ClientsComponent implements OnInit {
   paymentInstallmentCount = 1;
   paymentPaid = false;
   paymentFirstInstallmentPaid = false;
+  serviceManagementModalOpen = false;
+  serviceManagementObservation = '';
+  serviceManagementReturnAt = '';
 
   readonly paymentMethodOptions: Array<{ value: ServicePaymentMethod; label: string }> = [
     { value: 'PIX', label: 'Pix' },
@@ -286,6 +291,9 @@ export class ClientsComponent implements OnInit {
     if (normalized === 'NEGOCIO_FECHADO') {
       return 'Negócio fechado';
     }
+    if (normalized === 'AVALIACAO_MARCADA') {
+      return 'Avaliação marcada';
+    }
 
     return 'Negociação';
   }
@@ -310,6 +318,7 @@ export class ClientsComponent implements OnInit {
     this.errorMessage = null;
     this.infoMessage = null;
     this.serviceOrderId = null;
+    this.serviceHistoryAccordionOpen = false;
     this.selectedServiceIds = [''];
     this.extraProductRows = [];
     this.wizardNotes = '';
@@ -355,6 +364,11 @@ export class ClientsComponent implements OnInit {
     this.serviceWizardOpen = false;
     this.selectedClientForService = null;
     this.serviceOrderId = null;
+    this.serviceHistoryAccordionOpen = false;
+  }
+
+  toggleServiceHistoryAccordion(): void {
+    this.serviceHistoryAccordionOpen = !this.serviceHistoryAccordionOpen;
   }
 
   addServiceRow(): void {
@@ -427,9 +441,28 @@ export class ClientsComponent implements OnInit {
       return 'Aguardando pagamento';
     }
     if (normalized === 'PAGO') {
-      return 'Pago';
+      return 'Pago/em atendimento';
+    }
+    if (normalized === 'RETORNO_AGENDADO') {
+      return 'Retorno agendado';
+    }
+    if (normalized === 'FINALIZADO') {
+      return 'Finalizado';
     }
     return 'Não informado';
+  }
+
+  isOrderStatusQuoted(status: string | null | undefined): boolean {
+    return (status || '').trim().toUpperCase() === 'ORCADO';
+  }
+
+  isOrderStatusAwaiting(status: string | null | undefined): boolean {
+    return (status || '').trim().toUpperCase() === 'AGUARDANDO_PAGAMENTO';
+  }
+
+  isOrderStatusPaid(status: string | null | undefined): boolean {
+    const normalized = (status || '').trim().toUpperCase();
+    return normalized === 'PAGO' || normalized === 'RETORNO_AGENDADO' || normalized === 'FINALIZADO';
   }
 
   canFinalizeHistoryOrder(status: string | null | undefined): boolean {
@@ -439,7 +472,22 @@ export class ClientsComponent implements OnInit {
 
   canViewOrderPayments(status: string | null | undefined): boolean {
     const normalized = (status || '').trim().toUpperCase();
-    return normalized === 'AGUARDANDO_PAGAMENTO' || normalized === 'PAGO';
+    return normalized === 'AGUARDANDO_PAGAMENTO' || normalized === 'PAGO' || normalized === 'RETORNO_AGENDADO' || normalized === 'FINALIZADO';
+  }
+
+  canManageServiceLifecycle(status: string | null | undefined): boolean {
+    const normalized = (status || '').trim().toUpperCase();
+    return normalized === 'PAGO' || normalized === 'RETORNO_AGENDADO' || normalized === 'FINALIZADO';
+  }
+
+  canScheduleServiceReturn(status: string | null | undefined): boolean {
+    const normalized = (status || '').trim().toUpperCase();
+    return normalized === 'PAGO' || normalized === 'RETORNO_AGENDADO';
+  }
+
+  canFinalizeServiceLifecycle(status: string | null | undefined): boolean {
+    const normalized = (status || '').trim().toUpperCase();
+    return normalized === 'PAGO' || normalized === 'RETORNO_AGENDADO';
   }
 
   canDeleteOrderInvoices(): boolean {
@@ -472,6 +520,112 @@ export class ClientsComponent implements OnInit {
         referenceId: order.id
       }
     });
+  }
+
+  openServiceManagement(order: ClientServiceOrderItem): void {
+    this.selectedOrderForManagement = order;
+    this.serviceManagementModalOpen = true;
+    this.serviceManagementObservation = '';
+    this.serviceManagementReturnAt = this.toDateTimeLocalInput(this.addDays(new Date(), 7));
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeServiceManagementModal(): void {
+    this.serviceManagementModalOpen = false;
+    this.selectedOrderForManagement = null;
+    this.serviceManagementObservation = '';
+  }
+
+  addServiceObservation(): void {
+    if (!this.selectedOrderForManagement || this.saving) {
+      return;
+    }
+
+    const note = (this.serviceManagementObservation || '').trim();
+    if (!note) {
+      this.errorMessage = 'Informe a observação para salvar.';
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.clientOrdersService.addObservation(this.selectedOrderForManagement.id, { note }).subscribe({
+      next: (updated) => {
+        this.replaceHistoryOrder(updated);
+        this.selectedOrderForManagement = updated;
+        this.serviceManagementObservation = '';
+        this.saving = false;
+        this.infoMessage = 'Observação registrada com sucesso.';
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível registrar a observação.';
+        this.saving = false;
+      }
+    });
+  }
+
+  scheduleServiceReturn(): void {
+    if (!this.selectedOrderForManagement || this.saving) {
+      return;
+    }
+
+    if (!this.serviceManagementReturnAt) {
+      this.errorMessage = 'Informe data e hora do retorno.';
+      return;
+    }
+
+    const returnAt = new Date(this.serviceManagementReturnAt);
+    if (Number.isNaN(returnAt.getTime())) {
+      this.errorMessage = 'Data/hora de retorno inválida.';
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.clientOrdersService.scheduleReturn(this.selectedOrderForManagement.id, { returnAt: returnAt.toISOString() }).subscribe({
+      next: (updated) => {
+        this.replaceHistoryOrder(updated);
+        this.selectedOrderForManagement = updated;
+        this.saving = false;
+        this.infoMessage = 'Retorno agendado com sucesso.';
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível agendar o retorno.';
+        this.saving = false;
+      }
+    });
+  }
+
+  finalizeServiceLifecycle(): void {
+    if (!this.selectedOrderForManagement || this.saving) {
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.clientOrdersService.finalizeService(this.selectedOrderForManagement.id).subscribe({
+      next: (updated) => {
+        this.replaceHistoryOrder(updated);
+        this.selectedOrderForManagement = updated;
+        this.saving = false;
+        this.infoMessage = 'Serviço finalizado com sucesso.';
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível finalizar o serviço.';
+        this.saving = false;
+      }
+    });
+  }
+
+  private replaceHistoryOrder(updated: ClientServiceOrderItem): void {
+    this.clientServiceHistory = this.clientServiceHistory.map((item) => (item.id === updated.id ? updated : item));
   }
 
   openDeleteOrderInvoicesModal(order: ClientServiceOrderItem): void {
@@ -804,7 +958,7 @@ export class ClientsComponent implements OnInit {
     if (this.paymentInstallmentCount < 1 || this.paymentInstallmentCount > 12) {
       this.paymentInstallmentCount = 1;
     }
-    this.paymentPaid = order.status === 'PAGO';
+    this.paymentPaid = order.status === 'PAGO' || order.status === 'RETORNO_AGENDADO' || order.status === 'FINALIZADO';
     this.paymentFirstInstallmentPaid = !this.paymentPaid && this.paymentInstallmentCount > 1 && Number(order.paidInstallmentCount || 0) > 0;
 
     if (!this.requiresInstallments) {
@@ -854,5 +1008,20 @@ export class ClientsComponent implements OnInit {
       sourceContactId: null,
       notes: ''
     };
+  }
+
+  private addDays(value: Date, days: number): Date {
+    const result = new Date(value);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  private toDateTimeLocalInput(value: Date): string {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    const hours = String(value.getHours()).padStart(2, '0');
+    const minutes = String(value.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 }

@@ -1,0 +1,337 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Serviços de Clientes">
+      <div class="services-toolbar mb-3">
+        <div class="services-filters">
+          <input class="form-control form-control-sm" placeholder="Buscar por cliente ou observação" [(ngModel)]="searchTerm" />
+          <select class="form-select form-select-sm" [(ngModel)]="selectedStatus">
+            <option value="">Todos os status</option>
+            <option value="ORCADO">Orçado</option>
+            <option value="AGUARDANDO_PAGAMENTO">Aguardando pagamento</option>
+            <option value="PAGO">Pago/em atendimento</option>
+            <option value="RETORNO_AGENDADO">Retorno agendado</option>
+            <option value="FINALIZADO">Finalizado</option>
+          </select>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-sm btn-primary" type="button" (click)="openCreateWizard()">
+            <i class="ti ti-plus me-1"></i>
+            Novo serviço
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="loadOrders()">
+            <i class="ti ti-refresh me-1"></i>
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-success" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando serviços dos clientes...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && filteredOrders.length === 0">
+        <div class="empty-state">
+          <p class="mb-0">Nenhum serviço encontrado.</p>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && filteredOrders.length > 0">
+        <div class="desktop-list d-none d-md-block">
+          <div class="table-responsive services-table-wrapper">
+            <table class="table table-hover align-middle services-table mb-0">
+              <thead class="services-thead">
+                <tr>
+                  <th>Cliente</th>
+                  <th>Status</th>
+                  <th>Valor</th>
+                  <th>Próximo retorno</th>
+                  <th>Criado em</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let order of filteredOrders">
+                  <td>
+                    <div class="fw-semibold">{{ order.clientName }}</div>
+                    <small class="text-muted">Serviços: {{ order.services.length }} | Produtos: {{ order.products.length }}</small>
+                  </td>
+                  <td>
+                    <span class="history-status" [class.quoted]="isStatusQuoted(order.status)" [class.awaiting]="isStatusAwaiting(order.status)" [class.paid]="isStatusPaid(order.status)">
+                      {{ getOrderStatusLabel(order.status) }}
+                    </span>
+                  </td>
+                  <td>{{ order.finalTotal | currency: 'BRL' }}</td>
+                  <td>{{ order.nextReturnAt ? (order.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</td>
+                  <td>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="text-end">
+                    <div class="table-actions">
+                      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)">Detalhes</button>
+                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openOrderPayments(order)">Financeiro</button>
+                      <button
+                        class="btn btn-sm btn-outline-success"
+                        type="button"
+                        (click)="openServiceManagement(order)"
+                        *ngIf="canManageServiceLifecycle(order.status)"
+                      >
+                        Gerenciar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-list d-block d-md-none">
+          <div class="mobile-service-card" *ngFor="let order of filteredOrders">
+            <div class="mobile-service-row"><span class="mobile-label">Cliente</span><span>{{ order.clientName }}</span></div>
+            <div class="mobile-service-row"><span class="mobile-label">Status</span><span>{{ getOrderStatusLabel(order.status) }}</span></div>
+            <div class="mobile-service-row"><span class="mobile-label">Valor</span><span>{{ order.finalTotal | currency: 'BRL' }}</span></div>
+            <div class="mobile-service-row">
+              <span class="mobile-label">Próx. retorno</span>
+              <span>{{ order.nextReturnAt ? (order.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</span>
+            </div>
+            <div class="mobile-service-row"><span class="mobile-label">Criado em</span><span>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span></div>
+            <div class="mobile-actions">
+              <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)">Detalhes</button>
+              <button class="btn btn-sm btn-outline-primary" type="button" (click)="openOrderPayments(order)">Financeiro</button>
+              <button class="btn btn-sm btn-outline-success" type="button" (click)="openServiceManagement(order)" *ngIf="canManageServiceLifecycle(order.status)">
+                Gerenciar
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<div class="app-modal-backdrop" *ngIf="createWizardOpen">
+  <div class="app-modal">
+    <div class="app-modal-header">
+      <h5 class="mb-0">Novo serviço de cliente</h5>
+      <button type="button" class="btn-close" (click)="closeCreateWizard()"></button>
+    </div>
+
+    <div class="app-modal-body">
+      <div class="wizard-steps mb-3">
+        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 1" [class.btn-outline-secondary]="createWizardStep !== 1" (click)="goToWizardStep(1)">1. Cliente e serviços</button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 2" [class.btn-outline-secondary]="createWizardStep !== 2" (click)="goToWizardStep(2)">2. Produtos extras</button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 3" [class.btn-outline-secondary]="createWizardStep !== 3" (click)="goToWizardStep(3)">3. Orçamento</button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 4" [class.btn-outline-secondary]="createWizardStep !== 4" (click)="goToWizardStep(4)">4. Pagamento</button>
+      </div>
+
+      <div *ngIf="createWizardStep === 1">
+        <div class="mb-3">
+          <label class="form-label">Cliente</label>
+          <select class="form-select" [(ngModel)]="selectedClientId">
+            <option value="">Selecione um cliente</option>
+            <option *ngFor="let client of clients" [value]="client.id">{{ client.fullName }}</option>
+          </select>
+        </div>
+
+        <label class="form-label">Serviços</label>
+        <div class="service-row mb-2" *ngFor="let serviceId of selectedServiceIds; let index = index">
+          <select class="form-select" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(index, $event)">
+            <option value="">Selecione o serviço</option>
+            <option *ngFor="let service of availableServices" [value]="service.id" [disabled]="isServiceOptionDisabled(service.id, index)">
+              {{ service.name }} - {{ service.price | currency: 'BRL' }}
+            </option>
+          </select>
+          <button type="button" class="btn btn-outline-danger" (click)="removeServiceRow(index)">Remover</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="addServiceRow()">Adicionar serviço</button>
+
+        <div class="stock-box mt-3" *ngIf="requiredServiceProducts.length > 0">
+          <div class="fw-semibold mb-2">Consumo automático de estoque (serviços)</div>
+          <div class="stock-row" *ngFor="let row of requiredServiceProducts">
+            <span>{{ row.product.name }}</span>
+            <span [class.text-danger]="!row.enough">Nec.: {{ row.requiredQty }} | Disp.: {{ row.availableQty }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="createWizardStep === 2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <label class="form-label mb-0">Produtos extras</label>
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="addExtraProductRow()">Adicionar produto</button>
+        </div>
+
+        <div class="extra-product-row mb-2" *ngFor="let row of extraProductRows; let index = index">
+          <select class="form-select" [(ngModel)]="row.productId">
+            <option value="">Selecione o produto</option>
+            <option *ngFor="let product of availableProducts" [value]="product.id">
+              {{ product.name }} - Estoque {{ product.stockQuantity }} - {{ product.salePrice | currency: 'BRL' }}
+            </option>
+          </select>
+          <input class="form-control" type="number" min="1" [(ngModel)]="row.quantityUsed" />
+          <button type="button" class="btn btn-outline-danger" (click)="removeExtraProductRow(index)">Remover</button>
+        </div>
+      </div>
+
+      <div *ngIf="createWizardStep === 3">
+        <div class="summary-grid mb-3">
+          <div>Subtotal serviços</div>
+          <div>{{ subtotalServices | currency: 'BRL' }}</div>
+          <div>Subtotal produtos</div>
+          <div>{{ subtotalExtraProducts | currency: 'BRL' }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" rows="3" [(ngModel)]="wizardNotes"></textarea>
+        </div>
+
+        <div class="mb-2 form-check">
+          <input class="form-check-input" type="checkbox" id="customTotalEnabledGlobal" [(ngModel)]="wizardCustomTotalEnabled" />
+          <label class="form-check-label" for="customTotalEnabledGlobal">Usar valor final personalizado</label>
+        </div>
+
+        <div class="row g-2" *ngIf="wizardCustomTotalEnabled; else discountBlock">
+          <div class="col-md-6">
+            <label class="form-label">Valor final</label>
+            <input class="form-control" type="number" min="0" step="0.01" [(ngModel)]="wizardCustomTotalValue" />
+          </div>
+        </div>
+
+        <ng-template #discountBlock>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Desconto</label>
+              <input class="form-control" type="number" min="0" step="0.01" [(ngModel)]="wizardDiscountAmount" />
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="total-box mt-3">
+          <span>Total estimado</span>
+          <strong>{{ calculatedTotal | currency: 'BRL' }}</strong>
+        </div>
+      </div>
+
+      <div *ngIf="createWizardStep === 4">
+        <div class="mb-3">
+          <label class="form-label">Forma de pagamento</label>
+          <select class="form-select" [ngModel]="paymentMethod" (ngModelChange)="onPaymentMethodChange($event)">
+            <option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+        </div>
+
+        <div class="mb-3" *ngIf="requiresInstallments">
+          <label class="form-label">Parcelas</label>
+          <select class="form-select" [(ngModel)]="paymentInstallmentCount" (ngModelChange)="onInstallmentCountChange()">
+            <option *ngFor="let option of installmentOptions" [ngValue]="option.value">{{ option.label }}</option>
+          </select>
+        </div>
+
+        <div class="mb-2 form-check">
+          <input class="form-check-input" type="checkbox" id="orderPaidGlobal" [(ngModel)]="paymentPaid" [disabled]="requiresInstallments && paymentInstallmentCount > 1" />
+          <label class="form-check-label" for="orderPaidGlobal">Pago?</label>
+        </div>
+
+        <div class="mb-2 form-check" *ngIf="requiresInstallments && paymentInstallmentCount > 1 && !paymentPaid">
+          <input class="form-check-input" type="checkbox" id="orderFirstInstallmentPaidGlobal" [(ngModel)]="paymentFirstInstallmentPaid" />
+          <label class="form-check-label" for="orderFirstInstallmentPaidGlobal">1ª parcela paga?</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-modal-footer">
+      <button class="btn btn-outline-secondary" type="button" (click)="closeCreateWizard()">Fechar</button>
+
+      <button class="btn btn-outline-secondary" type="button" (click)="goToWizardStep(createWizardStep - 1)" *ngIf="createWizardStep > 1">
+        Voltar
+      </button>
+
+      <button class="btn btn-primary" type="button" (click)="goToWizardStep(createWizardStep + 1)" *ngIf="createWizardStep < 4" [disabled]="saving || createWizardLoading">
+        Próximo
+      </button>
+
+      <button class="btn btn-primary" type="button" (click)="confirmServicePayment()" *ngIf="createWizardStep === 4" [disabled]="saving || !serviceOrderId">
+        Confirmar pagamento
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="app-modal-backdrop" *ngIf="detailsModalOpen && selectedOrderForDetails">
+  <div class="app-modal app-modal-lg">
+    <div class="app-modal-header">
+      <h5 class="mb-0">Detalhes do serviço</h5>
+      <button type="button" class="btn-close" (click)="closeOrderDetails()"></button>
+    </div>
+    <div class="app-modal-body">
+      <p class="mb-1"><strong>Cliente:</strong> {{ selectedOrderForDetails.clientName }}</p>
+      <p class="mb-1"><strong>Status:</strong> {{ getOrderStatusLabel(selectedOrderForDetails.status) }}</p>
+      <p class="mb-1"><strong>Total:</strong> {{ selectedOrderForDetails.finalTotal | currency: 'BRL' }}</p>
+      <p class="mb-3"><strong>Observações:</strong> {{ selectedOrderForDetails.notes || '-' }}</p>
+
+      <h6 class="mb-2">Histórico de observações</h6>
+      <div class="history-list mb-3" *ngIf="selectedOrderForDetails.observations?.length; else noObs">
+        <div class="history-item" *ngFor="let obs of selectedOrderForDetails.observations">
+          <div>{{ obs.note }}</div>
+          <small class="text-muted">{{ obs.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+        </div>
+      </div>
+      <ng-template #noObs>
+        <p class="text-muted">Sem observações registradas.</p>
+      </ng-template>
+
+      <h6 class="mb-2">Histórico de retornos</h6>
+      <div class="history-list" *ngIf="selectedOrderForDetails.returns?.length; else noReturns">
+        <div class="history-item" *ngFor="let item of selectedOrderForDetails.returns">
+          <div>Retorno em {{ item.returnAt | date: 'dd/MM/yyyy HH:mm' }}</div>
+          <small class="text-muted">Registrado em {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+        </div>
+      </div>
+      <ng-template #noReturns>
+        <p class="text-muted">Sem retornos registrados.</p>
+      </ng-template>
+    </div>
+    <div class="app-modal-footer">
+      <button class="btn btn-outline-secondary" type="button" (click)="closeOrderDetails()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-modal-backdrop" *ngIf="serviceManagementModalOpen && selectedOrderForManagement">
+  <div class="app-modal app-modal-lg">
+    <div class="app-modal-header">
+      <h5 class="mb-0">Gerenciar serviço</h5>
+      <button type="button" class="btn-close" (click)="closeServiceManagementModal()"></button>
+    </div>
+    <div class="app-modal-body">
+      <p class="mb-1"><strong>Cliente:</strong> {{ selectedOrderForManagement.clientName }}</p>
+      <p class="mb-3"><strong>Status atual:</strong> {{ getOrderStatusLabel(selectedOrderForManagement.status) }}</p>
+
+      <div class="mb-3">
+        <label class="form-label">Adicionar observação</label>
+        <textarea class="form-control" rows="3" [(ngModel)]="serviceManagementObservation"></textarea>
+        <button class="btn btn-sm btn-outline-primary mt-2" type="button" (click)="addServiceObservation()" [disabled]="saving">Salvar observação</button>
+      </div>
+
+      <div class="mb-3" *ngIf="canScheduleServiceReturn(selectedOrderForManagement.status)">
+        <label class="form-label">Agendar retorno</label>
+        <div class="d-flex gap-2">
+          <input class="form-control" type="datetime-local" [(ngModel)]="serviceManagementReturnAt" />
+          <button class="btn btn-outline-primary" type="button" (click)="scheduleServiceReturn()" [disabled]="saving">Agendar</button>
+        </div>
+      </div>
+
+      <div *ngIf="canFinalizeServiceLifecycle(selectedOrderForManagement.status)">
+        <button class="btn btn-outline-success" type="button" (click)="finalizeServiceLifecycle()" [disabled]="saving">Finalizar serviço</button>
+      </div>
+    </div>
+    <div class="app-modal-footer">
+      <button class="btn btn-outline-secondary" type="button" (click)="closeServiceManagementModal()">Fechar</button>
+    </div>
+  </div>
+</div>

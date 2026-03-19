@@ -1,0 +1,185 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Agenda">
+      <div class="agenda-toolbar mb-3">
+        <div class="agenda-toolbar-left">
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="previousWeek()">
+            <i class="ti ti-chevron-left"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="goToCurrentWeek()">Hoje</button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="nextWeek()">
+            <i class="ti ti-chevron-right"></i>
+          </button>
+          <span class="agenda-week-label">Semana {{ weekLabel }}</span>
+        </div>
+
+        <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+          <i class="ti ti-plus me-1"></i>
+          Novo agendamento
+        </button>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando agenda...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading">
+        <div class="agenda-grid">
+          <div class="agenda-day-column" *ngFor="let day of weekDays">
+            <div class="agenda-day-header">
+              <div>{{ day.dayLabel }}</div>
+              <strong>{{ day.dateLabel }}</strong>
+            </div>
+
+            <div class="agenda-day-body" *ngIf="eventsForDay(day.date).length > 0; else emptyDay">
+              <button
+                class="agenda-event-card"
+                type="button"
+                *ngFor="let event of eventsForDay(day.date); trackBy: trackByEventId"
+                [style.border-left-color]="event.color"
+                (click)="openDetails(event)"
+              >
+                <div class="agenda-event-time">{{ formatTime(event.startAt) }} - {{ formatTime(event.endAt) }}</div>
+                <div class="agenda-event-title">{{ event.title }}</div>
+                <small class="text-muted">{{ event.typeName }}</small>
+                <small class="text-muted" *ngIf="event.clientName">Cliente: {{ event.clientName }}</small>
+              </button>
+            </div>
+
+            <ng-template #emptyDay>
+              <div class="agenda-day-empty">Sem eventos</div>
+            </ng-template>
+          </div>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="createModalOpen">
+  <div class="agenda-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="agenda-create-title">
+    <div class="agenda-modal">
+      <h6 id="agenda-create-title" class="mb-3">Novo evento na agenda</h6>
+
+      <div class="d-flex flex-column gap-2">
+        <div>
+          <label class="form-label">Tipo de evento</label>
+          <select class="form-select" [(ngModel)]="createForm.typeId" (ngModelChange)="onTypeChange()">
+            <option value="" disabled>Selecione um tipo</option>
+            <option *ngFor="let type of eventTypes" [value]="type.id">{{ type.name }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">Título</label>
+          <input class="form-control" [(ngModel)]="createForm.title" placeholder="Ex.: Palestra sobre skincare" />
+        </div>
+
+        <div class="row g-2">
+          <div class="col-sm-6">
+            <label class="form-label">Data</label>
+            <input type="date" class="form-control" [(ngModel)]="createForm.date" />
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Hora</label>
+            <input type="time" class="form-control" [(ngModel)]="createForm.time" />
+          </div>
+        </div>
+
+        <div *ngIf="allowsCustomDuration">
+          <label class="form-label">Tempo personalizado (minutos)</label>
+          <input type="number" min="1" step="1" class="form-control" [(ngModel)]="createForm.durationMinutes" />
+        </div>
+
+        <div *ngIf="!allowsCustomDuration && selectedType">
+          <label class="form-label">Duração do tipo</label>
+          <input class="form-control" [value]="selectedType.defaultDurationMinutes + ' min'" readonly />
+        </div>
+
+        <div>
+          <label class="form-label">Cor</label>
+          <div class="color-list">
+            <button
+              class="color-swatch"
+              type="button"
+              *ngFor="let color of colorOptions"
+              [class.active]="createForm.color === color"
+              [style.backgroundColor]="color"
+              (click)="createForm.color = color"
+              [attr.aria-label]="'Selecionar cor ' + color"
+            ></button>
+          </div>
+        </div>
+
+        <div *ngIf="requiresClient">
+          <label class="form-label">Cliente vinculado</label>
+          <select class="form-select" [(ngModel)]="createForm.clientId">
+            <option value="">Selecione um cliente</option>
+            <option *ngFor="let client of clients" [value]="client.id">{{ client.fullName }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">Observação (opcional)</label>
+          <textarea class="form-control" rows="2" [(ngModel)]="createForm.notes"></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createEvent()">Salvar evento</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="detailsModalOpen && selectedEvent">
+  <div class="agenda-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="agenda-details-title">
+    <div class="agenda-modal agenda-modal-sm">
+      <h6 id="agenda-details-title" class="mb-3">Detalhes do evento</h6>
+
+      <div class="details-list">
+        <div class="details-row">
+          <span class="details-label">Tipo</span>
+          <span>{{ selectedEvent.typeName }} ({{ getTypeKindLabel(selectedEvent.typeKind) }})</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Título</span>
+          <span>{{ selectedEvent.title }}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Início</span>
+          <span>{{ formatDateTime(selectedEvent.startAt) }}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Fim</span>
+          <span>{{ formatDateTime(selectedEvent.endAt) }}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Duração</span>
+          <span>{{ selectedEvent.durationMinutes }} min</span>
+        </div>
+        <div class="details-row" *ngIf="selectedEvent.clientName">
+          <span class="details-label">Cliente</span>
+          <span>{{ selectedEvent.clientName }}</span>
+        </div>
+        <div class="details-row" *ngIf="selectedEvent.notes">
+          <span class="details-label">Observação</span>
+          <span>{{ selectedEvent.notes }}</span>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end mt-3">
+        <button class="btn btn-outline-secondary" type="button" (click)="closeDetailsModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>

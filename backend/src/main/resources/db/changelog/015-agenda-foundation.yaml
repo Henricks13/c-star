@@ -1,0 +1,271 @@
+databaseChangeLog:
+  - changeSet:
+      id: 060-create-calendar-foundation
+      author: cstar
+      changes:
+        - createTable:
+            tableName: calendar_event_types
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: kind
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_duration_minutes
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: allows_custom_duration
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: requires_client
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: color
+                  type: VARCHAR(7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: calendar_events
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: event_type_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: client_id
+                  type: UUID
+              - column:
+                  name: title
+                  type: VARCHAR(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+              - column:
+                  name: color
+                  type: VARCHAR(7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duration_minutes
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: calendar_events
+            baseColumnNames: event_type_id
+            referencedTableName: calendar_event_types
+            referencedColumnNames: id
+            constraintName: fk_calendar_events_type
+            onDelete: RESTRICT
+
+        - addForeignKeyConstraint:
+            baseTableName: calendar_events
+            baseColumnNames: client_id
+            referencedTableName: clients
+            referencedColumnNames: id
+            constraintName: fk_calendar_events_client
+            onDelete: SET NULL
+
+        - createIndex:
+            tableName: calendar_event_types
+            indexName: idx_calendar_event_types_kind
+            columns:
+              - column:
+                  name: kind
+
+        - createIndex:
+            tableName: calendar_events
+            indexName: idx_calendar_events_start_at
+            columns:
+              - column:
+                  name: start_at
+
+        - createIndex:
+            tableName: calendar_events
+            indexName: idx_calendar_events_client
+            columns:
+              - column:
+                  name: client_id
+
+        - sql:
+            sql: |
+              ALTER TABLE calendar_event_types
+              ADD CONSTRAINT ck_calendar_event_types_kind
+              CHECK (kind IN ('EVENTO', 'AVALIACAO', 'RETORNO'));
+
+        - sql:
+            sql: |
+              ALTER TABLE calendar_event_types
+              ADD CONSTRAINT ck_calendar_event_types_duration
+              CHECK (default_duration_minutes > 0 AND default_duration_minutes <= 1440);
+
+        - sql:
+            sql: |
+              ALTER TABLE calendar_events
+              ADD CONSTRAINT ck_calendar_events_duration
+              CHECK (duration_minutes > 0 AND duration_minutes <= 1440);
+
+        - insert:
+            tableName: calendar_event_types
+            columns:
+              - column:
+                  name: id
+                  value: d6a1674f-95cb-49ec-bdfd-02e4ed7466c1
+              - column:
+                  name: name
+                  value: Evento
+              - column:
+                  name: kind
+                  value: EVENTO
+              - column:
+                  name: default_duration_minutes
+                  valueNumeric: 60
+              - column:
+                  name: allows_custom_duration
+                  valueBoolean: true
+              - column:
+                  name: requires_client
+                  valueBoolean: false
+              - column:
+                  name: color
+                  value: '#3B82F6'
+              - column:
+                  name: active
+                  valueBoolean: true
+
+        - insert:
+            tableName: calendar_event_types
+            columns:
+              - column:
+                  name: id
+                  value: 0dd65582-9001-41cf-9b87-0fd0b8ca2f40
+              - column:
+                  name: name
+                  value: Avaliação
+              - column:
+                  name: kind
+                  value: AVALIACAO
+              - column:
+                  name: default_duration_minutes
+                  valueNumeric: 60
+              - column:
+                  name: allows_custom_duration
+                  valueBoolean: false
+              - column:
+                  name: requires_client
+                  valueBoolean: true
+              - column:
+                  name: color
+                  value: '#10B981'
+              - column:
+                  name: active
+                  valueBoolean: true
+
+        - insert:
+            tableName: calendar_event_types
+            columns:
+              - column:
+                  name: id
+                  value: ff009f5e-62a3-4fb5-b211-f29980efd70f
+              - column:
+                  name: name
+                  value: Retorno
+              - column:
+                  name: kind
+                  value: RETORNO
+              - column:
+                  name: default_duration_minutes
+                  valueNumeric: 30
+              - column:
+                  name: allows_custom_duration
+                  valueBoolean: false
+              - column:
+                  name: requires_client
+                  valueBoolean: true
+              - column:
+                  name: color
+                  value: '#8B5CF6'
+              - column:
+                  name: active
+                  valueBoolean: true
+
+  - changeSet:
+      id: 061-extend-client-business-status-for-evaluation
+      author: cstar
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE clients
+              DROP CONSTRAINT IF EXISTS ck_clients_business_status;
+
+        - sql:
+            sql: |
+              ALTER TABLE clients
+              ADD CONSTRAINT ck_clients_business_status
+              CHECK (business_status IN ('NEGOCIACAO', 'AVALIACAO_MARCADA', 'NEGOCIO_FECHADO'));

@@ -73,6 +73,9 @@ public class ClientServiceOrder {
     @Column(name = "paid_at")
     private Instant paidAt;
 
+    @Column(name = "next_return_at")
+    private Instant nextReturnAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -84,6 +87,12 @@ public class ClientServiceOrder {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<ClientServiceOrderProductItem> products = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<ClientServiceOrderObservation> observations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<ClientServiceOrderReturn> returns = new ArrayList<>();
 
     protected ClientServiceOrder() {
     }
@@ -133,6 +142,9 @@ public class ClientServiceOrder {
         this.installmentCount = null;
         this.paidInstallmentCount = 0;
         this.paidAt = null;
+        this.nextReturnAt = null;
+        this.observations.clear();
+        this.returns.clear();
     }
 
     public void applyPaymentStatus(ServicePaymentMethod paymentMethod, int installmentCount, int paidInstallmentCount) {
@@ -143,6 +155,21 @@ public class ClientServiceOrder {
         this.installmentCount = installmentCount;
         this.paidInstallmentCount = paidInstallmentCount;
         this.paidAt = this.status == ClientServiceOrderStatus.PAGO ? Instant.now() : null;
+    }
+
+    public void addObservation(String note) {
+        observations.add(ClientServiceOrderObservation.of(this, note));
+    }
+
+    public void scheduleReturn(Instant returnAt) {
+        returns.add(ClientServiceOrderReturn.of(this, returnAt));
+        this.nextReturnAt = returnAt;
+        this.status = ClientServiceOrderStatus.RETORNO_AGENDADO;
+    }
+
+    public void finalizeService() {
+        this.nextReturnAt = null;
+        this.status = ClientServiceOrderStatus.FINALIZADO;
     }
 
     public void addServiceItem(ClientServiceOrderServiceItem item) {
@@ -229,6 +256,10 @@ public class ClientServiceOrder {
         return paidAt;
     }
 
+    public Instant getNextReturnAt() {
+        return nextReturnAt;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -243,5 +274,13 @@ public class ClientServiceOrder {
 
     public List<ClientServiceOrderProductItem> getProducts() {
         return products;
+    }
+
+    public List<ClientServiceOrderObservation> getObservations() {
+        return observations;
+    }
+
+    public List<ClientServiceOrderReturn> getReturns() {
+        return returns;
     }
 }

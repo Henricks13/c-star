@@ -1,5 +1,5 @@
 export type OrderProductSource = 'SERVICE_COMPOSITION' | 'EXTRA';
-export type ClientServiceOrderStatus = 'ORCADO' | 'AGUARDANDO_PAGAMENTO' | 'PAGO';
+export type ClientServiceOrderStatus = 'ORCADO' | 'AGUARDANDO_PAGAMENTO' | 'PAGO' | 'RETORNO_AGENDADO' | 'FINALIZADO';
 export type ServicePaymentMethod = 'PIX' | 'CREDIT_CARD' | 'PIX_INSTALLMENT' | 'CASH' | 'TRADE';
 
 export interface CreateClientServiceOrderExtraProductInput {
@@ -25,6 +25,14 @@ export interface ConfirmClientServiceOrderPaymentRequest {
   firstInstallmentPaid?: boolean | null;
 }
 
+export interface AddClientServiceOrderObservationRequest {
+  note: string;
+}
+
+export interface ScheduleClientServiceOrderReturnRequest {
+  returnAt: string;
+}
+
 export interface ClientServiceOrderServiceItem {
   id: string;
   serviceId: string;
@@ -41,9 +49,22 @@ export interface ClientServiceOrderProductItem {
   salePrice: number;
 }
 
+export interface ClientServiceOrderObservationItem {
+  id: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface ClientServiceOrderReturnItem {
+  id: string;
+  returnAt: string;
+  createdAt: string;
+}
+
 export interface ClientServiceOrderItem {
   id: string;
   clientId: string;
+  clientName: string;
   subtotalServices: number;
   subtotalExtraProducts: number;
   discountAmount: number;
@@ -56,8 +77,11 @@ export interface ClientServiceOrderItem {
   installmentCount: number | null;
   paidInstallmentCount: number | null;
   paidAt: string | null;
+  nextReturnAt: string | null;
   services: ClientServiceOrderServiceItem[];
   products: ClientServiceOrderProductItem[];
+  observations: ClientServiceOrderObservationItem[];
+  returns: ClientServiceOrderReturnItem[];
   createdAt: string;
   updatedAt: string;
 }

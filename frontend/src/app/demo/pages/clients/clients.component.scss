@@ -320,6 +320,11 @@
   background: var(--bs-body-bg);
 }
 
+.history-box.history-box-scroll {
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
 .history-item {
   border: 1px solid var(--bs-border-color);
   border-radius: 8px;

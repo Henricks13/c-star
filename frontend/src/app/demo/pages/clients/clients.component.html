@@ -306,17 +306,17 @@
           </ng-template>
         </div>
 
-        <div class="wizard-section">
+        <div class="wizard-section d-none d-md-block">
           <label class="form-label mb-2">Histórico de serviços deste cliente</label>
-          <div class="history-box" *ngIf="clientServiceHistory.length > 0; else noHistory">
+          <div class="history-box" [class.history-box-scroll]="clientServiceHistory.length >= 3" *ngIf="clientServiceHistory.length > 0; else noHistory">
             <div class="history-item" *ngFor="let history of clientServiceHistory">
               <div class="fw-semibold d-flex justify-content-between gap-2 flex-wrap align-items-center">
                 <span>{{ history.finalTotal | currency: 'BRL' }} - {{ history.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
                 <span
                   class="history-status"
-                  [class.quoted]="history.status === 'ORCADO'"
-                  [class.awaiting]="history.status === 'AGUARDANDO_PAGAMENTO'"
-                  [class.paid]="history.status === 'PAGO'"
+                  [class.quoted]="isOrderStatusQuoted(history.status)"
+                  [class.awaiting]="isOrderStatusAwaiting(history.status)"
+                  [class.paid]="isOrderStatusPaid(history.status)"
                 >
                   {{ getOrderStatusLabel(history.status) }}
                 </span>
@@ -348,6 +348,15 @@
                   Visualizar pagamentos
                 </button>
                 <button
+                  class="btn btn-sm btn-outline-info"
+                  type="button"
+                  *ngIf="canManageServiceLifecycle(history.status)"
+                  [disabled]="saving"
+                  (click)="openServiceManagement(history)"
+                >
+                  Gerenciar serviço
+                </button>
+                <button
                   class="btn btn-sm btn-outline-danger"
                   type="button"
                   *ngIf="canViewOrderPayments(history.status) && canDeleteOrderInvoices()"
@@ -365,6 +374,82 @@
               <small class="text-muted">Nenhum serviço fechado para este cliente ainda.</small>
             </div>
           </ng-template>
+        </div>
+
+        <div class="wizard-section d-block d-md-none">
+          <button class="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center" type="button" (click)="toggleServiceHistoryAccordion()">
+            <span>Histórico de serviços deste cliente</span>
+            <i class="ti" [class.ti-chevron-down]="!serviceHistoryAccordionOpen" [class.ti-chevron-up]="serviceHistoryAccordionOpen"></i>
+          </button>
+
+          <div class="mt-2" *ngIf="serviceHistoryAccordionOpen">
+            <div class="history-box" [class.history-box-scroll]="clientServiceHistory.length >= 3" *ngIf="clientServiceHistory.length > 0; else noHistoryMobile">
+              <div class="history-item" *ngFor="let history of clientServiceHistory">
+                <div class="fw-semibold d-flex justify-content-between gap-2 flex-wrap align-items-center">
+                  <span>{{ history.finalTotal | currency: 'BRL' }} - {{ history.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                  <span
+                    class="history-status"
+                    [class.quoted]="isOrderStatusQuoted(history.status)"
+                    [class.awaiting]="isOrderStatusAwaiting(history.status)"
+                    [class.paid]="isOrderStatusPaid(history.status)"
+                  >
+                    {{ getOrderStatusLabel(history.status) }}
+                  </span>
+                </div>
+                <div class="history-payment" *ngIf="history.paymentMethod">
+                  <span class="history-payment-pill">{{ getPaymentMethodLabel(history.paymentMethod) }}</span>
+                  <span class="history-payment-pill">{{ getInstallmentLabel(history.installmentCount) }}</span>
+                  <span class="history-payment-pill" *ngIf="history.installmentCount && history.installmentCount > 1">
+                    {{ history.paidInstallmentCount || 0 }}/{{ history.installmentCount }} paga(s)
+                  </span>
+                </div>
+                <div class="history-actions" *ngIf="canFinalizeHistoryOrder(history.status) || canViewOrderPayments(history.status)">
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    type="button"
+                    *ngIf="canFinalizeHistoryOrder(history.status)"
+                    [disabled]="saving"
+                    (click)="finalizeHistoryOrder(history)"
+                  >
+                    Finalizar
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    type="button"
+                    *ngIf="canViewOrderPayments(history.status)"
+                    [disabled]="saving"
+                    (click)="openOrderPayments(history)"
+                  >
+                    Visualizar pagamentos
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-info"
+                    type="button"
+                    *ngIf="canManageServiceLifecycle(history.status)"
+                    [disabled]="saving"
+                    (click)="openServiceManagement(history)"
+                  >
+                    Gerenciar serviço
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    type="button"
+                    *ngIf="canViewOrderPayments(history.status) && canDeleteOrderInvoices()"
+                    [disabled]="saving"
+                    (click)="openDeleteOrderInvoicesModal(history)"
+                  >
+                    Excluir orçamento
+                  </button>
+                </div>
+                <small class="text-muted">Serviços: {{ history.services.length }} | Produtos: {{ history.products.length }}</small>
+              </div>
+            </div>
+            <ng-template #noHistoryMobile>
+              <div class="history-box">
+                <small class="text-muted">Nenhum serviço fechado para este cliente ainda.</small>
+              </div>
+            </ng-template>
+          </div>
         </div>
       </ng-container>
 
@@ -429,8 +514,8 @@
             <input type="number" step="0.01" min="0" class="form-control" [(ngModel)]="wizardDiscountAmount" [disabled]="wizardCustomTotalEnabled" />
           </div>
 
-          <div class="form-check form-switch system-status-switch mb-2">
-            <input id="wizardCustomTotalEnabled" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="wizardCustomTotalEnabled" />
+          <div class="form-check mb-2">
+            <input id="wizardCustomTotalEnabled" class="form-check-input" type="checkbox" [(ngModel)]="wizardCustomTotalEnabled" />
             <label class="form-check-label" for="wizardCustomTotalEnabled">Usar valor final personalizado</label>
           </div>
 
@@ -466,13 +551,13 @@
             </select>
           </div>
 
-          <div class="form-check form-switch system-status-switch mb-2" *ngIf="!requiresInstallments || paymentInstallmentCount === 1">
-            <input id="paymentPaid" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="paymentPaid" />
+          <div class="form-check mb-2" *ngIf="!requiresInstallments || paymentInstallmentCount === 1">
+            <input id="paymentPaid" class="form-check-input" type="checkbox" [(ngModel)]="paymentPaid" />
             <label class="form-check-label" for="paymentPaid">Pago?</label>
           </div>
 
-          <div class="form-check form-switch system-status-switch mb-2" *ngIf="requiresInstallments && paymentInstallmentCount > 1 && !paymentPaid">
-            <input id="paymentFirstInstallmentPaid" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="paymentFirstInstallmentPaid" />
+          <div class="form-check mb-2" *ngIf="requiresInstallments && paymentInstallmentCount > 1 && !paymentPaid">
+            <input id="paymentFirstInstallmentPaid" class="form-check-input" type="checkbox" [(ngModel)]="paymentFirstInstallmentPaid" />
             <label class="form-check-label" for="paymentFirstInstallmentPaid">1ª parcela paga?</label>
           </div>
 
@@ -513,6 +598,86 @@
             </span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="serviceManagementModalOpen && selectedOrderForManagement">
+  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="service-management-title">
+    <div class="clients-modal clients-modal-wide">
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+        <div>
+          <h6 id="service-management-title" class="mb-1">Gerenciar serviço do cliente</h6>
+          <small class="text-muted">Status: {{ getOrderStatusLabel(selectedOrderForManagement.status) }}</small>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeServiceManagementModal()" [disabled]="saving">Fechar</button>
+      </div>
+
+      <div class="details-grid mb-3">
+        <div class="details-item">
+          <span class="details-label">Valor final</span>
+          <span>{{ selectedOrderForManagement.finalTotal | currency: 'BRL' }}</span>
+        </div>
+        <div class="details-item">
+          <span class="details-label">Próximo retorno</span>
+          <span>{{ selectedOrderForManagement.nextReturnAt ? (selectedOrderForManagement.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</span>
+        </div>
+      </div>
+
+      <div class="wizard-section mb-3">
+        <label class="form-label">Nova observação</label>
+        <textarea class="form-control mb-2" rows="2" [(ngModel)]="serviceManagementObservation"></textarea>
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="saving" (click)="addServiceObservation()">Salvar observação</button>
+        </div>
+      </div>
+
+      <div class="wizard-section mb-3" *ngIf="canScheduleServiceReturn(selectedOrderForManagement.status)">
+        <label class="form-label">Agendar retorno</label>
+        <div class="d-flex flex-column flex-md-row gap-2 align-items-stretch align-items-md-end">
+          <div class="flex-grow-1">
+            <input type="datetime-local" class="form-control" [(ngModel)]="serviceManagementReturnAt" />
+          </div>
+          <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="scheduleServiceReturn()">Agendar retorno</button>
+        </div>
+      </div>
+
+      <div class="wizard-section mb-3" *ngIf="canFinalizeServiceLifecycle(selectedOrderForManagement.status)">
+        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+          <span class="text-muted">Quando não houver mais retornos pendentes, finalize o serviço.</span>
+          <button class="btn btn-sm btn-success" type="button" [disabled]="saving" (click)="finalizeServiceLifecycle()">Finalizar serviço</button>
+        </div>
+      </div>
+
+      <div class="wizard-section mb-3">
+        <label class="form-label mb-2">Histórico de observações</label>
+        <div class="history-box" *ngIf="selectedOrderForManagement.observations.length > 0; else noServiceObservations">
+          <div class="history-item" *ngFor="let item of selectedOrderForManagement.observations">
+            <div class="fw-semibold">{{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</div>
+            <small class="text-muted">{{ item.note }}</small>
+          </div>
+        </div>
+        <ng-template #noServiceObservations>
+          <div class="history-box">
+            <small class="text-muted">Nenhuma observação registrada ainda.</small>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="wizard-section">
+        <label class="form-label mb-2">Histórico de retornos</label>
+        <div class="history-box" *ngIf="selectedOrderForManagement.returns.length > 0; else noServiceReturns">
+          <div class="history-item" *ngFor="let item of selectedOrderForManagement.returns">
+            <div class="fw-semibold">Retorno: {{ item.returnAt | date: 'dd/MM/yyyy HH:mm' }}</div>
+            <small class="text-muted">Registrado em {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+        </div>
+        <ng-template #noServiceReturns>
+          <div class="history-box">
+            <small class="text-muted">Nenhum retorno agendado até o momento.</small>
+          </div>
+        </ng-template>
       </div>
     </div>
   </div>

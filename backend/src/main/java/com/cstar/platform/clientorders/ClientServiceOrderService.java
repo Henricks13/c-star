@@ -3,11 +3,15 @@ package com.cstar.platform.clientorders;
 import com.cstar.platform.clinicservices.ClinicServiceRepository;
 import com.cstar.platform.clinicservices.model.ClinicService;
 import com.cstar.platform.clientorders.dto.ClientServiceOrderProductItemResponse;
+import com.cstar.platform.clientorders.dto.ClientServiceOrderObservationResponse;
+import com.cstar.platform.clientorders.dto.ClientServiceOrderReturnResponse;
 import com.cstar.platform.clientorders.dto.ClientServiceOrderResponse;
 import com.cstar.platform.clientorders.dto.ClientServiceOrderServiceItemResponse;
 import com.cstar.platform.clientorders.dto.ConfirmClientServiceOrderPaymentRequest;
 import com.cstar.platform.clientorders.dto.CreateClientServiceOrderRequest;
 import com.cstar.platform.clientorders.dto.ExtraProductInput;
+import com.cstar.platform.clientorders.dto.AddClientServiceOrderObservationRequest;
+import com.cstar.platform.clientorders.dto.ScheduleClientServiceOrderReturnRequest;
 import com.cstar.platform.clientorders.model.ClientServiceOrder;
 import com.cstar.platform.clientorders.model.ClientServiceOrderStatus;
 import com.cstar.platform.clientorders.model.ClientServiceOrderProductItem;
@@ -33,6 +37,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,6 +75,14 @@ public class ClientServiceOrderService {
         this.financeEntryService = financeEntryService;
         this.financeIncomeTypeRepository = financeIncomeTypeRepository;
         this.financeIncomeRepository = financeIncomeRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClientServiceOrderResponse> listAll() {
+        return orderRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -214,6 +227,63 @@ public class ClientServiceOrderService {
         }
 
         return toResponse(saved);
+    }
+
+    @Transactional
+    public ClientServiceOrderResponse addObservation(UUID orderId, AddClientServiceOrderObservationRequest request) {
+        ClientServiceOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Serviço não encontrado"));
+
+        if (order.getStatus() == ClientServiceOrderStatus.ORCADO || order.getStatus() == ClientServiceOrderStatus.AGUARDANDO_PAGAMENTO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Finalize o pagamento para registrar observações do serviço");
+        }
+
+        String note = normalizeNotes(request.note());
+        if (note == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Observação inválida");
+        }
+
+        order.addObservation(note);
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public ClientServiceOrderResponse scheduleReturn(UUID orderId, ScheduleClientServiceOrderReturnRequest request) {
+        ClientServiceOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Serviço não encontrado"));
+
+        if (order.getStatus() == ClientServiceOrderStatus.ORCADO || order.getStatus() == ClientServiceOrderStatus.AGUARDANDO_PAGAMENTO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Finalize o pagamento para agendar retorno");
+        }
+
+        if (order.getStatus() == ClientServiceOrderStatus.FINALIZADO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serviço já finalizado");
+        }
+
+        Instant returnAt = request.returnAt();
+        if (returnAt == null || !returnAt.isAfter(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data/hora do retorno deve ser futura");
+        }
+
+        order.scheduleReturn(returnAt);
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public ClientServiceOrderResponse finalizeService(UUID orderId) {
+        ClientServiceOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Serviço não encontrado"));
+
+        if (order.getStatus() == ClientServiceOrderStatus.ORCADO || order.getStatus() == ClientServiceOrderStatus.AGUARDANDO_PAGAMENTO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Finalize o pagamento para concluir o serviço");
+        }
+
+        if (order.getStatus() == ClientServiceOrderStatus.FINALIZADO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serviço já está finalizado");
+        }
+
+        order.finalizeService();
+        return toResponse(orderRepository.save(order));
     }
 
     private Optional<ClientServiceOrder> findRequestedOpenOrder(Client client, UUID orderId) {
@@ -476,9 +546,28 @@ public class ClientServiceOrderService {
                 ))
                 .toList();
 
+            List<ClientServiceOrderObservationResponse> observations = order.getObservations().stream()
+                .sorted((first, second) -> second.getCreatedAt().compareTo(first.getCreatedAt()))
+                .map(item -> new ClientServiceOrderObservationResponse(
+                    item.getId(),
+                    item.getNote(),
+                    item.getCreatedAt()
+                ))
+                .toList();
+
+            List<ClientServiceOrderReturnResponse> returns = order.getReturns().stream()
+                .sorted((first, second) -> second.getReturnAt().compareTo(first.getReturnAt()))
+                .map(item -> new ClientServiceOrderReturnResponse(
+                    item.getId(),
+                    item.getReturnAt(),
+                    item.getCreatedAt()
+                ))
+                .toList();
+
         return new ClientServiceOrderResponse(
                 order.getId(),
                 order.getClient().getId(),
+            order.getClient().getFullName(),
                 order.getSubtotalServices(),
                 order.getSubtotalExtraProducts(),
                 order.getDiscountAmount(),
@@ -491,8 +580,11 @@ public class ClientServiceOrderService {
                 order.getInstallmentCount(),
                 order.getPaidInstallmentCount(),
                 order.getPaidAt(),
+                order.getNextReturnAt(),
                 services,
                 products,
+                observations,
+                returns,
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );

@@ -8,6 +8,7 @@ import java.util.UUID;
 public record ClientServiceOrderResponse(
         UUID id,
         UUID clientId,
+        String clientName,
         BigDecimal subtotalServices,
         BigDecimal subtotalExtraProducts,
         BigDecimal discountAmount,
@@ -20,8 +21,11 @@ public record ClientServiceOrderResponse(
         Integer installmentCount,
         Integer paidInstallmentCount,
         Instant paidAt,
+        Instant nextReturnAt,
         List<ClientServiceOrderServiceItemResponse> services,
         List<ClientServiceOrderProductItemResponse> products,
+        List<ClientServiceOrderObservationResponse> observations,
+        List<ClientServiceOrderReturnResponse> returns,
         Instant createdAt,
         Instant updatedAt
 ) {

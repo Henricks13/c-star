@@ -27,3 +27,7 @@ databaseChangeLog:
       file: db/changelog/013-products-last-stock-adjustment.yaml
   - include:
       file: db/changelog/014-anamnesis-foundation.yaml
+  - include:
+      file: db/changelog/015-agenda-foundation.yaml
+  - include:
+      file: db/changelog/016-client-service-followup.yaml

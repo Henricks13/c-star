@@ -1,0 +1,111 @@
+databaseChangeLog:
+  - changeSet:
+      id: 062-client-service-followup-foundation
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: client_service_orders
+            columns:
+              - column:
+                  name: next_return_at
+                  type: TIMESTAMP
+
+        - createTable:
+            tableName: client_service_order_observations
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: note
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: client_service_order_returns
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: return_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: client_service_order_observations
+            baseColumnNames: order_id
+            referencedTableName: client_service_orders
+            referencedColumnNames: id
+            constraintName: fk_client_service_order_observations_order
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: client_service_order_returns
+            baseColumnNames: order_id
+            referencedTableName: client_service_orders
+            referencedColumnNames: id
+            constraintName: fk_client_service_order_returns_order
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: client_service_order_observations
+            indexName: idx_client_service_order_observations_order
+            columns:
+              - column:
+                  name: order_id
+
+        - createIndex:
+            tableName: client_service_order_returns
+            indexName: idx_client_service_order_returns_order
+            columns:
+              - column:
+                  name: order_id
+
+        - createIndex:
+            tableName: client_service_orders
+            indexName: idx_client_service_orders_next_return
+            columns:
+              - column:
+                  name: next_return_at
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              DROP CONSTRAINT IF EXISTS ck_client_service_orders_status;
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_status
+              CHECK (status IN ('ORCADO', 'AGUARDANDO_PAGAMENTO', 'PAGO', 'RETORNO_AGENDADO', 'FINALIZADO'));

@@ -60,11 +60,34 @@ export const NavigationItems: NavigationItem[] = [
         ]
       },
       {
-        id: 'clients',
-        title: 'Clientes',
+        id: 'client-management',
+        title: 'Gestão de Clientes',
+        type: 'collapse',
+        icon: 'ti ti-user-check',
+        breadcrumbs: false,
+        children: [
+          {
+            id: 'client-management-clients',
+            title: 'Clientes',
+            type: 'item',
+            url: '/clients',
+            breadcrumbs: false
+          },
+          {
+            id: 'client-management-services',
+            title: 'Serviços de Clientes',
+            type: 'item',
+            url: '/clients/services',
+            breadcrumbs: false
+          }
+        ]
+      },
+      {
+        id: 'services',
+        title: 'Serviços',
         type: 'item',
-        url: '/clients',
-        icon: 'ti ti-user-check'
+        url: '/services',
+        icon: 'ti ti-briefcase'
       },
       {
         id: 'products',
@@ -90,11 +113,11 @@ export const NavigationItems: NavigationItem[] = [
         ]
       },
       {
-        id: 'services',
-        title: 'Serviços',
+        id: 'agenda',
+        title: 'Agenda',
         type: 'item',
-        url: '/services',
-        icon: 'ti ti-briefcase'
+        url: '/agenda',
+        icon: 'ti ti-calendar-event'
       },
       {
         id: 'finance',

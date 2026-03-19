@@ -57,6 +57,10 @@ const routes: Routes = [
         loadComponent: () => import('./demo/pages/users/users.component').then((c) => c.UsersComponent)
       },
       {
+        path: 'clients/services',
+        loadComponent: () => import('./demo/pages/client-services/client-services.component').then((c) => c.ClientServicesComponent)
+      },
+      {
         path: 'clients',
         loadComponent: () => import('./demo/pages/clients/clients.component').then((c) => c.ClientsComponent)
       },
@@ -71,6 +75,10 @@ const routes: Routes = [
       {
         path: 'services',
         loadComponent: () => import('./demo/pages/services/services.component').then((c) => c.ServicesComponent)
+      },
+      {
+        path: 'agenda',
+        loadComponent: () => import('./demo/pages/agenda/agenda.component').then((c) => c.AgendaComponent)
       },
       {
         path: 'finance',

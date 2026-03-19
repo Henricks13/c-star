@@ -3,6 +3,8 @@ package com.cstar.platform.clientorders;
 import com.cstar.platform.clientorders.dto.ClientServiceOrderResponse;
 import com.cstar.platform.clientorders.dto.ConfirmClientServiceOrderPaymentRequest;
 import com.cstar.platform.clientorders.dto.CreateClientServiceOrderRequest;
+import com.cstar.platform.clientorders.dto.AddClientServiceOrderObservationRequest;
+import com.cstar.platform.clientorders.dto.ScheduleClientServiceOrderReturnRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,12 +32,38 @@ public class ClientServiceOrderController {
         return clientServiceOrderService.create(request);
     }
 
+    @GetMapping("/client-service-orders")
+    public List<ClientServiceOrderResponse> listAll() {
+        return clientServiceOrderService.listAll();
+    }
+
     @PostMapping("/client-service-orders/{orderId}/payment")
     public ClientServiceOrderResponse confirmPayment(
             @PathVariable UUID orderId,
             @RequestBody @Valid ConfirmClientServiceOrderPaymentRequest request
     ) {
         return clientServiceOrderService.confirmPayment(orderId, request);
+    }
+
+    @PostMapping("/client-service-orders/{orderId}/observations")
+    public ClientServiceOrderResponse addObservation(
+            @PathVariable UUID orderId,
+            @RequestBody @Valid AddClientServiceOrderObservationRequest request
+    ) {
+        return clientServiceOrderService.addObservation(orderId, request);
+    }
+
+    @PostMapping("/client-service-orders/{orderId}/returns")
+    public ClientServiceOrderResponse scheduleReturn(
+            @PathVariable UUID orderId,
+            @RequestBody @Valid ScheduleClientServiceOrderReturnRequest request
+    ) {
+        return clientServiceOrderService.scheduleReturn(orderId, request);
+    }
+
+    @PostMapping("/client-service-orders/{orderId}/finalize")
+    public ClientServiceOrderResponse finalizeService(@PathVariable UUID orderId) {
+        return clientServiceOrderService.finalizeService(orderId);
     }
 
     @GetMapping("/clients/{clientId}/service-orders")
