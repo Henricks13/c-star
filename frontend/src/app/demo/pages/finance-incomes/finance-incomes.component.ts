@@ -1,13 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { FinanceService } from 'src/app/core/finance/finance.service';
 import {
   FinanceIncomeItem,
   FinanceIncomePaymentStatus,
   FinanceIncomeRequest,
-  FinanceTypeItem
+  FinanceTypeItem,
+  IncomeSource
 } from 'src/app/core/finance/finance.types';
 import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
 
@@ -27,6 +29,8 @@ export class FinanceIncomesComponent implements OnInit {
   incomes: FinanceIncomeItem[] = [];
   incomeTypes: FinanceTypeItem[] = [];
   selectedIncome: FinanceIncomeItem | null = null;
+  filterSource: IncomeSource | null = null;
+  filterReferenceId: string | null = null;
 
   createModalOpen = false;
   editModalOpen = false;
@@ -36,10 +40,41 @@ export class FinanceIncomesComponent implements OnInit {
   createForm: FinanceIncomeRequest = this.defaultForm();
   editForm: FinanceIncomeRequest = this.defaultForm();
 
-  constructor(private readonly financeService: FinanceService) {}
+  constructor(
+    private readonly financeService: FinanceService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
+  ) {}
 
   ngOnInit(): void {
+    this.readFilterFromRoute();
     this.loadAll();
+  }
+
+  get filteredIncomes(): FinanceIncomeItem[] {
+    if (!this.filterSource || !this.filterReferenceId) {
+      return this.incomes;
+    }
+
+    return this.incomes.filter((income) => income.source === this.filterSource && income.referenceId === this.filterReferenceId);
+  }
+
+  get hasOrderFilter(): boolean {
+    return !!(this.filterSource && this.filterReferenceId);
+  }
+
+  clearOrderFilter(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        source: null,
+        referenceId: null
+      },
+      queryParamsHandling: 'merge'
+    });
+
+    this.filterSource = null;
+    this.filterReferenceId = null;
   }
 
   loadAll(): void {
@@ -244,6 +279,20 @@ export class FinanceIncomesComponent implements OnInit {
 
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
+  }
+
+  private readFilterFromRoute(): void {
+    const source = (this.route.snapshot.queryParamMap.get('source') || '').trim().toUpperCase();
+    const referenceId = (this.route.snapshot.queryParamMap.get('referenceId') || '').trim();
+
+    if (source === 'SERVICE_ORDER' && referenceId) {
+      this.filterSource = 'SERVICE_ORDER';
+      this.filterReferenceId = referenceId;
+      return;
+    }
+
+    this.filterSource = null;
+    this.filterReferenceId = null;
   }
 
   private normalizePayload(form: FinanceIncomeRequest): FinanceIncomeRequest | null {

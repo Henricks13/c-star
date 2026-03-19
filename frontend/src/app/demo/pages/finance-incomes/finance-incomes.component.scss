@@ -3,10 +3,32 @@
   justify-content: flex-end;
 }
 
+.types-toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.filter-indicator {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+  background: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+}
+
 .types-table-wrapper {
   border: 1px solid var(--bs-border-color);
   border-radius: 8px;
   overflow: hidden;
+}
+
+.types-table {
+  min-width: 840px;
 }
 
 .types-thead th {
@@ -19,7 +41,63 @@
 .type-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.4rem;
+}
+
+.mobile-income-card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: var(--bs-tertiary-bg);
+}
+
+.mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.income-type {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.mobile-card-body {
+  margin-top: 0.25rem;
+}
+
+.mobile-income-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.mobile-label {
+  color: var(--bs-secondary-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.mobile-value {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.income-amount {
+  font-weight: 700;
+}
+
+.mobile-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
 }
 
 .income-status-pill {
@@ -82,5 +160,28 @@
 
   .types-toolbar .btn {
     width: 100%;
+  }
+
+  .types-toolbar-actions {
+    width: 100%;
+  }
+
+  .filter-indicator {
+    width: 100%;
+    text-align: center;
+  }
+
+  .mobile-card-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .mobile-income-row {
+    flex-wrap: wrap;
+  }
+
+  .mobile-value {
+    width: 100%;
+    text-align: left;
   }
 }

@@ -9,6 +9,10 @@
   overflow: hidden;
 }
 
+.types-table {
+  min-width: 640px;
+}
+
 .types-thead th {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -19,7 +23,55 @@
 .type-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.4rem;
+}
+
+.mobile-type-card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: var(--bs-tertiary-bg);
+}
+
+.mobile-card-header {
+  margin-bottom: 0.5rem;
+}
+
+.type-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.mobile-card-body {
+  margin-top: 0.25rem;
+}
+
+.mobile-type-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.mobile-label {
+  color: var(--bs-secondary-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.mobile-value {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.mobile-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
 }
 
 .empty-state {
@@ -56,5 +108,14 @@
 
   .types-toolbar .btn {
     width: 100%;
+  }
+
+  .mobile-type-row {
+    flex-wrap: wrap;
+  }
+
+  .mobile-value {
+    width: 100%;
+    text-align: left;
   }
 }

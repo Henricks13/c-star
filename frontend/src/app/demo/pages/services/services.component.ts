@@ -34,6 +34,7 @@ interface ServiceFormModel {
 export class ServicesComponent implements OnInit {
   loading = false;
   saving = false;
+  togglingServiceId: string | null = null;
 
   errorMessage: string | null = null;
   infoMessage: string | null = null;
@@ -189,6 +190,41 @@ export class ServicesComponent implements OnInit {
       },
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Não foi possível excluir o serviço.';
+      }
+    });
+  }
+
+  toggleServiceActive(service: ServiceItem, nextActive: boolean): void {
+    if (this.togglingServiceId) {
+      return;
+    }
+
+    const payload: UpdateServiceRequest = {
+      name: service.name,
+      stage: service.stage,
+      price: Number(service.price),
+      durationMinutes: service.durationMinutes,
+      active: nextActive,
+      notes: service.notes,
+      consumedProducts: (service.consumedProducts || []).map((item) => ({
+        productId: item.productId,
+        quantityUsed: Number(item.quantityUsed)
+      }))
+    };
+
+    this.togglingServiceId = service.id;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.servicesService.update(service.id, payload).subscribe({
+      next: (updated) => {
+        service.active = updated.active;
+        this.infoMessage = updated.active ? 'Serviço ativado com sucesso.' : 'Serviço desativado com sucesso.';
+        this.togglingServiceId = null;
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível alterar o status do serviço.';
+        this.togglingServiceId = null;
       }
     });
   }

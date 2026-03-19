@@ -57,6 +57,9 @@
                       <button class="btn btn-sm btn-outline-success" type="button" (click)="openServiceWizard(client)" title="Serviços" aria-label="Serviços">
                         <i class="ti ti-briefcase"></i>
                       </button>
+                      <button class="btn btn-sm btn-outline-warning" type="button" (click)="openAnamnesis(client)" title="Anamnese" aria-label="Anamnese">
+                        <i class="ti ti-clipboard-text"></i>
+                      </button>
                       <button class="btn btn-sm btn-outline-primary" type="button" (click)="openDetailsModal(client)" title="Ver detalhes" aria-label="Ver detalhes">
                         <i class="ti ti-eye"></i>
                       </button>
@@ -70,41 +73,50 @@
 
         <div class="mobile-list d-block d-md-none">
           <div class="mobile-client-card" *ngFor="let client of clients">
-            <div class="mobile-client-row">
-              <span class="mobile-label">Nome</span>
-              <span>{{ client.fullName }}</span>
+            <div class="mobile-card-header">
+              <div class="client-cell">
+                <div class="client-avatar">{{ getInitials(client.fullName) }}</div>
+                <div>
+                  <p class="client-name mb-0">{{ client.fullName || 'Não informado' }}</p>
+                  <small class="text-muted">ID: {{ client.id }}</small>
+                  <div class="mobile-badges mt-1">
+                    <span class="client-badge origin">{{ getOriginLabel(client.origin) }}</span>
+                    <span class="client-badge status" [class.is-closed]="client.businessStatus === 'NEGOCIO_FECHADO'">
+                      {{ getBusinessStatusLabel(client.businessStatus) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="mobile-client-row">
-              <span class="mobile-label">Número</span>
-              <span>{{ client.phone }}</span>
+
+            <div class="mobile-card-body">
+              <div class="mobile-client-row">
+                <span class="mobile-label">Telefone</span>
+                <span class="mobile-value">{{ client.phone }}</span>
+              </div>
+              <div class="mobile-client-row">
+                <span class="mobile-label">CPF</span>
+                <span class="mobile-value">{{ client.cpf || '—' }}</span>
+              </div>
+              <div class="mobile-client-row">
+                <span class="mobile-label">E-mail</span>
+                <span class="mobile-value">{{ client.email || '—' }}</span>
+              </div>
+              <div class="mobile-client-row">
+                <span class="mobile-label">Vínculo</span>
+                <span class="mobile-value">{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</span>
+              </div>
             </div>
-            <div class="mobile-client-row">
-              <span class="mobile-label">CPF</span>
-              <span>{{ client.cpf || '—' }}</span>
-            </div>
-            <div class="mobile-client-row">
-              <span class="mobile-label">E-mail</span>
-              <span>{{ client.email || '—' }}</span>
-            </div>
-            <div class="mobile-client-row">
-              <span class="mobile-label">Origem</span>
-              <span>{{ getOriginLabel(client.origin) }}</span>
-            </div>
-            <div class="mobile-client-row">
-              <span class="mobile-label">Status</span>
-              <span>{{ getBusinessStatusLabel(client.businessStatus) }}</span>
-            </div>
-            <div class="mobile-client-row">
-              <span class="mobile-label">Vínculo</span>
-              <span>{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</span>
-            </div>
-            <div class="mobile-client-row">
+
+            <div class="mobile-card-actions">
               <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openServiceWizard(client)">
                 <i class="ti ti-briefcase me-1"></i>
                 Serviços
               </button>
-            </div>
-            <div class="mobile-client-row">
+              <button class="btn btn-sm btn-outline-warning w-100" type="button" (click)="openAnamnesis(client)">
+                <i class="ti ti-clipboard-text me-1"></i>
+                Anamnese
+              </button>
               <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openDetailsModal(client)">
                 <i class="ti ti-eye me-1"></i>
                 Ver detalhes
@@ -316,9 +328,33 @@
                   {{ history.paidInstallmentCount || 0 }}/{{ history.installmentCount }} paga(s)
                 </span>
               </div>
-              <div class="history-actions" *ngIf="canFinalizeHistoryOrder(history.status)">
-                <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="saving" (click)="finalizeHistoryOrder(history)">
+              <div class="history-actions" *ngIf="canFinalizeHistoryOrder(history.status) || canViewOrderPayments(history.status)">
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  type="button"
+                  *ngIf="canFinalizeHistoryOrder(history.status)"
+                  [disabled]="saving"
+                  (click)="finalizeHistoryOrder(history)"
+                >
                   Finalizar
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  *ngIf="canViewOrderPayments(history.status)"
+                  [disabled]="saving"
+                  (click)="openOrderPayments(history)"
+                >
+                  Visualizar pagamentos
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  type="button"
+                  *ngIf="canViewOrderPayments(history.status) && canDeleteOrderInvoices()"
+                  [disabled]="saving"
+                  (click)="openDeleteOrderInvoicesModal(history)"
+                >
+                  Excluir orçamento
                 </button>
               </div>
               <small class="text-muted">Serviços: {{ history.services.length }} | Produtos: {{ history.products.length }}</small>
@@ -393,8 +429,8 @@
             <input type="number" step="0.01" min="0" class="form-control" [(ngModel)]="wizardDiscountAmount" [disabled]="wizardCustomTotalEnabled" />
           </div>
 
-          <div class="form-check mb-2">
-            <input id="wizardCustomTotalEnabled" class="form-check-input" type="checkbox" [(ngModel)]="wizardCustomTotalEnabled" />
+          <div class="form-check form-switch system-status-switch mb-2">
+            <input id="wizardCustomTotalEnabled" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="wizardCustomTotalEnabled" />
             <label class="form-check-label" for="wizardCustomTotalEnabled">Usar valor final personalizado</label>
           </div>
 
@@ -430,13 +466,13 @@
             </select>
           </div>
 
-          <div class="form-check mb-2" *ngIf="!requiresInstallments || paymentInstallmentCount === 1">
-            <input id="paymentPaid" class="form-check-input" type="checkbox" [(ngModel)]="paymentPaid" />
+          <div class="form-check form-switch system-status-switch mb-2" *ngIf="!requiresInstallments || paymentInstallmentCount === 1">
+            <input id="paymentPaid" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="paymentPaid" />
             <label class="form-check-label" for="paymentPaid">Pago?</label>
           </div>
 
-          <div class="form-check mb-2" *ngIf="requiresInstallments && paymentInstallmentCount > 1 && !paymentPaid">
-            <input id="paymentFirstInstallmentPaid" class="form-check-input" type="checkbox" [(ngModel)]="paymentFirstInstallmentPaid" />
+          <div class="form-check form-switch system-status-switch mb-2" *ngIf="requiresInstallments && paymentInstallmentCount > 1 && !paymentPaid">
+            <input id="paymentFirstInstallmentPaid" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="paymentFirstInstallmentPaid" />
             <label class="form-check-label" for="paymentFirstInstallmentPaid">1ª parcela paga?</label>
           </div>
 
@@ -478,6 +514,108 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="deleteOrderInvoicesModalOpen && selectedOrderForInvoiceDeletion">
+  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-order-invoices-title">
+    <div class="clients-modal">
+      <h6 id="delete-order-invoices-title" class="mb-3">Excluir orçamento</h6>
+      <p class="mb-3">
+        Confirma excluir este orçamento e todas as faturas relacionadas?
+      </p>
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteOrderInvoicesModal()">Cancelar</button>
+        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteOrderInvoices()">
+          <span *ngIf="!saving">Excluir orçamento</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Excluindo...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="anamnesisModalOpen">
+  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="anamnesis-client-title">
+    <div class="clients-modal clients-modal-wide anamnesis-client-modal">
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+        <div>
+          <h6 id="anamnesis-client-title" class="mb-1">Anamnese do cliente</h6>
+          <small class="text-muted">{{ selectedClientForAnamnesis?.fullName }}</small>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeAnamnesisModal()">Fechar</button>
+      </div>
+
+      <ng-container *ngIf="anamnesisModalError">
+        <div class="alert alert-danger py-2" role="alert">{{ anamnesisModalError }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="anamnesisModalInfo">
+        <div class="alert alert-info py-2" role="alert">{{ anamnesisModalInfo }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="anamnesisModalLoading">
+        <p class="mb-0">Carregando anamnese...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!anamnesisModalLoading && anamnesisFormData">
+        <div class="anamnesis-client-status mb-3" [class.answered]="anamnesisFormData.answered">
+          <strong>{{ anamnesisFormData.answered ? 'Respondida' : 'Ainda não respondida' }}</strong>
+          <small class="text-muted" *ngIf="anamnesisFormData.submittedAt">
+            Enviada em {{ anamnesisFormData.submittedAt | date: 'dd/MM/yyyy HH:mm' }}
+          </small>
+        </div>
+
+        <ng-container *ngIf="!anamnesisFormData.answered">
+          <div class="anamnesis-client-actions mb-3">
+            <button class="btn btn-primary" type="button" (click)="generateAnamnesisLink()">
+              <i class="ti ti-link me-1"></i>
+              Gerar link
+            </button>
+
+            <div class="input-group" *ngIf="anamnesisShareLink">
+              <input class="form-control" type="text" [value]="anamnesisShareLink" readonly />
+              <a class="btn btn-outline-secondary" [href]="anamnesisShareLink" target="_blank" rel="noopener noreferrer">
+                Abrir
+              </a>
+            </div>
+          </div>
+
+          <div class="anamnesis-client-questions" *ngIf="anamnesisFormData.questions.length > 0; else noQuestions">
+            <div class="anamnesis-question-item" *ngFor="let question of anamnesisFormData.questions">
+              <span class="details-label">Pergunta</span>
+              <div>{{ question.questionText }}</div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="anamnesisFormData.answered">
+          <div class="anamnesis-client-answers" *ngIf="anamnesisFormData.answers.length > 0; else noAnswers">
+            <div class="anamnesis-answer-item" *ngFor="let item of anamnesisFormData.answers">
+              <span class="details-label">Pergunta</span>
+              <div class="mb-2">{{ item.questionText }}</div>
+              <span class="details-label">Resposta</span>
+              <div>{{ item.answerText }}</div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #noQuestions>
+          <div class="history-box">
+            <small class="text-muted">Nenhuma pergunta ativa cadastrada para anamnese.</small>
+          </div>
+        </ng-template>
+
+        <ng-template #noAnswers>
+          <div class="history-box">
+            <small class="text-muted">Nenhuma resposta registrada para este cliente.</small>
+          </div>
+        </ng-template>
+      </ng-container>
     </div>
   </div>
 </ng-container>

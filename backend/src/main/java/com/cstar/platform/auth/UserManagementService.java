@@ -91,6 +91,10 @@ public class UserManagementService {
         user.getRoles().clear();
         user.addRole(role);
 
+                if (request.enabled() != null) {
+                        user.setEnabled(request.enabled());
+                }
+
         userRepository.save(user);
         return toResponse(user);
     }

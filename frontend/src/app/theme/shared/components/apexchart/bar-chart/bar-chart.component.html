@@ -2,14 +2,19 @@
   <div class="card-body">
     <div class="row mb-3 align-items-center">
       <div class="col">
-        <div class="text-sm">Total Growth</div>
-        <h3 class="mt-2 f-w-600">$2,324.00</h3>
+        <div class="text-sm">Consolidado mensal (recebido x a receber)</div>
+        <h3 class="mt-2 f-w-600">{{ formatCurrency(totalPeriodo) }}</h3>
       </div>
       <div class="col-auto">
-        <select class="form-select p-r-35" title="Select">
-          <option>Today</option>
-          <option selected>Month</option>
-          <option>Year</option>
+        <select
+          class="form-select p-r-35"
+          title="Selecionar período"
+          [(ngModel)]="periodo"
+          (ngModelChange)="alterarPeriodo($event)"
+        >
+          <option value="hoje">Hoje</option>
+          <option value="mes">Mês</option>
+          <option value="ano">Ano</option>
         </select>
       </div>
     </div>

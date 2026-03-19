@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 public record UpdateUserRequest(
         @Email @NotBlank String email,
         @NotBlank @Size(min = 3, max = 160) String fullName,
-        String roleCode
+        String roleCode,
+        Boolean enabled
 ) {
 }

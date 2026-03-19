@@ -13,7 +13,7 @@
         tabindex="0"
         (keydown)="handleKeyDown($event, 'month')"
       >
-        Month
+        Mês
       </div>
       <div
         class="btn btn-sm text-white"
@@ -22,7 +22,7 @@
         tabindex="0"
         (keydown)="handleKeyDown($event, 'year')"
       >
-        Year
+        Ano
       </div>
     </div>
   </div>
@@ -30,10 +30,10 @@
 <div class="row">
   <div class="col-6">
     <span class="text-white d-block f-34 f-w-500 my-2">
-      ${{ amount }}
+      {{ formatCurrency(amount) }}
       <i class="ti ti-circle-arrow-up-right opacity-50"></i>
     </span>
-    <p class="mb-0 opacity-50">C/w Last Year</p>
+    <p class="mb-0 opacity-50">{{ referenceLabel }}</p>
   </div>
   <div class="col-6">
     <div id="chart text-dark">

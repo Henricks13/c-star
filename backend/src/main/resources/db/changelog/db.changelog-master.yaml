@@ -25,3 +25,5 @@ databaseChangeLog:
       file: db/changelog/012-finance-income-payment-status.yaml
   - include:
       file: db/changelog/013-products-last-stock-adjustment.yaml
+  - include:
+      file: db/changelog/014-anamnesis-foundation.yaml

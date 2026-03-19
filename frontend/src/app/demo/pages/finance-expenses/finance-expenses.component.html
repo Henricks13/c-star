@@ -28,36 +28,68 @@
       </ng-container>
 
       <ng-container *ngIf="!loading && expenses.length > 0">
-        <div class="table-responsive types-table-wrapper">
-          <table class="table table-hover align-middle types-table mb-0">
-            <thead class="types-thead">
-              <tr>
-                <th>Data</th>
-                <th>Tipo</th>
-                <th>Descrição</th>
-                <th>Valor</th>
-                <th class="text-end">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let expense of expenses">
-                <td>{{ expense.occurredOn | date: 'dd/MM/yyyy' }}</td>
-                <td>{{ expense.expenseTypeName }}</td>
-                <td>{{ expense.description || '—' }}</td>
-                <td>{{ formatCurrency(expense.amount) }}</td>
-                <td>
-                  <div class="type-actions">
-                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(expense)">
-                      <i class="ti ti-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteExpense(expense)">
-                      <i class="ti ti-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="desktop-list d-none d-md-block">
+          <div class="table-responsive types-table-wrapper">
+            <table class="table table-hover align-middle types-table mb-0">
+              <thead class="types-thead">
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let expense of expenses">
+                  <td>{{ expense.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                  <td>{{ expense.expenseTypeName }}</td>
+                  <td>{{ expense.description || '—' }}</td>
+                  <td>{{ formatCurrency(expense.amount) }}</td>
+                  <td>
+                    <div class="type-actions">
+                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(expense)" title="Editar" aria-label="Editar">
+                        <i class="ti ti-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteExpense(expense)" title="Excluir" aria-label="Excluir">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-list d-block d-md-none">
+          <div class="mobile-expense-card" *ngFor="let expense of expenses">
+            <div class="mobile-card-header">
+              <div>
+                <p class="expense-type mb-0">{{ expense.expenseTypeName }}</p>
+                <small class="text-muted">{{ expense.occurredOn | date: 'dd/MM/yyyy' }}</small>
+              </div>
+              <span class="expense-amount">{{ formatCurrency(expense.amount) }}</span>
+            </div>
+
+            <div class="mobile-card-body">
+              <div class="mobile-expense-row">
+                <span class="mobile-label">Descrição</span>
+                <span class="mobile-value">{{ expense.description || '—' }}</span>
+              </div>
+            </div>
+
+            <div class="mobile-card-actions">
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openEditModal(expense)">
+                <i class="ti ti-pencil me-1"></i>
+                Editar
+              </button>
+              <button class="btn btn-sm btn-outline-danger w-100" type="button" (click)="deleteExpense(expense)">
+                <i class="ti ti-trash me-1"></i>
+                Excluir
+              </button>
+            </div>
+          </div>
         </div>
       </ng-container>
     </app-card>

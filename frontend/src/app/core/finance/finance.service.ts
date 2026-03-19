@@ -74,6 +74,10 @@ export class FinanceService {
     return this.http.delete<void>(`${this.apiBase}/incomes/${id}`);
   }
 
+  deleteServiceOrderWithIncomes(orderId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiBase}/incomes/service-order/${orderId}`);
+  }
+
   listExpenses(): Observable<FinanceExpenseItem[]> {
     return this.http.get<FinanceExpenseItem[]>(`${this.apiBase}/expenses`);
   }

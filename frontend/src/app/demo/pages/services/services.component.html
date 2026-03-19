@@ -28,54 +28,114 @@
       </ng-container>
 
       <ng-container *ngIf="!loading && services.length > 0">
-        <div class="table-responsive services-table-wrapper">
-          <table class="table table-hover align-middle services-table mb-0">
-            <thead class="services-thead">
-              <tr>
-                <th>Serviço</th>
-                <th>Etapa</th>
-                <th>Preço</th>
-                <th>Produtos usados</th>
-                <th>Status</th>
-                <th class="text-end">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let service of services">
-                <td>
-                  <div class="fw-semibold">{{ service.name }}</div>
-                  <small class="text-muted">
-                    Duração: {{ service.durationMinutes ? (service.durationMinutes + ' min') : 'Não informada' }}
-                  </small>
-                </td>
-                <td>{{ getStageLabel(service.stage) }}</td>
-                <td>{{ service.price | currency: 'BRL' }}</td>
-                <td>
-                  <ng-container *ngIf="service.consumedProducts.length > 0; else noProducts">
-                    <div *ngFor="let item of service.consumedProducts">
-                      {{ item.productName }} ({{ item.quantityUsed }})
+        <div class="desktop-list d-none d-md-block">
+          <div class="table-responsive services-table-wrapper">
+            <table class="table table-hover align-middle services-table mb-0">
+              <thead class="services-thead">
+                <tr>
+                  <th>Serviço</th>
+                  <th>Etapa</th>
+                  <th>Preço</th>
+                  <th>Produtos usados</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let service of services">
+                  <td>
+                    <div class="fw-semibold">{{ service.name }}</div>
+                    <small class="text-muted">
+                      Duração: {{ service.durationMinutes ? (service.durationMinutes + ' min') : 'Não informada' }}
+                    </small>
+                  </td>
+                  <td>{{ getStageLabel(service.stage) }}</td>
+                  <td>{{ service.price | currency: 'BRL' }}</td>
+                  <td>
+                    <ng-container *ngIf="service.consumedProducts.length > 0; else noProducts">
+                      <div *ngFor="let item of service.consumedProducts">
+                        {{ item.productName }} ({{ item.quantityUsed }})
+                      </div>
+                    </ng-container>
+                    <ng-template #noProducts>Sem produtos vinculados</ng-template>
+                  </td>
+                  <td>
+                    <div class="service-actions">
+                      <div class="form-check form-switch system-status-switch mb-0">
+                        <input
+                          class="form-check-input system-status-switch-control"
+                          type="checkbox"
+                          [id]="'service-switch-' + service.id"
+                          [checked]="service.active"
+                          [attr.aria-label]="service.active ? 'Desativar serviço' : 'Ativar serviço'"
+                          [title]="service.active ? 'Ativo' : 'Desativado'"
+                          [disabled]="togglingServiceId === service.id"
+                          (change)="toggleServiceActive(service, $any($event.target).checked)"
+                        />
+                      </div>
+                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(service)" title="Editar" aria-label="Editar">
+                        <i class="ti ti-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteService(service)" title="Excluir" aria-label="Excluir">
+                        <i class="ti ti-trash"></i>
+                      </button>
                     </div>
-                  </ng-container>
-                  <ng-template #noProducts>Sem produtos vinculados</ng-template>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="service.active ? 'text-bg-success' : 'text-bg-secondary'">
-                    {{ service.active ? 'Ativo' : 'Inativo' }}
-                  </span>
-                </td>
-                <td>
-                  <div class="service-actions">
-                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(service)" title="Editar" aria-label="Editar">
-                      <i class="ti ti-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteService(service)" title="Excluir" aria-label="Excluir">
-                      <i class="ti ti-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-list d-block d-md-none">
+          <div class="mobile-service-card" *ngFor="let service of services">
+            <div class="mobile-service-row">
+              <span class="mobile-label">Serviço</span>
+              <span>{{ service.name }}</span>
+            </div>
+            <div class="mobile-service-row">
+              <span class="mobile-label">Duração</span>
+              <span>{{ service.durationMinutes ? (service.durationMinutes + ' min') : 'Não informada' }}</span>
+            </div>
+            <div class="mobile-service-row">
+              <span class="mobile-label">Etapa</span>
+              <span>{{ getStageLabel(service.stage) }}</span>
+            </div>
+            <div class="mobile-service-row">
+              <span class="mobile-label">Preço</span>
+              <span>{{ service.price | currency: 'BRL' }}</span>
+            </div>
+            <div class="mobile-service-row">
+              <span class="mobile-label">Produtos</span>
+              <span>{{ service.consumedProducts.length > 0 ? service.consumedProducts.length : 0 }}</span>
+            </div>
+            <div class="mobile-service-row mobile-service-row-switch">
+              <span class="mobile-label">Ativo</span>
+              <div class="form-check form-switch system-status-switch mb-0">
+                <input
+                  class="form-check-input system-status-switch-control"
+                  type="checkbox"
+                  [id]="'mobile-service-switch-' + service.id"
+                  [checked]="service.active"
+                  [attr.aria-label]="service.active ? 'Desativar serviço' : 'Ativar serviço'"
+                  [title]="service.active ? 'Ativo' : 'Desativado'"
+                  [disabled]="togglingServiceId === service.id"
+                  (change)="toggleServiceActive(service, $any($event.target).checked)"
+                />
+              </div>
+            </div>
+            <div class="mobile-service-row">
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openEditModal(service)">
+                <i class="ti ti-pencil me-1"></i>
+                Editar
+              </button>
+            </div>
+            <div class="mobile-service-row">
+              <button class="btn btn-sm btn-outline-danger w-100" type="button" (click)="deleteService(service)">
+                <i class="ti ti-trash me-1"></i>
+                Excluir
+              </button>
+            </div>
+          </div>
         </div>
       </ng-container>
     </app-card>
@@ -134,8 +194,13 @@
         <input type="number" step="1" class="form-control" [(ngModel)]="formModel.durationMinutes" />
       </div>
       <div class="col-sm-6 d-flex align-items-end">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" [id]="editing ? 'edit-service-active' : 'create-service-active'" [(ngModel)]="formModel.active" />
+        <div class="form-check form-switch system-status-switch">
+          <input
+            class="form-check-input system-status-switch-control"
+            type="checkbox"
+            [id]="editing ? 'edit-service-active' : 'create-service-active'"
+            [(ngModel)]="formModel.active"
+          />
           <label class="form-check-label" [for]="editing ? 'edit-service-active' : 'create-service-active'">Serviço ativo</label>
         </div>
       </div>

@@ -55,27 +55,52 @@
           <div class="col-lg-6">
             <div class="detail-card">
               <h6 class="mb-2">Entradas</h6>
-              <div class="table-responsive" *ngIf="report.entries.length > 0; else noEntries">
-                <table class="table table-sm align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Categoria</th>
-                      <th>Descrição</th>
-                      <th>Fonte</th>
-                      <th class="text-end">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let item of report.entries; trackBy: trackByItemId">
-                      <td>{{ item.occurredOn | date: 'dd/MM/yyyy' }}</td>
-                      <td>{{ item.category }}</td>
-                      <td>{{ item.description || '—' }}</td>
-                      <td>{{ formatSource(item.source) }}</td>
-                      <td class="text-end">{{ formatCurrency(item.amount) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div *ngIf="report.entries.length > 0; else noEntries">
+                <div class="table-responsive d-none d-md-block report-table-wrapper">
+                  <table class="table table-sm align-middle mb-0 report-table">
+                    <thead>
+                      <tr>
+                        <th>Data</th>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th>Fonte</th>
+                        <th class="text-end">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of report.entries; trackBy: trackByItemId">
+                        <td>{{ item.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                        <td>{{ item.category }}</td>
+                        <td>{{ item.description || '—' }}</td>
+                        <td>{{ formatSource(item.source) }}</td>
+                        <td class="text-end">{{ formatCurrency(item.amount) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mobile-list d-block d-md-none">
+                  <div class="mobile-report-card" *ngFor="let item of report.entries; trackBy: trackByItemId">
+                    <div class="mobile-card-header">
+                      <p class="report-category mb-0">{{ item.category }}</p>
+                      <span class="report-amount income">{{ formatCurrency(item.amount) }}</span>
+                    </div>
+                    <div class="mobile-card-body">
+                      <div class="mobile-report-row">
+                        <span class="mobile-label">Data</span>
+                        <span class="mobile-value">{{ item.occurredOn | date: 'dd/MM/yyyy' }}</span>
+                      </div>
+                      <div class="mobile-report-row">
+                        <span class="mobile-label">Descrição</span>
+                        <span class="mobile-value">{{ item.description || '—' }}</span>
+                      </div>
+                      <div class="mobile-report-row">
+                        <span class="mobile-label">Fonte</span>
+                        <span class="mobile-value">{{ formatSource(item.source) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <ng-template #noEntries>
                 <small class="text-muted">Nenhuma entrada no período.</small>
@@ -86,27 +111,52 @@
           <div class="col-lg-6">
             <div class="detail-card">
               <h6 class="mb-2">Saídas</h6>
-              <div class="table-responsive" *ngIf="report.exits.length > 0; else noExits">
-                <table class="table table-sm align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Categoria</th>
-                      <th>Descrição</th>
-                      <th>Tipo</th>
-                      <th class="text-end">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let item of report.exits; trackBy: trackByItemId">
-                      <td>{{ item.occurredOn | date: 'dd/MM/yyyy' }}</td>
-                      <td>{{ item.category }}</td>
-                      <td>{{ item.description || '—' }}</td>
-                      <td>{{ formatKind(item.kind) }}</td>
-                      <td class="text-end">{{ formatCurrency(item.amount) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div *ngIf="report.exits.length > 0; else noExits">
+                <div class="table-responsive d-none d-md-block report-table-wrapper">
+                  <table class="table table-sm align-middle mb-0 report-table">
+                    <thead>
+                      <tr>
+                        <th>Data</th>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th>Tipo</th>
+                        <th class="text-end">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of report.exits; trackBy: trackByItemId">
+                        <td>{{ item.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                        <td>{{ item.category }}</td>
+                        <td>{{ item.description || '—' }}</td>
+                        <td>{{ formatKind(item.kind) }}</td>
+                        <td class="text-end">{{ formatCurrency(item.amount) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mobile-list d-block d-md-none">
+                  <div class="mobile-report-card" *ngFor="let item of report.exits; trackBy: trackByItemId">
+                    <div class="mobile-card-header">
+                      <p class="report-category mb-0">{{ item.category }}</p>
+                      <span class="report-amount expense">{{ formatCurrency(item.amount) }}</span>
+                    </div>
+                    <div class="mobile-card-body">
+                      <div class="mobile-report-row">
+                        <span class="mobile-label">Data</span>
+                        <span class="mobile-value">{{ item.occurredOn | date: 'dd/MM/yyyy' }}</span>
+                      </div>
+                      <div class="mobile-report-row">
+                        <span class="mobile-label">Descrição</span>
+                        <span class="mobile-value">{{ item.description || '—' }}</span>
+                      </div>
+                      <div class="mobile-report-row">
+                        <span class="mobile-label">Tipo</span>
+                        <span class="mobile-value">{{ formatKind(item.kind) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <ng-template #noExits>
                 <small class="text-muted">Nenhuma saída no período.</small>

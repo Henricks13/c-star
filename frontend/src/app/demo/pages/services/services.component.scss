@@ -24,7 +24,35 @@
 .service-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.4rem;
+}
+
+.mobile-service-card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  background: var(--bs-tertiary-bg);
+}
+
+.mobile-service-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobile-service-row-switch {
+  align-items: center;
+}
+
+.mobile-label {
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+  min-width: 96px;
 }
 
 .empty-state {
@@ -77,5 +105,9 @@
 
   .consumed-row {
     grid-template-columns: 1fr;
+  }
+
+  .mobile-service-row {
+    flex-wrap: wrap;
   }
 }

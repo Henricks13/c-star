@@ -1,39 +1,76 @@
 // angular import
-import { Component, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 // third party
 import { NgApexchartsModule, ChartComponent, ApexOptions } from 'ng-apexcharts';
 
+type BarChartPeriodKey = 'hoje' | 'mes' | 'ano';
+
+interface BarChartPeriodData {
+  categories: string[];
+  received: number[];
+  receivable: number[];
+  overdue: number[];
+  total: number;
+}
+
 @Component({
   selector: 'app-bar-chart',
-  imports: [NgApexchartsModule],
+  imports: [NgApexchartsModule, FormsModule],
   templateUrl: './bar-chart.component.html',
   styleUrl: './bar-chart.component.scss'
 })
-export class BarChartComponent {
+export class BarChartComponent implements OnChanges {
   // public props
   @ViewChild('chart') chart!: ChartComponent;
+  @Input() chartDataByPeriod?: Record<BarChartPeriodKey, BarChartPeriodData>;
+
   chartOptions!: Partial<ApexOptions>;
+  periodo: BarChartPeriodKey = 'mes';
+  totalPeriodo = 0;
+
+  private readonly dadosPadraoPorPeriodo: Record<BarChartPeriodKey, BarChartPeriodData> = {
+    hoje: {
+      categories: ['01/01', '02/01', '03/01', '04/01', '05/01', '06/01', '07/01', '08/01', '09/01', '10/01', '11/01', '12/01'],
+      received: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      receivable: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      overdue: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      total: 0
+    },
+    mes: {
+      categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+      received: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      receivable: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      overdue: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      total: 0
+    },
+    ano: {
+      categories: ['2021', '2022', '2023', '2024', '2025', '2026'],
+      received: [0, 0, 0, 0, 0, 0],
+      receivable: [0, 0, 0, 0, 0, 0],
+      overdue: [0, 0, 0, 0, 0, 0],
+      total: 0
+    }
+  };
 
   // Constructor
   constructor() {
+    const dadosMes = this.resolveDadosPorPeriodo()['mes'];
+
     this.chartOptions = {
       series: [
         {
-          name: 'Investment',
-          data: [35, 125, 35, 35, 35, 80, 35, 20, 35, 45, 15, 75]
+          name: 'Recebido',
+          data: dadosMes.received
         },
         {
-          name: 'Loss',
-          data: [35, 15, 15, 35, 65, 40, 80, 25, 15, 85, 25, 75]
+          name: 'A receber',
+          data: dadosMes.receivable
         },
         {
-          name: 'Profit',
-          data: [35, 145, 35, 35, 20, 105, 100, 10, 65, 45, 30, 10]
-        },
-        {
-          name: 'Maintenance',
-          data: [0, 0, 75, 0, 0, 115, 0, 0, 0, 0, 150, 0]
+          name: 'Inadimplência',
+          data: dadosMes.overdue
         }
       ],
       dataLabels: {
@@ -48,7 +85,7 @@ export class BarChartComponent {
         },
         background: 'transparent'
       },
-      colors: ['#d3eafd', '#ad9720', '#FFD700', '#ede7f6'],
+      colors: ['#d3eafd', '#FFD700', '#ede7f6'],
       responsive: [
         {
           breakpoint: 480,
@@ -69,11 +106,53 @@ export class BarChartComponent {
       },
       xaxis: {
         type: 'category',
-        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        categories: dadosMes.categories
       },
       tooltip: {
         theme: 'light'
       }
     };
+
+    this.totalPeriodo = dadosMes.total;
+  }
+
+  ngOnChanges(_: SimpleChanges): void {
+    this.alterarPeriodo(this.periodo);
+  }
+
+  alterarPeriodo(periodo: BarChartPeriodKey): void {
+    this.periodo = periodo;
+    const dadosPorPeriodo = this.resolveDadosPorPeriodo();
+    const dados = dadosPorPeriodo[periodo] ?? dadosPorPeriodo['mes'];
+
+    this.chartOptions.series = [
+      {
+        name: 'Recebido',
+        data: dados.received
+      },
+      {
+        name: 'A receber',
+        data: dados.receivable
+      },
+      {
+        name: 'Inadimplência',
+        data: dados.overdue
+      }
+    ];
+
+    this.chartOptions.xaxis = {
+      type: 'category',
+      categories: dados.categories
+    };
+
+    this.totalPeriodo = dados.total;
+  }
+
+  private resolveDadosPorPeriodo(): Record<BarChartPeriodKey, BarChartPeriodData> {
+    return this.chartDataByPeriod || this.dadosPadraoPorPeriodo;
+  }
+
+  formatCurrency(value: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   }
 }

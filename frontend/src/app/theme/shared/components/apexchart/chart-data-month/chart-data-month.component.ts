@@ -1,6 +1,6 @@
 // angular import
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, ViewChild } from '@angular/core';
 
 // third party
 import { NgApexchartsModule, ChartComponent, ApexOptions } from 'ng-apexcharts';
@@ -11,16 +11,24 @@ import { NgApexchartsModule, ChartComponent, ApexOptions } from 'ng-apexcharts';
   templateUrl: './chart-data-month.component.html',
   styleUrl: './chart-data-month.component.scss'
 })
-export class ChartDataMonthComponent implements OnInit {
+export class ChartDataMonthComponent implements OnInit, OnChanges {
   // public props
   @ViewChild('chart') chart!: ChartComponent;
+  @Input() monthAmount = 0;
+  @Input() yearAmount = 0;
+  @Input() monthSeries: number[] = [12, 18, 14, 22, 20, 26, 21, 24];
+  @Input() yearSeries: number[] = [132, 146, 158, 149, 171, 182, 175, 189];
+  @Input() monthReferenceLabel = 'Comparado ao mesmo mês do ano passado';
+  @Input() yearReferenceLabel = 'Comparado ao acumulado do ano anterior';
+
   chartOptions!: Partial<ApexOptions>;
-  amount = 961;
+  amount = 0;
+  referenceLabel = '';
   btnActive!: string;
 
   // life cycle event
   ngOnInit() {
-    this.btnActive = 'year';
+    this.btnActive = 'month';
     this.chartOptions = {
       chart: {
         type: 'line',
@@ -39,13 +47,13 @@ export class ChartDataMonthComponent implements OnInit {
       },
       series: [
         {
-          name: 'series1',
-          data: [35, 44, 9, 54, 45, 66, 41, 69]
+          name: 'Recebido',
+          data: this.monthSeries
         }
       ],
       yaxis: {
-        min: 5,
-        max: 95
+        min: 0,
+        max: this.calculateMax(this.monthSeries)
       },
       tooltip: {
         theme: 'dark',
@@ -60,6 +68,16 @@ export class ChartDataMonthComponent implements OnInit {
         }
       }
     };
+
+    this.applyCurrentState();
+  }
+
+  ngOnChanges(_: SimpleChanges): void {
+    if (!this.chartOptions) {
+      return;
+    }
+
+    this.applyCurrentState();
   }
 
   handleKeyDown(event: KeyboardEvent, value: string): void {
@@ -72,12 +90,34 @@ export class ChartDataMonthComponent implements OnInit {
   // public method
   toggleActive(value: string) {
     this.btnActive = value;
+    this.applyCurrentState();
+  }
+
+  formatCurrency(value: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  }
+
+  private applyCurrentState(): void {
+    const activeSeries = this.btnActive === 'year' ? this.yearSeries : this.monthSeries;
+
     this.chartOptions.series = [
       {
-        name: 'series1',
-        data: value === 'month' ? [45, 66, 41, 89, 25, 44, 9, 54] : [35, 44, 9, 54, 45, 66, 41, 69]
+        name: 'Recebido',
+        data: activeSeries
       }
     ];
-    this.amount = value === 'month' ? 108 : 961;
+
+    this.chartOptions.yaxis = {
+      min: 0,
+      max: this.calculateMax(activeSeries)
+    };
+
+    this.amount = this.btnActive === 'year' ? this.yearAmount : this.monthAmount;
+    this.referenceLabel = this.btnActive === 'year' ? this.yearReferenceLabel : this.monthReferenceLabel;
+  }
+
+  private calculateMax(series: number[]): number {
+    const maxValue = Math.max(...series, 1);
+    return Number((maxValue * 1.2).toFixed(2));
   }
 }

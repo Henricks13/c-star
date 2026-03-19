@@ -1,5 +1,5 @@
 // angular import
-import { Component, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 
 // third party
 import { NgApexchartsModule, ChartComponent, ApexOptions } from 'ng-apexcharts';
@@ -10,9 +10,11 @@ import { NgApexchartsModule, ChartComponent, ApexOptions } from 'ng-apexcharts';
   templateUrl: './bajaj-chart.component.html',
   styleUrl: './bajaj-chart.component.scss'
 })
-export class BajajChartComponent {
+export class BajajChartComponent implements OnChanges {
   // public props
   @ViewChild('chart') chart!: ChartComponent;
+  @Input() seriesData: number[] = [0, 15, 10, 50, 30, 40, 25];
+
   chartOptions!: Partial<ApexOptions>;
 
   // constructor
@@ -33,7 +35,7 @@ export class BajajChartComponent {
       },
       series: [
         {
-          data: [0, 15, 10, 50, 30, 40, 25]
+          data: this.seriesData
         }
       ],
       tooltip: {
@@ -55,5 +57,17 @@ export class BajajChartComponent {
       },
       colors: ['#FFD700']
     };
+  }
+
+  ngOnChanges(_: SimpleChanges): void {
+    if (!this.chartOptions) {
+      return;
+    }
+
+    this.chartOptions.series = [
+      {
+        data: this.seriesData
+      }
+    ];
   }
 }

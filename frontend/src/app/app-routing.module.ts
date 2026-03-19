@@ -12,7 +12,7 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: '/contacts',
+        redirectTo: '/default',
         pathMatch: 'full'
       },
       {
@@ -100,6 +100,13 @@ const routes: Routes = [
       {
         path: 'finance/report',
         loadComponent: () => import('./demo/pages/finance-report/finance-report.component').then((c) => c.FinanceReportComponent)
+      },
+      {
+        path: 'settings/anamnesis-questions',
+        loadComponent: () =>
+          import('./demo/pages/settings-anamnesis-questions/settings-anamnesis-questions.component').then(
+            (c) => c.SettingsAnamnesisQuestionsComponent
+          )
       }
     ]
   },
@@ -118,6 +125,10 @@ const routes: Routes = [
       {
         path: 'access-denied',
         loadComponent: () => import('./demo/pages/authentication/access-denied/access-denied.component').then((c) => c.AccessDeniedComponent)
+      },
+      {
+        path: 'anamnese',
+        loadComponent: () => import('./demo/pages/public-anamnesis/public-anamnesis.component').then((c) => c.PublicAnamnesisComponent)
       }
     ]
   }

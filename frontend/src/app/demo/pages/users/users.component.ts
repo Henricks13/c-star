@@ -18,6 +18,7 @@ export class UsersComponent implements OnInit {
   loading = false;
   saving = false;
   savingPassword = false;
+  togglingUserId: string | null = null;
   errorMessage: string | null = null;
   infoMessage: string | null = null;
 
@@ -38,7 +39,8 @@ export class UsersComponent implements OnInit {
   editForm: UpdateUserRequest = {
     fullName: '',
     email: '',
-    roleCode: 'COLABORADOR'
+    roleCode: 'COLABORADOR',
+    enabled: true
   };
 
   passwordForm = {
@@ -139,7 +141,8 @@ export class UsersComponent implements OnInit {
     this.editForm = {
       fullName: user.fullName,
       email: user.email,
-      roleCode: user.roles?.[0] || 'COLABORADOR'
+      roleCode: user.roles?.[0] || 'COLABORADOR',
+      enabled: user.enabled
     };
     this.errorMessage = null;
     this.infoMessage = null;
@@ -159,7 +162,8 @@ export class UsersComponent implements OnInit {
     const payload: UpdateUserRequest = {
       fullName: this.editForm.fullName.trim(),
       email: this.editForm.email.trim().toLowerCase(),
-      roleCode: this.editForm.roleCode
+      roleCode: this.editForm.roleCode,
+      enabled: this.editForm.enabled
     };
 
     if (!payload.fullName || !payload.email) {
@@ -232,6 +236,35 @@ export class UsersComponent implements OnInit {
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Não foi possível atualizar a senha.';
         this.savingPassword = false;
+      }
+    });
+  }
+
+  toggleUserEnabled(user: UserListItem, nextEnabled: boolean): void {
+    if (this.togglingUserId) {
+      return;
+    }
+
+    const payload: UpdateUserRequest = {
+      fullName: user.fullName,
+      email: user.email,
+      roleCode: user.roles?.[0] || 'COLABORADOR',
+      enabled: nextEnabled
+    };
+
+    this.togglingUserId = user.id;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.usersService.update(user.id, payload).subscribe({
+      next: (updated) => {
+        user.enabled = updated.enabled;
+        this.infoMessage = updated.enabled ? 'Usuário ativado com sucesso.' : 'Usuário desativado com sucesso.';
+        this.togglingUserId = null;
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível alterar o status do usuário.';
+        this.togglingUserId = null;
       }
     });
   }

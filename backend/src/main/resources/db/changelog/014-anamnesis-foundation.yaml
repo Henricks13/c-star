@@ -1,0 +1,162 @@
+databaseChangeLog:
+  - changeSet:
+      id: 014-create-anamnesis-questions
+      author: copilot
+      changes:
+        - createTable:
+            tableName: anamnesis_questions
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: question_text
+                  type: VARCHAR(400)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: display_order
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 015-create-client-anamnesis-submissions
+      author: copilot
+      changes:
+        - createTable:
+            tableName: client_anamnesis_submissions
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: client_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: client_name_snapshot
+                  type: VARCHAR(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cpf_snapshot
+                  type: VARCHAR(14)
+              - column:
+                  name: submitted_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: client_anamnesis_submissions
+            baseColumnNames: client_id
+            referencedTableName: clients
+            referencedColumnNames: id
+            constraintName: fk_client_anamnesis_submissions_client
+            onDelete: RESTRICT
+
+  - changeSet:
+      id: 016-create-client-anamnesis-submission-answers
+      author: copilot
+      changes:
+        - createTable:
+            tableName: client_anamnesis_submission_answers
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: submission_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: question_id_snapshot
+                  type: UUID
+              - column:
+                  name: question_text_snapshot
+                  type: VARCHAR(400)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: answer_text
+                  type: VARCHAR(2000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: display_order
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: client_anamnesis_submission_answers
+            baseColumnNames: submission_id
+            referencedTableName: client_anamnesis_submissions
+            referencedColumnNames: id
+            constraintName: fk_client_anamnesis_submission_answers_submission
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: client_anamnesis_submission_answers
+            indexName: idx_client_anamnesis_submission_answers_submission_id
+            columns:
+              - column:
+                  name: submission_id

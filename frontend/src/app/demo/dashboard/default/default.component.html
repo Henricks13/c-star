@@ -1,4 +1,10 @@
 <div class="row">
+  @if (errorMessage) {
+    <div class="col-12">
+      <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+    </div>
+  }
+
   <div class="col-xl-4 col-md-6">
     <div class="card earning-card bg-secondary-dark text-white overflow-hidden">
       <span class="round secondary-round small"></span>
@@ -16,17 +22,17 @@
                 <i class="ti ti-dots"></i>
               </a>
               <ul class="dropdown-menu dropdown-menu-end" ngbDropdownMenu>
-                <li><button class="dropdown-item" type="button">Import Card</button></li>
-                <li><button class="dropdown-item" type="button">Export</button></li>
+                <li><button class="dropdown-item" type="button">Exportar relatório</button></li>
+                <li><button class="dropdown-item" type="button">Ver lançamentos</button></li>
               </ul>
             </div>
           </div>
         </div>
         <span class="text-white d-block f-34 f-w-500 my-2">
-          $500.00
+          {{ formatCurrency(dashboardResumo.saldoDisponivel) }}
           <i class="ti ti-circle-arrow-up-right opacity-50"></i>
         </span>
-        <p class="mb-0 opacity-75">Total Earning</p>
+        <p class="mb-0 opacity-75">Saldo disponível</p>
       </div>
     </div>
   </div>
@@ -35,7 +41,14 @@
       <span class="round primary-round small"></span>
       <span class="round primary-round big"></span>
       <div class="card-body">
-        <app-chart-data-month />
+        <app-chart-data-month
+          [monthAmount]="recebidoComparativo.monthAmount"
+          [yearAmount]="recebidoComparativo.yearAmount"
+          [monthSeries]="recebidoComparativo.monthSeries"
+          [yearSeries]="recebidoComparativo.yearSeries"
+          [monthReferenceLabel]="recebidoComparativo.monthReferenceLabel"
+          [yearReferenceLabel]="recebidoComparativo.yearReferenceLabel"
+        />
       </div>
     </div>
   </div>
@@ -47,8 +60,8 @@
             <i class="text-white ti ti-layout-board-split f-24"></i>
           </div>
           <div class="ms-2">
-            <h4 class="text-white f-w-600 mb-1">$203k</h4>
-            <p class="mb-0 opacity-75 text-sm">Total Income</p>
+            <h4 class="text-white f-w-600 mb-1">{{ formatCurrency(dashboardResumo.recebidoAno) }}</h4>
+            <p class="mb-0 opacity-75 text-sm">Total recebido no ano</p>
           </div>
         </div>
       </div>
@@ -60,8 +73,8 @@
             <i class="text-warning ti ti-layout-board-split f-24"></i>
           </div>
           <div class="ms-2">
-            <h4 class="f-w-600 mb-1">$203k</h4>
-            <p class="mb-0 text-sm">Total Income</p>
+            <h4 class="f-w-600 mb-1">{{ formatCurrency(dashboardResumo.recebidoMes) }}</h4>
+            <p class="mb-0 text-sm">Recebido neste mês</p>
           </div>
         </div>
       </div>
@@ -69,14 +82,14 @@
   </div>
 
   <div class="col-xl-8 col-md-12">
-    <app-bar-chart />
+    <app-bar-chart [chartDataByPeriod]="barChartDataByPeriod" />
   </div>
   <div class="col-xl-4 col-md-12">
     <div class="card">
       <div class="card-body">
         <div class="row mb-3 align-items-center">
           <div class="col">
-            <h4>Popular Stocks</h4>
+            <h4>Contas em destaque</h4>
           </div>
           <div class="col-auto"></div>
         </div>
@@ -84,18 +97,18 @@
           <div class="px-3 pt-3">
             <div class="row mb-1 align-items-start">
               <div class="col">
-                <h5 class="text-dark mb-0">Bajaj Finery</h5>
-                <small class="text-muted">10% Profit</small>
+                <h5 class="text-dark mb-0">Total parcial a receber</h5>
+                <small class="text-muted">Em aberto no mês atual</small>
               </div>
               <div class="col-auto">
-                <h4 class="mb-0">$1839.00</h4>
+                <h4 class="mb-0">{{ formatCurrency(dashboardResumo.totalReceberMes) }}</h4>
               </div>
             </div>
           </div>
-          <app-bajaj-chart />
+          <app-bajaj-chart [seriesData]="aReceberSparkline" />
         </div>
         <ul class="list-group list-group-flush">
-          @for (list of ListGroup; track list) {
+          @for (list of contasDestaque; track list) {
             <li class="list-group-item px-0 {{ list.space }}">
               <div class="row align-items-start">
                 <div class="col">
@@ -116,7 +129,7 @@
         </ul>
         <div class="text-center">
           <a href="javascript:" class="b-b-primary text-primary f-w-500">
-            View all
+            Ver tudo
             <i class="ti ti-chevron-right"></i>
           </a>
         </div>

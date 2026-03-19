@@ -23,6 +23,13 @@ export const NavigationItems: NavigationItem[] = [
     icon: 'icon-navigation',
     children: [
       {
+        id: 'dashboard',
+        title: 'Dashboard',
+        type: 'item',
+        url: '/default',
+        icon: 'ti ti-layout-dashboard'
+      },
+      {
         id: 'contacts',
         title: 'Contatos',
         type: 'collapse',
@@ -153,6 +160,22 @@ export const NavigationItems: NavigationItem[] = [
         type: 'item',
         url: '/users',
         icon: 'ti ti-users-group'
+      },
+      {
+        id: 'settings',
+        title: 'Configurações',
+        type: 'collapse',
+        icon: 'ti ti-settings',
+        breadcrumbs: false,
+        children: [
+          {
+            id: 'settings-anamnesis-questions',
+            title: 'Perguntas de Anamnese',
+            type: 'item',
+            url: '/settings/anamnesis-questions',
+            breadcrumbs: false
+          }
+        ]
       }
     ]
   }

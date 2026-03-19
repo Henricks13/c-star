@@ -3,9 +3,6 @@ import { Component, OnInit, output, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
-//theme version
-import { environment } from 'src/environments/environment';
-
 // project import
 import { NavigationItem, NavigationItems } from '../navigation';
 import { AuthService } from 'src/app/core/auth/auth.service';
@@ -30,10 +27,6 @@ export class NavContentComponent implements OnInit {
   // public props
   NavCollapsedMob = output();
   SubmenuCollapse = output();
-
-  // version
-  title = 'Demo application for version numbering';
-  currentApplicationVersion = environment.appVersion;
 
   navigations!: NavigationItem[];
   windowWidth: number;

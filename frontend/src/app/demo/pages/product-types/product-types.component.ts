@@ -15,6 +15,7 @@ import { CardComponent } from 'src/app/theme/shared/components/card/card.compone
 export class ProductTypesComponent implements OnInit {
   loading = false;
   saving = false;
+  togglingTypeId: string | null = null;
 
   errorMessage: string | null = null;
   infoMessage: string | null = null;
@@ -159,6 +160,34 @@ export class ProductTypesComponent implements OnInit {
       },
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Não foi possível excluir o tipo de produto.';
+      }
+    });
+  }
+
+  toggleTypeActive(type: ProductTypeItem, nextActive: boolean): void {
+    if (this.togglingTypeId) {
+      return;
+    }
+
+    const payload: UpdateProductTypeRequest = {
+      name: type.name,
+      description: type.description,
+      active: nextActive
+    };
+
+    this.togglingTypeId = type.id;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.productTypesService.update(type.id, payload).subscribe({
+      next: (updated) => {
+        type.active = updated.active;
+        this.infoMessage = updated.active ? 'Tipo de produto ativado com sucesso.' : 'Tipo de produto desativado com sucesso.';
+        this.togglingTypeId = null;
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível alterar o status do tipo de produto.';
+        this.togglingTypeId = null;
       }
     });
   }

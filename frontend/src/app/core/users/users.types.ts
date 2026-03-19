@@ -17,6 +17,7 @@ export interface UpdateUserRequest {
   fullName: string;
   email: string;
   roleCode: string;
+  enabled?: boolean;
 }
 
 export interface UpdateUserPasswordRequest {

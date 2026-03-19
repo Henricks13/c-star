@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AnamnesisService } from 'src/app/core/anamnesis/anamnesis.service';
+import { PublicAnamnesisForm } from 'src/app/core/anamnesis/anamnesis.types';
+import { AuthService } from 'src/app/core/auth/auth.service';
 
 import { ClientOrdersService } from 'src/app/core/client-orders/client-orders.service';
 import {
@@ -11,6 +15,7 @@ import {
 } from 'src/app/core/client-orders/client-orders.types';
 import { ClientsService } from 'src/app/core/clients/clients.service';
 import { CLIENT_ORIGIN_OPTIONS, ClientListItem, CreateClientRequest } from 'src/app/core/clients/clients.types';
+import { FinanceService } from 'src/app/core/finance/finance.service';
 import { ProductItem } from 'src/app/core/products/products.types';
 import { ProductsService } from 'src/app/core/products/products.service';
 import { ServiceItem } from 'src/app/core/services/services.types';
@@ -41,11 +46,20 @@ export class ClientsComponent implements OnInit {
   modalOpen = false;
   detailsModalOpen = false;
   originLocked = false;
+  anamnesisModalOpen = false;
+  anamnesisModalLoading = false;
+  selectedClientForAnamnesis: ClientListItem | null = null;
+  anamnesisFormData: PublicAnamnesisForm | null = null;
+  anamnesisModalError: string | null = null;
+  anamnesisModalInfo: string | null = null;
+  anamnesisShareLink: string | null = null;
 
   serviceWizardOpen = false;
   serviceWizardStep = 1;
   serviceWizardLoading = false;
+  deleteOrderInvoicesModalOpen = false;
   selectedClientForService: ClientListItem | null = null;
+  selectedOrderForInvoiceDeletion: ClientServiceOrderItem | null = null;
   serviceOrderId: string | null = null;
   availableServices: ServiceItem[] = [];
   availableProducts: ProductItem[] = [];
@@ -82,7 +96,11 @@ export class ClientsComponent implements OnInit {
     private readonly clientsService: ClientsService,
     private readonly servicesService: ServicesService,
     private readonly productsService: ProductsService,
-    private readonly clientOrdersService: ClientOrdersService
+    private readonly clientOrdersService: ClientOrdersService,
+    private readonly anamnesisService: AnamnesisService,
+    private readonly financeService: FinanceService,
+    private readonly authService: AuthService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -120,6 +138,98 @@ export class ClientsComponent implements OnInit {
   openDetailsModal(client: ClientListItem): void {
     this.detailClient = client;
     this.detailsModalOpen = true;
+  }
+
+  openAnamnesis(client: ClientListItem): void {
+    this.selectedClientForAnamnesis = client;
+    this.anamnesisFormData = null;
+    this.anamnesisModalError = null;
+    this.anamnesisModalInfo = null;
+    this.anamnesisShareLink = null;
+    this.anamnesisModalOpen = true;
+    this.anamnesisModalLoading = true;
+
+    this.anamnesisService.getPublicForm(client.id, null).subscribe({
+      next: (response) => {
+        this.anamnesisFormData = response;
+        this.anamnesisModalLoading = false;
+      },
+      error: (error) => {
+        this.anamnesisModalError = error?.error?.message || 'Não foi possível carregar a anamnese deste cliente.';
+        this.anamnesisModalLoading = false;
+      }
+    });
+  }
+
+  closeAnamnesisModal(): void {
+    this.anamnesisModalOpen = false;
+    this.anamnesisModalLoading = false;
+    this.selectedClientForAnamnesis = null;
+    this.anamnesisFormData = null;
+    this.anamnesisModalError = null;
+    this.anamnesisModalInfo = null;
+    this.anamnesisShareLink = null;
+  }
+
+  async generateAnamnesisLink(): Promise<void> {
+    const clientId = this.anamnesisFormData?.clientId || this.selectedClientForAnamnesis?.id;
+    if (!clientId) {
+      this.anamnesisModalError = 'Cliente inválido para gerar link de anamnese.';
+      return;
+    }
+
+    const link = this.buildAnamnesisLink(clientId);
+    this.anamnesisShareLink = link;
+    this.anamnesisModalError = null;
+
+    const copied = await this.copyToClipboard(link);
+    this.anamnesisModalInfo = copied ? 'Link da anamnese gerado e copiado.' : 'Link da anamnese gerado.';
+  }
+
+  private buildAnamnesisLink(clientId: string): string {
+    const query = `clientId=${encodeURIComponent(clientId)}`;
+    const path = `/anamnese?${query}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return origin ? `${origin}${path}` : path;
+  }
+
+  private async copyToClipboard(value: string): Promise<boolean> {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return true;
+      } catch {
+        return this.copyWithTextarea(value);
+      }
+    }
+
+    return this.copyWithTextarea(value);
+  }
+
+  private copyWithTextarea(value: string): boolean {
+    if (typeof document === 'undefined') {
+      return false;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly', 'true');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    }
+
+    document.body.removeChild(textarea);
+    return copied;
   }
 
   closeDetailsModal(): void {
@@ -178,6 +288,18 @@ export class ClientsComponent implements OnInit {
     }
 
     return 'Negociação';
+  }
+
+  getInitials(name: string | null | undefined): string {
+    const source = (name || '').trim();
+    if (!source) {
+      return '--';
+    }
+
+    const parts = source.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.charAt(0) || '';
+    const last = parts.length > 1 ? parts[parts.length - 1]?.charAt(0) || '' : '';
+    return `${first}${last}`.toUpperCase() || source.slice(0, 2).toUpperCase();
   }
 
   openServiceWizard(client: ClientListItem): void {
@@ -312,7 +434,27 @@ export class ClientsComponent implements OnInit {
 
   canFinalizeHistoryOrder(status: string | null | undefined): boolean {
     const normalized = (status || '').trim().toUpperCase();
-    return normalized === 'ORCADO' || normalized === 'AGUARDANDO_PAGAMENTO';
+    return normalized === 'ORCADO';
+  }
+
+  canViewOrderPayments(status: string | null | undefined): boolean {
+    const normalized = (status || '').trim().toUpperCase();
+    return normalized === 'AGUARDANDO_PAGAMENTO' || normalized === 'PAGO';
+  }
+
+  canDeleteOrderInvoices(): boolean {
+    const user = this.authService.currentUser();
+    if (!user) {
+      return false;
+    }
+
+    const email = (user.email || '').trim().toLowerCase();
+    if (email === 'carol@gmail.com') {
+      return true;
+    }
+
+    const roles = (user.roles || []).map((role) => (role || '').trim().toUpperCase());
+    return roles.includes('DEV_SUPORTE') || roles.includes('MASTER_ADMIN');
   }
 
   finalizeHistoryOrder(order: ClientServiceOrderItem): void {
@@ -320,6 +462,57 @@ export class ClientsComponent implements OnInit {
     this.serviceWizardStep = 4;
     this.infoMessage = 'Orçamento carregado. Finalize o pagamento no passo 4.';
     this.errorMessage = null;
+  }
+
+  openOrderPayments(order: ClientServiceOrderItem): void {
+    this.closeServiceWizard();
+    this.router.navigate(['/finance/incomes'], {
+      queryParams: {
+        source: 'SERVICE_ORDER',
+        referenceId: order.id
+      }
+    });
+  }
+
+  openDeleteOrderInvoicesModal(order: ClientServiceOrderItem): void {
+    if (!this.canDeleteOrderInvoices()) {
+      this.errorMessage = 'Sem permissão para excluir o orçamento e suas faturas.';
+      return;
+    }
+
+    this.selectedOrderForInvoiceDeletion = order;
+    this.deleteOrderInvoicesModalOpen = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeDeleteOrderInvoicesModal(): void {
+    this.deleteOrderInvoicesModalOpen = false;
+    this.selectedOrderForInvoiceDeletion = null;
+  }
+
+  confirmDeleteOrderInvoices(): void {
+    if (!this.selectedOrderForInvoiceDeletion || this.saving) {
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.financeService.deleteServiceOrderWithIncomes(this.selectedOrderForInvoiceDeletion.id).subscribe({
+      next: () => {
+        this.saving = false;
+        this.closeDeleteOrderInvoicesModal();
+        this.serviceOrderId = null;
+        this.infoMessage = 'Orçamento e faturas excluídos com sucesso.';
+        this.refreshOrderHistory();
+      },
+      error: (error) => {
+        this.saving = false;
+        this.errorMessage = error?.error?.message || 'Não foi possível excluir o orçamento e suas faturas.';
+      }
+    });
   }
 
   goToWizardStep(step: number): void {

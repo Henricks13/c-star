@@ -31,6 +31,7 @@ interface StockAdjustmentFormModel {
 export class ProductsComponent implements OnInit {
   loading = false;
   saving = false;
+  togglingProductId: string | null = null;
 
   errorMessage: string | null = null;
   infoMessage: string | null = null;
@@ -257,6 +258,42 @@ export class ProductsComponent implements OnInit {
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Não foi possível excluir o produto.';
         this.saving = false;
+      }
+    });
+  }
+
+  toggleProductActive(product: ProductItem, nextActive: boolean): void {
+    if (this.togglingProductId) {
+      return;
+    }
+
+    const payload: UpdateProductRequest = {
+      name: product.name,
+      sku: product.sku,
+      productTypeId: product.productTypeId,
+      purchasePrice: Number(product.purchasePrice),
+      salePrice: Number(product.salePrice),
+      stockQuantity: Number(product.stockQuantity),
+      minimumStock: Number(product.minimumStock),
+      perishable: product.perishable,
+      expirationDate: product.expirationDate,
+      active: nextActive,
+      notes: product.notes
+    };
+
+    this.togglingProductId = product.id;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.productsService.update(product.id, payload).subscribe({
+      next: (updated) => {
+        product.active = updated.active;
+        this.infoMessage = updated.active ? 'Produto ativado com sucesso.' : 'Produto desativado com sucesso.';
+        this.togglingProductId = null;
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível alterar o status do produto.';
+        this.togglingProductId = null;
       }
     });
   }

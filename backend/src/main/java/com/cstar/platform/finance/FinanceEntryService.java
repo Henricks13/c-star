@@ -1,5 +1,8 @@
 package com.cstar.platform.finance;
 
+import com.cstar.platform.auth.security.AuthUserPrincipal;
+import com.cstar.platform.clientorders.ClientServiceOrderRepository;
+import com.cstar.platform.clientorders.model.ClientServiceOrder;
 import com.cstar.platform.finance.dto.FinanceExpenseRequest;
 import com.cstar.platform.finance.dto.FinanceExpenseResponse;
 import com.cstar.platform.finance.dto.FinanceIncomeRequest;
@@ -9,6 +12,7 @@ import com.cstar.platform.finance.model.FinanceExpenseType;
 import com.cstar.platform.finance.model.FinanceIncome;
 import com.cstar.platform.finance.model.FinanceIncomeStatus;
 import com.cstar.platform.finance.model.FinanceIncomeType;
+import com.cstar.platform.finance.model.IncomeSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +27,16 @@ public class FinanceEntryService {
     private final FinanceIncomeRepository incomeRepository;
     private final FinanceExpenseRepository expenseRepository;
     private final FinanceTypeService financeTypeService;
+    private final ClientServiceOrderRepository clientServiceOrderRepository;
 
     public FinanceEntryService(FinanceIncomeRepository incomeRepository,
                                FinanceExpenseRepository expenseRepository,
-                               FinanceTypeService financeTypeService) {
+                               FinanceTypeService financeTypeService,
+                               ClientServiceOrderRepository clientServiceOrderRepository) {
         this.incomeRepository = incomeRepository;
         this.expenseRepository = expenseRepository;
         this.financeTypeService = financeTypeService;
+        this.clientServiceOrderRepository = clientServiceOrderRepository;
     }
 
     @Transactional(readOnly = true)
@@ -89,6 +96,21 @@ public class FinanceEntryService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Receita não encontrada");
         }
         incomeRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteServiceOrderWithIncomes(UUID orderId, AuthUserPrincipal principal) {
+        validateServiceOrderInvoiceDeletionAccess(principal);
+
+        ClientServiceOrder order = clientServiceOrderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Orçamento não encontrado"));
+
+        List<FinanceIncome> incomes = incomeRepository.findByReferenceIdAndSourceOrderByOccurredOnAscCreatedAtAsc(orderId, IncomeSource.SERVICE_ORDER);
+        if (!incomes.isEmpty()) {
+            incomeRepository.deleteAll(incomes);
+        }
+
+        clientServiceOrderRepository.delete(order);
     }
 
     @Transactional(readOnly = true)
@@ -168,5 +190,24 @@ public class FinanceEntryService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void validateServiceOrderInvoiceDeletionAccess(AuthUserPrincipal principal) {
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão para excluir faturas do orçamento.");
+        }
+
+        String email = principal.getUsername() == null ? "" : principal.getUsername().trim().toLowerCase();
+        if ("carol@gmail.com".equals(email)) {
+            return;
+        }
+
+        boolean authorizedByRole = principal.getRoleCodes().stream()
+                .map(code -> code == null ? "" : code.trim().toUpperCase())
+                .anyMatch(code -> "DEV_SUPORTE".equals(code) || "MASTER_ADMIN".equals(code));
+
+        if (!authorizedByRole) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão para excluir faturas do orçamento.");
+        }
     }
 }

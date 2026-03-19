@@ -1,11 +1,13 @@
 package com.cstar.platform.finance;
 
+import com.cstar.platform.auth.security.AuthUserPrincipal;
 import com.cstar.platform.finance.dto.FinanceExpenseRequest;
 import com.cstar.platform.finance.dto.FinanceExpenseResponse;
 import com.cstar.platform.finance.dto.FinanceIncomeRequest;
 import com.cstar.platform.finance.dto.FinanceIncomeResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,6 +57,13 @@ public class FinanceEntryController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteIncome(@PathVariable UUID id) {
         financeEntryService.deleteIncome(id);
+    }
+
+    @DeleteMapping("/incomes/service-order/{orderId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteServiceOrderWithIncomes(@PathVariable UUID orderId,
+                                              @AuthenticationPrincipal AuthUserPrincipal principal) {
+        financeEntryService.deleteServiceOrderWithIncomes(orderId, principal);
     }
 
     @GetMapping("/expenses")

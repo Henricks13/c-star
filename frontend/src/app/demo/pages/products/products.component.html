@@ -28,67 +28,151 @@
       </ng-container>
 
       <ng-container *ngIf="!loading && products.length > 0">
-        <div class="table-responsive products-table-wrapper">
-          <table class="table table-hover align-middle products-table mb-0">
-            <thead class="products-thead">
-              <tr>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Preços</th>
-                <th>Estoque</th>
-                <th>Último ajuste</th>
-                <th>Validade</th>
-                <th>Status</th>
-                <th class="text-end">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let product of products">
-                <td>
-                  <div class="fw-semibold">{{ product.name }}</div>
-                  <small class="text-muted">SKU: {{ product.sku || '—' }}</small>
-                </td>
-                <td>{{ product.productTypeName }}</td>
-                <td>
-                  <div>Compra: {{ product.purchasePrice | currency: 'BRL' }}</div>
-                  <div>Venda: {{ product.salePrice | currency: 'BRL' }}</div>
-                </td>
-                <td>
-                  <span [ngClass]="isLowStock(product) ? 'text-danger fw-semibold' : ''">{{ product.stockQuantity }}</span>
-                  <small class="text-muted d-block">Mínimo: {{ product.minimumStock }}</small>
-                </td>
-                <td>
-                  <ng-container *ngIf="product.lastAdjustmentAt; else noAdjustment">
-                    <div>{{ adjustmentOperationLabel(product.lastAdjustmentOperation) }}: {{ product.lastAdjustmentQuantity }}</div>
-                    <small class="text-muted d-block">{{ product.lastAdjustmentAt | date: 'dd/MM/yyyy HH:mm' }}</small>
-                  </ng-container>
-                  <ng-template #noAdjustment>—</ng-template>
-                </td>
-                <td>
-                  <span *ngIf="product.perishable; else notPerishable">{{ product.expirationDate ? (product.expirationDate | date: 'dd/MM/yyyy') : 'Sem data' }}</span>
-                  <ng-template #notPerishable>Não perecível</ng-template>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="product.active ? 'text-bg-success' : 'text-bg-secondary'">
-                    {{ product.active ? 'Ativo' : 'Inativo' }}
-                  </span>
-                </td>
-                <td>
-                  <div class="product-actions">
-                    <button class="btn btn-sm btn-outline-warning" type="button" (click)="openStockModal(product)" title="Ajustar estoque" aria-label="Ajustar estoque">
-                      <i class="ti ti-box-seam"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(product)" title="Editar" aria-label="Editar">
-                      <i class="ti ti-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDeleteModal(product)" title="Excluir" aria-label="Excluir">
-                      <i class="ti ti-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="desktop-list d-none d-md-block">
+          <div class="table-responsive products-table-wrapper">
+            <table class="table table-hover align-middle products-table mb-0">
+              <thead class="products-thead">
+                <tr>
+                  <th>Nome</th>
+                  <th>Tipo</th>
+                  <th>Preços</th>
+                  <th>Estoque</th>
+                  <th>Último ajuste</th>
+                  <th>Validade</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let product of products">
+                  <td>
+                    <div class="fw-semibold">{{ product.name }}</div>
+                    <small class="text-muted">SKU: {{ product.sku || '—' }}</small>
+                  </td>
+                  <td>{{ product.productTypeName }}</td>
+                  <td>
+                    <div>Compra: {{ product.purchasePrice | currency: 'BRL' }}</div>
+                    <div>Venda: {{ product.salePrice | currency: 'BRL' }}</div>
+                  </td>
+                  <td>
+                    <span [ngClass]="isLowStock(product) ? 'text-danger fw-semibold' : ''">{{ product.stockQuantity }}</span>
+                    <small class="text-muted d-block">Mínimo: {{ product.minimumStock }}</small>
+                  </td>
+                  <td>
+                    <ng-container *ngIf="product.lastAdjustmentAt; else noAdjustment">
+                      <div>{{ adjustmentOperationLabel(product.lastAdjustmentOperation) }}: {{ product.lastAdjustmentQuantity }}</div>
+                      <small class="text-muted d-block">{{ product.lastAdjustmentAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                    </ng-container>
+                    <ng-template #noAdjustment>—</ng-template>
+                  </td>
+                  <td>
+                    <span *ngIf="product.perishable; else notPerishable">{{ product.expirationDate ? (product.expirationDate | date: 'dd/MM/yyyy') : 'Sem data' }}</span>
+                    <ng-template #notPerishable>Não perecível</ng-template>
+                  </td>
+                  <td>
+                    <div class="product-actions">
+                      <div class="form-check form-switch system-status-switch mb-0">
+                        <input
+                          class="form-check-input system-status-switch-control"
+                          type="checkbox"
+                          [id]="'product-switch-' + product.id"
+                          [checked]="product.active"
+                          [attr.aria-label]="product.active ? 'Desativar produto' : 'Ativar produto'"
+                          [title]="product.active ? 'Ativo' : 'Desativado'"
+                          [disabled]="togglingProductId === product.id"
+                          (change)="toggleProductActive(product, $any($event.target).checked)"
+                        />
+                      </div>
+                      <button class="btn btn-sm btn-outline-warning" type="button" (click)="openStockModal(product)" title="Ajustar estoque" aria-label="Ajustar estoque">
+                        <i class="ti ti-box-seam"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(product)" title="Editar" aria-label="Editar">
+                        <i class="ti ti-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDeleteModal(product)" title="Excluir" aria-label="Excluir">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-list d-block d-md-none">
+          <div class="mobile-product-card" *ngFor="let product of products">
+            <div class="mobile-product-row">
+              <span class="mobile-label">Nome</span>
+              <span>{{ product.name }}</span>
+            </div>
+            <div class="mobile-product-row">
+              <span class="mobile-label">SKU</span>
+              <span>{{ product.sku || '—' }}</span>
+            </div>
+            <div class="mobile-product-row">
+              <span class="mobile-label">Tipo</span>
+              <span>{{ product.productTypeName }}</span>
+            </div>
+            <div class="mobile-product-row">
+              <span class="mobile-label">Compra</span>
+              <span>{{ product.purchasePrice | currency: 'BRL' }}</span>
+            </div>
+            <div class="mobile-product-row">
+              <span class="mobile-label">Venda</span>
+              <span>{{ product.salePrice | currency: 'BRL' }}</span>
+            </div>
+            <div class="mobile-product-row">
+              <span class="mobile-label">Estoque</span>
+              <span [ngClass]="isLowStock(product) ? 'text-danger fw-semibold' : ''">{{ product.stockQuantity }} (mín: {{ product.minimumStock }})</span>
+            </div>
+            <div class="mobile-product-row">
+              <span class="mobile-label">Último ajuste</span>
+              <span *ngIf="product.lastAdjustmentAt; else noAdjustmentMobile">
+                {{ adjustmentOperationLabel(product.lastAdjustmentOperation) }}: {{ product.lastAdjustmentQuantity }} -
+                {{ product.lastAdjustmentAt | date: 'dd/MM/yyyy HH:mm' }}
+              </span>
+              <ng-template #noAdjustmentMobile>—</ng-template>
+            </div>
+            <div class="mobile-product-row">
+              <span class="mobile-label">Validade</span>
+              <span>
+                {{ product.perishable ? (product.expirationDate ? (product.expirationDate | date: 'dd/MM/yyyy') : 'Sem data') : 'Não perecível' }}
+              </span>
+            </div>
+            <div class="mobile-product-row mobile-product-row-switch">
+              <span class="mobile-label">Ativo</span>
+              <div class="form-check form-switch system-status-switch mb-0">
+                <input
+                  class="form-check-input system-status-switch-control"
+                  type="checkbox"
+                  [id]="'mobile-product-switch-' + product.id"
+                  [checked]="product.active"
+                  [attr.aria-label]="product.active ? 'Desativar produto' : 'Ativar produto'"
+                  [title]="product.active ? 'Ativo' : 'Desativado'"
+                  [disabled]="togglingProductId === product.id"
+                  (change)="toggleProductActive(product, $any($event.target).checked)"
+                />
+              </div>
+            </div>
+            <div class="mobile-product-row">
+              <button class="btn btn-sm btn-outline-warning w-100" type="button" (click)="openStockModal(product)">
+                <i class="ti ti-box-seam me-1"></i>
+                Ajustar estoque
+              </button>
+            </div>
+            <div class="mobile-product-row">
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openEditModal(product)">
+                <i class="ti ti-pencil me-1"></i>
+                Editar
+              </button>
+            </div>
+            <div class="mobile-product-row">
+              <button class="btn btn-sm btn-outline-danger w-100" type="button" (click)="openDeleteModal(product)">
+                <i class="ti ti-trash me-1"></i>
+                Excluir
+              </button>
+            </div>
+          </div>
         </div>
       </ng-container>
     </app-card>
@@ -132,8 +216,8 @@
           <input type="number" step="0.001" min="0.001" class="form-control" [(ngModel)]="stockForm.quantity" />
         </div>
 
-        <div class="form-check">
-          <input id="stockCustomPriceEnabled" class="form-check-input" type="checkbox" [(ngModel)]="stockForm.customPriceEnabled" />
+        <div class="form-check form-switch system-status-switch">
+          <input id="stockCustomPriceEnabled" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="stockForm.customPriceEnabled" />
           <label class="form-check-label" for="stockCustomPriceEnabled">Preço personalizado?</label>
         </div>
 
@@ -224,8 +308,13 @@
       </div>
     </div>
 
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" [id]="editing ? 'edit-perishable' : 'create-perishable'" [(ngModel)]="formModel.perishable" />
+    <div class="form-check form-switch system-status-switch">
+      <input
+        class="form-check-input system-status-switch-control"
+        type="checkbox"
+        [id]="editing ? 'edit-perishable' : 'create-perishable'"
+        [(ngModel)]="formModel.perishable"
+      />
       <label class="form-check-label" [for]="editing ? 'edit-perishable' : 'create-perishable'">Produto perecível</label>
     </div>
 
@@ -234,8 +323,8 @@
       <input type="date" class="form-control" [(ngModel)]="formModel.expirationDate" />
     </div>
 
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" [id]="editing ? 'edit-active' : 'create-active'" [(ngModel)]="formModel.active" />
+    <div class="form-check form-switch system-status-switch">
+      <input class="form-check-input system-status-switch-control" type="checkbox" [id]="editing ? 'edit-active' : 'create-active'" [(ngModel)]="formModel.active" />
       <label class="form-check-label" [for]="editing ? 'edit-active' : 'create-active'">Produto ativo</label>
     </div>
 
