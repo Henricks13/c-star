@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,13 +54,13 @@ public class WhatsappContactSyncService {
         contactLifecycleService.refreshStagesByOutboundRecency();
 
         String instanceName = resolveInstanceName(principal);
-        List<Map<String, Object>> chats = extractRecords(evolutionApiClient.findChats(instanceName, 400));
+        List<Map<String, Object>> chats = fetchAllChats(instanceName, 500, 200);
 
         int conversationsSynced = 0;
         int messagesProcessed = 0;
 
         for (Map<String, Object> chat : chats) {
-            String remoteJid = asString(chat.get("remoteJid"));
+            String remoteJid = extractRemoteJid(chat);
             if (remoteJid == null || remoteJid.isBlank() || remoteJid.endsWith("@g.us")) {
                 continue;
             }
@@ -74,14 +75,18 @@ public class WhatsappContactSyncService {
                 continue;
             }
 
-            List<Map<String, Object>> probeMessages = extractRecords(evolutionApiClient.findMessages(instanceName, remoteJid, 1));
+            List<Map<String, Object>> probeMessages = extractRecords(evolutionApiClient.findMessages(instanceName, remoteJid, 5));
             Map<String, Object> latest = findLatestByTimestamp(probeMessages);
-            if (latest == null || isFromMe(latest)) {
+            int unreadCount = extractUnreadCount(chat);
+            boolean hasUnreadMessages = unreadCount > 0;
+            boolean hasLatestInbound = latest != null && !isFromMe(latest);
+            boolean hasInboundInProbe = probeMessages.stream().anyMatch(message -> !isFromMe(message));
+            if (!hasUnreadMessages && !hasLatestInbound && !hasInboundInProbe) {
                 continue;
             }
 
             conversationsSynced++;
-            String displayName = asString(chat.get("pushName"));
+            String displayName = resolveDisplayName(chat, phone);
 
             List<Map<String, Object>> messages = extractRecords(evolutionApiClient.findMessages(instanceName, remoteJid, 25));
             messages.sort(Comparator.comparing(this::extractSentAt));
@@ -101,6 +106,41 @@ public class WhatsappContactSyncService {
         }
 
         return new ContactSyncResponse(conversationsSynced, messagesProcessed);
+    }
+
+    private List<Map<String, Object>> fetchAllChats(String instanceName, int pageSize, int maxPages) {
+        int safePageSize = Math.max(50, Math.min(pageSize, 500));
+        int safeMaxPages = Math.max(1, maxPages);
+
+        Map<String, Map<String, Object>> uniqueChatsByJid = new LinkedHashMap<>();
+        int pagesWithoutGrowth = 0;
+        for (int page = 1; page <= safeMaxPages; page++) {
+            List<Map<String, Object>> pageRecords = extractRecords(evolutionApiClient.findChats(instanceName, page, safePageSize));
+            if (pageRecords.isEmpty()) {
+                break;
+            }
+
+            int beforeCount = uniqueChatsByJid.size();
+            for (Map<String, Object> chat : pageRecords) {
+                String remoteJid = extractRemoteJid(chat);
+                if (remoteJid == null || remoteJid.isBlank()) {
+                    continue;
+                }
+                uniqueChatsByJid.putIfAbsent(remoteJid, chat);
+            }
+
+            if (uniqueChatsByJid.size() == beforeCount) {
+                pagesWithoutGrowth++;
+            } else {
+                pagesWithoutGrowth = 0;
+            }
+
+            if (pagesWithoutGrowth >= 2) {
+                break;
+            }
+        }
+
+        return new ArrayList<>(uniqueChatsByJid.values());
     }
 
     public List<ContactMessageItemResponse> getLatestMessages(UUID contactId, int limit) {
@@ -309,6 +349,117 @@ public class WhatsappContactSyncService {
         return messages.stream()
                 .max(Comparator.comparing(this::extractSentAt))
                 .orElse(null);
+    }
+
+    private String resolveDisplayName(Map<String, Object> chat, String phone) {
+        String pushName = asString(chat.get("pushName"));
+        if (pushName != null && !pushName.isBlank()) {
+            return pushName;
+        }
+
+        String name = asString(chat.get("name"));
+        if (name != null && !name.isBlank()) {
+            return name;
+        }
+
+        String profileName = asString(chat.get("profileName"));
+        if (profileName != null && !profileName.isBlank()) {
+            return profileName;
+        }
+
+        String notify = asString(chat.get("notify"));
+        if (notify != null && !notify.isBlank()) {
+            return notify;
+        }
+
+        return phone;
+    }
+
+    private String extractRemoteJid(Map<String, Object> chat) {
+        String remoteJid = asString(chat.get("remoteJid"));
+        if (remoteJid != null && !remoteJid.isBlank()) {
+            return remoteJid;
+        }
+
+        String id = asString(chat.get("id"));
+        if (id != null && id.contains("@")) {
+            return id;
+        }
+
+        String jid = asString(chat.get("jid"));
+        if (jid != null && jid.contains("@")) {
+            return jid;
+        }
+
+        Map<String, Object> key = asMap(chat.get("key"));
+        String nestedRemoteJid = asString(key.get("remoteJid"));
+        if (nestedRemoteJid != null && nestedRemoteJid.contains("@")) {
+            return nestedRemoteJid;
+        }
+
+        String nestedId = asString(key.get("id"));
+        if (nestedId != null && nestedId.contains("@")) {
+            return nestedId;
+        }
+
+        return null;
+    }
+
+    private int extractUnreadCount(Map<String, Object> chat) {
+        int unreadCount = parseInteger(chat.get("unreadCount"));
+        if (unreadCount > 0) {
+            return unreadCount;
+        }
+
+        int unreadMessageCount = parseInteger(chat.get("unreadMessageCount"));
+        if (unreadMessageCount > 0) {
+            return unreadMessageCount;
+        }
+
+        int unreadMessages = parseInteger(chat.get("unreadMessages"));
+        if (unreadMessages > 0) {
+            return unreadMessages;
+        }
+
+        int unread = parseInteger(chat.get("unread"));
+        if (unread > 0) {
+            return unread;
+        }
+
+        Map<String, Object> stats = asMap(chat.get("stats"));
+        int statsUnread = parseInteger(stats.get("unread"));
+        if (statsUnread > 0) {
+            return statsUnread;
+        }
+
+        Map<String, Object> metadata = asMap(chat.get("metadata"));
+        return parseInteger(metadata.get("unreadCount"));
+    }
+
+    private int parseInteger(Object value) {
+        if (value == null) {
+            return 0;
+        }
+
+        if (value instanceof Number number) {
+            return Math.max(0, number.intValue());
+        }
+
+        String raw = asString(value);
+        if (raw == null || raw.isBlank()) {
+            return 0;
+        }
+
+        String digits = raw.replaceAll("[^0-9-]", "");
+        if (digits.isBlank()) {
+            return 0;
+        }
+
+        try {
+            return Math.max(0, Integer.parseInt(digits));
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
     }
 
     @SuppressWarnings("unchecked")

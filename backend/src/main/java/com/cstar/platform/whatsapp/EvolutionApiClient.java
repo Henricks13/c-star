@@ -98,10 +98,15 @@ public class EvolutionApiClient {
     }
 
     public Map<String, Object> findChats(String instanceName, int limit) {
+        return findChats(instanceName, 1, limit);
+    }
+
+    public Map<String, Object> findChats(String instanceName, int page, int limit) {
         String url = properties.getEvolution().getBaseUrl() + "/chat/findChats/" + instanceName;
+        int safePage = Math.max(1, page);
         int safeLimit = Math.max(1, Math.min(limit, 500));
         Map<String, Object> payload = new HashMap<>();
-        payload.put("page", 1);
+        payload.put("page", safePage);
         payload.put("limit", safeLimit);
         return post(url, payload);
     }
