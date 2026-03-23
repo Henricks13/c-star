@@ -86,11 +86,11 @@ public class AgendaService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo de evento inválido"));
 
         Client client = null;
-        if (type.isRequiresClient()) {
-            if (request.clientId() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cliente é obrigatório para este tipo de evento");
-            }
+        if (type.isRequiresClient() && request.clientId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cliente é obrigatório para este tipo de evento");
+        }
 
+        if (request.clientId() != null) {
             client = clientRepository.findById(request.clientId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cliente não encontrado"));
         }

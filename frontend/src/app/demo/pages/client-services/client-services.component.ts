@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
+import { AuthService } from 'src/app/core/auth/auth.service';
 import { ClientOrdersService } from 'src/app/core/client-orders/client-orders.service';
 import {
   ClientServiceOrderItem,
+  ClientServiceOrderPaymentStatus,
   ClientServiceOrderStatus,
   ConfirmClientServiceOrderPaymentRequest,
   CreateClientServiceOrderRequest,
@@ -13,6 +15,8 @@ import {
 } from 'src/app/core/client-orders/client-orders.types';
 import { ClientsService } from 'src/app/core/clients/clients.service';
 import { ClientListItem } from 'src/app/core/clients/clients.types';
+import { FinanceService } from 'src/app/core/finance/finance.service';
+import { FinanceIncomeItem } from 'src/app/core/finance/finance.types';
 import { ProductItem } from 'src/app/core/products/products.types';
 import { ProductsService } from 'src/app/core/products/products.service';
 import { ServiceItem } from 'src/app/core/services/services.types';
@@ -23,6 +27,8 @@ interface ExtraProductRow {
   productId: string;
   quantityUsed: number;
 }
+
+type PaymentPlanSelection = ServicePaymentMethod | 'CUSTOM_SPLIT';
 
 @Component({
   selector: 'app-client-services',
@@ -59,6 +65,7 @@ export class ClientServicesComponent implements OnInit {
   paymentInstallmentCount = 1;
   paymentPaid = false;
   paymentFirstInstallmentPaid = false;
+  wizardServiceStatus: ClientServiceOrderStatus | null = null;
 
   detailsModalOpen = false;
   selectedOrderForDetails: ClientServiceOrderItem | null = null;
@@ -66,7 +73,27 @@ export class ClientServicesComponent implements OnInit {
   serviceManagementModalOpen = false;
   selectedOrderForManagement: ClientServiceOrderItem | null = null;
   serviceManagementObservation = '';
+  serviceManagementScheduleAt = '';
   serviceManagementReturnAt = '';
+  deleteServiceOrderModalOpen = false;
+  selectedOrderForDeletion: ClientServiceOrderItem | null = null;
+  paymentModalOpen = false;
+  selectedOrderForPayment: ClientServiceOrderItem | null = null;
+  paymentModalErrorMessage: string | null = null;
+  paymentModalInfoMessage: string | null = null;
+  paymentInvoices: FinanceIncomeItem[] = [];
+  paymentPlanLoading = false;
+  paymentPlanSelection: PaymentPlanSelection = 'PIX';
+  paymentPlanMethod: ServicePaymentMethod = 'PIX';
+  paymentPlanInstallments = 1;
+  paymentPlanDownPaymentEnabled = false;
+  paymentPlanDownPaymentAmount: number | null = null;
+  paymentPlanCustomSplitEnabled = false;
+  paymentPlanDownPaymentMethod: ServicePaymentMethod = 'PIX';
+  paymentPlanRemainingPaymentMethod: ServicePaymentMethod = 'CREDIT_CARD';
+  invoiceNotesDraft: Record<string, string> = {};
+  routeClientId: string | null = null;
+  routeOpenWizard = false;
 
   readonly paymentMethodOptions: Array<{ value: ServicePaymentMethod; label: string }> = [
     { value: 'PIX', label: 'Pix' },
@@ -90,6 +117,9 @@ export class ClientServicesComponent implements OnInit {
     private readonly clientsService: ClientsService,
     private readonly servicesService: ServicesService,
     private readonly productsService: ProductsService,
+    private readonly financeService: FinanceService,
+    private readonly authService: AuthService,
+    private readonly route: ActivatedRoute,
     private readonly router: Router
   ) {}
 
@@ -184,11 +214,47 @@ export class ClientServicesComponent implements OnInit {
     return this.paymentMethod === 'CREDIT_CARD' || this.paymentMethod === 'PIX_INSTALLMENT';
   }
 
+  get paymentPlanAllowsInstallments(): boolean {
+    return this.paymentPlanMethod === 'CREDIT_CARD' || this.paymentPlanMethod === 'PIX_INSTALLMENT';
+  }
+
+  get paymentPlanEffectiveMethod(): ServicePaymentMethod {
+    return this.paymentPlanCustomSplitEnabled ? this.paymentPlanRemainingPaymentMethod : this.paymentPlanMethod;
+  }
+
+  get paymentPlanEffectiveAllowsInstallments(): boolean {
+    const method = this.paymentPlanEffectiveMethod;
+    return method === 'CREDIT_CARD' || method === 'PIX_INSTALLMENT';
+  }
+
+  get isWizardWaitingScheduling(): boolean {
+    return this.wizardServiceStatus === 'ORCADO';
+  }
+
+  get canConfirmPaymentInWizard(): boolean {
+    return !this.isWizardWaitingScheduling;
+  }
+
+  canDeleteServiceOrders(): boolean {
+    const user = this.authService.currentUser();
+    if (!user) {
+      return false;
+    }
+
+    const email = (user.email || '').trim().toLowerCase();
+    if (email === 'carol@gmail.com') {
+      return true;
+    }
+
+    const roles = (user.roles || []).map((role) => (role || '').trim().toUpperCase());
+    return roles.includes('DEV_SUPORTE') || roles.includes('MASTER_ADMIN');
+  }
+
   get filteredOrders(): ClientServiceOrderItem[] {
     const normalizedSearch = (this.searchTerm || '').trim().toLowerCase();
 
     return this.orders.filter((order) => {
-      const matchesStatus = !this.selectedStatus || order.status === this.selectedStatus;
+      const matchesStatus = !this.selectedStatus || order.serviceStatus === this.selectedStatus;
       const matchesSearch =
         !normalizedSearch ||
         (order.clientName || '').toLowerCase().includes(normalizedSearch) ||
@@ -198,9 +264,30 @@ export class ClientServicesComponent implements OnInit {
     });
   }
 
+  get hasPaymentInvoices(): boolean {
+    return this.paymentInvoices.length > 0;
+  }
+
+  get paymentTotalInvoiced(): number {
+    return this.paymentInvoices.reduce((acc, item) => acc + Number(item.amount || 0), 0);
+  }
+
+  get paymentTotalPaid(): number {
+    return this.paymentInvoices
+      .filter((item) => item.paymentStatus === 'PAGO')
+      .reduce((acc, item) => acc + Number(item.amount || 0), 0);
+  }
+
+  get paymentTotalPending(): number {
+    return this.paymentTotalInvoiced - this.paymentTotalPaid;
+  }
+
   loadInitialData(): void {
     this.loading = true;
     this.errorMessage = null;
+
+    this.routeClientId = this.route.snapshot.queryParamMap.get('clientId');
+    this.routeOpenWizard = this.route.snapshot.queryParamMap.get('openWizard') === '1';
 
     this.clientsService.list().subscribe({
       next: (clients) => {
@@ -211,6 +298,7 @@ export class ClientServicesComponent implements OnInit {
             this.productsService.list().subscribe({
               next: (products) => {
                 this.availableProducts = products.filter((item) => item.active);
+                this.applyRouteShortcut();
                 this.loadOrders();
               },
               error: () => {
@@ -255,10 +343,30 @@ export class ClientServicesComponent implements OnInit {
     this.createWizardOpen = true;
   }
 
+  private applyRouteShortcut(): void {
+    if (!this.routeClientId) {
+      return;
+    }
+
+    const hasClient = this.clients.some((item) => item.id === this.routeClientId);
+    if (!hasClient) {
+      return;
+    }
+
+    if (this.routeOpenWizard) {
+      this.openCreateWizard();
+    }
+
+    this.selectedClientId = this.routeClientId;
+    this.routeClientId = null;
+    this.routeOpenWizard = false;
+  }
+
   closeCreateWizard(): void {
     this.createWizardOpen = false;
     this.createWizardLoading = false;
     this.serviceOrderId = null;
+    this.wizardServiceStatus = null;
   }
 
   goToWizardStep(step: number): void {
@@ -381,9 +489,12 @@ export class ClientServicesComponent implements OnInit {
     this.clientOrdersService.create(payload).subscribe({
       next: (order) => {
         this.serviceOrderId = order.id;
+        this.wizardServiceStatus = order.serviceStatus;
         this.saving = false;
         this.errorMessage = null;
-        this.infoMessage = moveToPaymentStep ? 'Orçamento salvo. Agora finalize o pagamento.' : 'Orçamento salvo com sucesso.';
+        this.infoMessage = moveToPaymentStep
+          ? 'Orçamento salvo. Agende o serviço no gerenciamento para liberar o pagamento.'
+          : 'Orçamento salvo com sucesso.';
         if (moveToPaymentStep) {
           this.createWizardStep = 4;
         }
@@ -400,6 +511,11 @@ export class ClientServicesComponent implements OnInit {
   confirmServicePayment(): void {
     if (!this.serviceOrderId) {
       this.errorMessage = 'Salve o orçamento antes de confirmar pagamento.';
+      return;
+    }
+
+    if (!this.canConfirmPaymentInWizard) {
+      this.errorMessage = 'Agende o serviço antes de confirmar pagamento.';
       return;
     }
 
@@ -488,15 +604,84 @@ export class ClientServicesComponent implements OnInit {
     this.selectedOrderForManagement = order;
     this.serviceManagementModalOpen = true;
     this.serviceManagementObservation = '';
-    this.serviceManagementReturnAt = this.toDateTimeLocalInput(this.addDaysFromNow(7));
+    const scheduleBase = order.scheduledAt ? new Date(order.scheduledAt) : this.addDaysFromNow(1);
+    this.serviceManagementScheduleAt = this.toDateTimeLocalInput(scheduleBase);
+    const returnBase = order.scheduledAt ? this.addDays(new Date(order.scheduledAt), 7) : this.addDaysFromNow(7);
+    this.serviceManagementReturnAt = this.toDateTimeLocalInput(returnBase);
     this.errorMessage = null;
     this.infoMessage = null;
+  }
+
+  openScheduleAction(order: ClientServiceOrderItem): void {
+    this.openServiceManagement(order);
+  }
+
+  openReturnAction(order: ClientServiceOrderItem): void {
+    this.openServiceManagement(order);
+  }
+
+  openScheduleFromDetails(): void {
+    if (!this.selectedOrderForDetails) {
+      return;
+    }
+
+    this.openScheduleAction(this.selectedOrderForDetails);
+    this.closeOrderDetails();
+  }
+
+  openReturnFromDetails(): void {
+    if (!this.selectedOrderForDetails) {
+      return;
+    }
+
+    this.openReturnAction(this.selectedOrderForDetails);
+    this.closeOrderDetails();
   }
 
   closeServiceManagementModal(): void {
     this.serviceManagementModalOpen = false;
     this.selectedOrderForManagement = null;
     this.serviceManagementObservation = '';
+    this.serviceManagementScheduleAt = '';
+  }
+
+  scheduleService(): void {
+    if (!this.selectedOrderForManagement || this.saving) {
+      return;
+    }
+
+    if (!this.serviceManagementScheduleAt) {
+      this.errorMessage = 'Informe data e hora do agendamento.';
+      return;
+    }
+
+    const scheduledAt = new Date(this.serviceManagementScheduleAt);
+    if (Number.isNaN(scheduledAt.getTime())) {
+      this.errorMessage = 'Data/hora de agendamento inválida.';
+      return;
+    }
+
+    if (scheduledAt.getTime() < Date.now()) {
+      this.errorMessage = 'O agendamento deve ser de hoje em diante.';
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.clientOrdersService.scheduleService(this.selectedOrderForManagement.id, { scheduledAt: scheduledAt.toISOString() }).subscribe({
+      next: (updated) => {
+        this.replaceOrder(updated);
+        this.selectedOrderForManagement = updated;
+        this.saving = false;
+        this.infoMessage = 'Serviço agendado e evento criado na agenda.';
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Não foi possível agendar o serviço.';
+        this.saving = false;
+      }
+    });
   }
 
   addServiceObservation(): void {
@@ -545,6 +730,17 @@ export class ClientServicesComponent implements OnInit {
       return;
     }
 
+    if (returnAt.getTime() < Date.now()) {
+      this.errorMessage = 'O retorno deve ser de hoje em diante.';
+      return;
+    }
+
+    const scheduledAt = this.selectedOrderForManagement.scheduledAt ? new Date(this.selectedOrderForManagement.scheduledAt) : null;
+    if (scheduledAt && returnAt.getTime() < scheduledAt.getTime()) {
+      this.errorMessage = 'Não é possível marcar retorno antes da data de agendamento do serviço.';
+      return;
+    }
+
     this.saving = true;
     this.errorMessage = null;
     this.infoMessage = null;
@@ -586,11 +782,289 @@ export class ClientServicesComponent implements OnInit {
     });
   }
 
+  finalizeOrder(order: ClientServiceOrderItem): void {
+    this.selectedOrderForManagement = order;
+    this.finalizeServiceLifecycle();
+  }
+
   openOrderPayments(order: ClientServiceOrderItem): void {
-    this.router.navigate(['/finance/incomes'], {
-      queryParams: {
-        source: 'SERVICE_ORDER',
-        referenceId: order.id
+    this.selectedOrderForPayment = order;
+    this.paymentPlanSelection = order.paymentMethod || 'PIX';
+    this.paymentPlanMethod = order.paymentMethod || 'PIX';
+    this.paymentPlanInstallments = order.installmentCount && order.installmentCount > 0 ? order.installmentCount : 1;
+    this.paymentPlanDownPaymentEnabled = false;
+    this.paymentPlanDownPaymentAmount = null;
+    this.paymentPlanCustomSplitEnabled = false;
+    this.paymentPlanDownPaymentMethod = 'PIX';
+    this.paymentPlanRemainingPaymentMethod = 'CREDIT_CARD';
+    this.paymentModalErrorMessage = null;
+    this.paymentModalInfoMessage = null;
+    this.paymentModalOpen = true;
+    this.loadPaymentInvoices();
+  }
+
+  closePaymentModal(): void {
+    this.paymentModalOpen = false;
+    this.selectedOrderForPayment = null;
+    this.paymentInvoices = [];
+    this.invoiceNotesDraft = {};
+    this.paymentPlanLoading = false;
+    this.paymentPlanSelection = 'PIX';
+    this.paymentPlanMethod = 'PIX';
+    this.paymentPlanInstallments = 1;
+    this.paymentPlanDownPaymentEnabled = false;
+    this.paymentPlanDownPaymentAmount = null;
+    this.paymentPlanCustomSplitEnabled = false;
+    this.paymentPlanDownPaymentMethod = 'PIX';
+    this.paymentPlanRemainingPaymentMethod = 'CREDIT_CARD';
+    this.paymentModalErrorMessage = null;
+    this.paymentModalInfoMessage = null;
+  }
+
+  loadPaymentInvoices(): void {
+    if (!this.selectedOrderForPayment) {
+      return;
+    }
+
+    this.paymentPlanLoading = true;
+    this.paymentModalErrorMessage = null;
+    this.paymentModalInfoMessage = null;
+    this.financeService.listServiceOrderIncomes(this.selectedOrderForPayment.id).subscribe({
+      next: (invoices) => {
+        this.paymentInvoices = invoices;
+        this.invoiceNotesDraft = {};
+        for (const invoice of invoices) {
+          this.invoiceNotesDraft[invoice.id] = invoice.notes || '';
+        }
+        this.paymentPlanLoading = false;
+      },
+      error: (error) => {
+        this.paymentPlanLoading = false;
+        this.paymentModalErrorMessage = this.extractApiErrorMessage(error, 'Não foi possível carregar as faturas do serviço.');
+      }
+    });
+  }
+
+  createPaymentPlanForOrder(): void {
+    if (!this.selectedOrderForPayment || this.saving) {
+      return;
+    }
+
+    if (!this.paymentPlanEffectiveAllowsInstallments) {
+      this.paymentPlanInstallments = 1;
+      this.paymentPlanDownPaymentEnabled = false;
+      this.paymentPlanDownPaymentAmount = null;
+    }
+
+    if (this.paymentPlanCustomSplitEnabled) {
+      this.paymentPlanDownPaymentEnabled = true;
+    }
+
+    if (this.paymentPlanInstallments < 1 || this.paymentPlanInstallments > 12) {
+      this.paymentModalErrorMessage = 'Informe a quantidade de parcelas entre 1 e 12.';
+      return;
+    }
+
+    if (this.paymentPlanDownPaymentEnabled) {
+      const entry = Number(this.paymentPlanDownPaymentAmount || 0);
+      const total = Number(this.selectedOrderForPayment.finalTotal || 0);
+
+      if (entry <= 0) {
+        this.paymentModalErrorMessage = 'Informe um valor de entrada válido.';
+        return;
+      }
+
+      if (entry >= total) {
+        this.paymentModalErrorMessage = 'A entrada deve ser menor que o valor total do serviço.';
+        return;
+      }
+    }
+
+    this.saving = true;
+    this.paymentModalErrorMessage = null;
+    this.paymentModalInfoMessage = null;
+    this.infoMessage = null;
+
+    this.clientOrdersService
+      .createPaymentPlan(this.selectedOrderForPayment.id, {
+        paymentMethod: this.paymentPlanMethod,
+        installmentCount: this.paymentPlanEffectiveAllowsInstallments ? Number(this.paymentPlanInstallments) : 1,
+        downPaymentEnabled: this.paymentPlanEffectiveAllowsInstallments ? this.paymentPlanDownPaymentEnabled : false,
+        downPaymentAmount: this.paymentPlanEffectiveAllowsInstallments && this.paymentPlanDownPaymentEnabled ? Number(this.paymentPlanDownPaymentAmount || 0) : null,
+        customSplitPaymentEnabled: this.paymentPlanCustomSplitEnabled,
+        downPaymentMethod: this.paymentPlanCustomSplitEnabled ? this.paymentPlanDownPaymentMethod : null,
+        remainingPaymentMethod: this.paymentPlanCustomSplitEnabled ? this.paymentPlanRemainingPaymentMethod : null
+      })
+      .subscribe({
+        next: (updatedOrder) => {
+          this.replaceOrder(updatedOrder);
+          this.selectedOrderForPayment = updatedOrder;
+          this.saving = false;
+          this.infoMessage = 'Faturas geradas com sucesso.';
+          this.loadPaymentInvoices();
+        },
+        error: (error) => {
+          this.saving = false;
+          this.paymentModalErrorMessage = this.extractApiErrorMessage(error, 'Não foi possível gerar as faturas do serviço.');
+        }
+      });
+  }
+
+  confirmInvoicePayment(invoice: FinanceIncomeItem): void {
+    if (this.saving || invoice.paymentStatus === 'PAGO') {
+      return;
+    }
+
+    this.saving = true;
+    this.paymentModalErrorMessage = null;
+    this.paymentModalInfoMessage = null;
+
+    this.financeService.confirmIncomePayment(invoice.id).subscribe({
+      next: () => {
+        this.saving = false;
+        this.paymentModalInfoMessage = 'Pagamento da fatura confirmado.';
+        this.loadPaymentInvoices();
+        this.loadOrders();
+      },
+      error: (error) => {
+        this.saving = false;
+        this.paymentModalErrorMessage = this.extractApiErrorMessage(error, 'Não foi possível confirmar o pagamento da fatura.');
+      }
+    });
+  }
+
+  saveInvoiceNotes(invoice: FinanceIncomeItem): void {
+    if (this.saving) {
+      return;
+    }
+
+    this.saving = true;
+    this.paymentModalErrorMessage = null;
+    this.paymentModalInfoMessage = null;
+
+    this.financeService.updateIncomeNotes(invoice.id, (this.invoiceNotesDraft[invoice.id] || '').trim() || null).subscribe({
+      next: () => {
+        this.saving = false;
+        this.paymentModalInfoMessage = 'Observação salva com sucesso.';
+        this.invoiceNotesDraft[invoice.id] = '';
+      },
+      error: (error) => {
+        this.saving = false;
+        this.paymentModalErrorMessage = this.extractApiErrorMessage(error, 'Não foi possível salvar a observação da fatura.');
+      }
+    });
+  }
+
+  getInvoiceStatusLabel(status: string | null | undefined): string {
+    return (status || '').toUpperCase() === 'PAGO' ? 'Pago' : 'Aguardando pagamento';
+  }
+
+  onPaymentPlanMethodChange(method: PaymentPlanSelection): void {
+    this.paymentPlanSelection = method;
+
+    if (method === 'CUSTOM_SPLIT') {
+      this.paymentPlanCustomSplitEnabled = true;
+      this.paymentPlanDownPaymentEnabled = true;
+      this.paymentPlanMethod = this.paymentPlanRemainingPaymentMethod;
+      return;
+    }
+
+    this.paymentPlanMethod = method;
+    this.paymentPlanCustomSplitEnabled = false;
+
+    if (!this.paymentPlanAllowsInstallments) {
+      this.paymentPlanInstallments = 1;
+      this.paymentPlanDownPaymentEnabled = false;
+      this.paymentPlanDownPaymentAmount = null;
+      return;
+    }
+
+    if (!this.paymentPlanInstallments || this.paymentPlanInstallments < 1 || this.paymentPlanInstallments > 12) {
+      this.paymentPlanInstallments = 1;
+    }
+  }
+
+  onPaymentPlanCustomSplitChange(enabled: boolean): void {
+    this.paymentPlanCustomSplitEnabled = enabled;
+    if (enabled) {
+      this.paymentPlanDownPaymentEnabled = true;
+      this.paymentPlanMethod = this.paymentPlanRemainingPaymentMethod;
+      this.paymentPlanSelection = 'CUSTOM_SPLIT';
+      return;
+    }
+
+    this.paymentPlanSelection = this.paymentPlanMethod;
+
+    this.paymentPlanDownPaymentEnabled = false;
+    this.paymentPlanDownPaymentAmount = null;
+    this.paymentPlanDownPaymentMethod = 'PIX';
+    this.paymentPlanRemainingPaymentMethod = 'CREDIT_CARD';
+  }
+
+  onRemainingPaymentMethodChange(method: ServicePaymentMethod): void {
+    this.paymentPlanRemainingPaymentMethod = method;
+    this.paymentPlanMethod = method;
+    if (this.paymentPlanCustomSplitEnabled) {
+      this.paymentPlanSelection = 'CUSTOM_SPLIT';
+    }
+
+    if (!this.paymentPlanEffectiveAllowsInstallments) {
+      this.paymentPlanInstallments = 1;
+      this.paymentPlanDownPaymentEnabled = false;
+      this.paymentPlanDownPaymentAmount = null;
+    }
+  }
+
+  deleteServiceOrder(order: ClientServiceOrderItem): void {
+    if (this.saving) {
+      return;
+    }
+
+    if (!this.canDeleteServiceOrders()) {
+      this.errorMessage = 'Sem permissão para excluir serviço.';
+      return;
+    }
+
+    this.selectedOrderForDeletion = order;
+    this.deleteServiceOrderModalOpen = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeDeleteServiceOrderModal(): void {
+    this.deleteServiceOrderModalOpen = false;
+    this.selectedOrderForDeletion = null;
+  }
+
+  confirmDeleteServiceOrder(): void {
+    if (!this.selectedOrderForDeletion || this.saving) {
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.financeService.deleteServiceOrderWithIncomes(this.selectedOrderForDeletion.id).subscribe({
+      next: () => {
+        this.saving = false;
+        const deletedOrderId = this.selectedOrderForDeletion?.id;
+        this.closeDeleteServiceOrderModal();
+        if (!deletedOrderId) {
+          return;
+        }
+        this.orders = this.orders.filter((item) => item.id !== deletedOrderId);
+        if (this.selectedOrderForDetails?.id === deletedOrderId) {
+          this.closeOrderDetails();
+        }
+        if (this.selectedOrderForManagement?.id === deletedOrderId) {
+          this.closeServiceManagementModal();
+        }
+        this.infoMessage = 'Serviço e faturas vinculadas excluídos com sucesso.';
+      },
+      error: (error) => {
+        this.saving = false;
+        this.errorMessage = error?.error?.message || 'Não foi possível excluir o serviço.';
       }
     });
   }
@@ -598,16 +1072,13 @@ export class ClientServicesComponent implements OnInit {
   getOrderStatusLabel(status: string | null | undefined): string {
     const normalized = (status || '').trim().toUpperCase();
     if (normalized === 'ORCADO') {
-      return 'Orçado';
+      return 'Aguardando agendamento';
     }
-    if (normalized === 'AGUARDANDO_PAGAMENTO') {
-      return 'Aguardando pagamento';
+    if (normalized === 'AGENDADO') {
+      return 'Agendado';
     }
-    if (normalized === 'PAGO') {
-      return 'Pago/em atendimento';
-    }
-    if (normalized === 'RETORNO_AGENDADO') {
-      return 'Retorno agendado';
+    if (normalized === 'AGUARDANDO_RETORNO') {
+      return 'Aguardando retorno';
     }
     if (normalized === 'FINALIZADO') {
       return 'Finalizado';
@@ -615,19 +1086,41 @@ export class ClientServicesComponent implements OnInit {
     return 'Não informado';
   }
 
+  getPaymentStatusLabel(status: ClientServiceOrderPaymentStatus | string | null | undefined): string {
+    const normalized = (status || '').trim().toUpperCase();
+    if (normalized === 'ORCADO') {
+      return 'Orçado';
+    }
+    if (normalized === 'AGUARDANDO_PAGAMENTO') {
+      return 'Aguardando pagamento';
+    }
+    if (normalized === 'PAGAMENTO_PARCIAL') {
+      return 'Pagamento parcial';
+    }
+    if (normalized === 'PAGAMENTO_CONCLUIDO') {
+      return 'Pagamento concluído';
+    }
+    return 'Não informado';
+  }
+
   canManageServiceLifecycle(status: string | null | undefined): boolean {
     const normalized = (status || '').trim().toUpperCase();
-    return normalized === 'PAGO' || normalized === 'RETORNO_AGENDADO' || normalized === 'FINALIZADO';
+    return normalized === 'ORCADO' || normalized === 'AGENDADO' || normalized === 'AGUARDANDO_RETORNO';
+  }
+
+  canScheduleService(status: string | null | undefined): boolean {
+    const normalized = (status || '').trim().toUpperCase();
+    return normalized === 'ORCADO';
   }
 
   canScheduleServiceReturn(status: string | null | undefined): boolean {
     const normalized = (status || '').trim().toUpperCase();
-    return normalized === 'PAGO' || normalized === 'RETORNO_AGENDADO';
+    return normalized === 'AGENDADO' || normalized === 'AGUARDANDO_RETORNO';
   }
 
   canFinalizeServiceLifecycle(status: string | null | undefined): boolean {
     const normalized = (status || '').trim().toUpperCase();
-    return normalized === 'PAGO' || normalized === 'RETORNO_AGENDADO';
+    return normalized === 'AGENDADO' || normalized === 'AGUARDANDO_RETORNO';
   }
 
   isStatusQuoted(status: string): boolean {
@@ -635,11 +1128,11 @@ export class ClientServicesComponent implements OnInit {
   }
 
   isStatusAwaiting(status: string): boolean {
-    return status === 'AGUARDANDO_PAGAMENTO';
+    return status === 'AGENDADO';
   }
 
   isStatusPaid(status: string): boolean {
-    return status === 'PAGO' || status === 'RETORNO_AGENDADO' || status === 'FINALIZADO';
+    return status === 'AGUARDANDO_RETORNO' || status === 'FINALIZADO';
   }
 
   private syncPaymentFlags(): void {
@@ -673,14 +1166,24 @@ export class ClientServicesComponent implements OnInit {
     this.paymentInstallmentCount = 1;
     this.paymentPaid = false;
     this.paymentFirstInstallmentPaid = false;
+    this.wizardServiceStatus = null;
   }
 
   private replaceOrder(updated: ClientServiceOrderItem): void {
     this.orders = this.orders.map((item) => (item.id === updated.id ? updated : item));
+    if (this.selectedOrderForDetails?.id === updated.id) {
+      this.selectedOrderForDetails = updated;
+    }
   }
 
   private addDaysFromNow(days: number): Date {
     const result = new Date();
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  private addDays(base: Date, days: number): Date {
+    const result = new Date(base);
     result.setDate(result.getDate() + days);
     return result;
   }
@@ -692,5 +1195,13 @@ export class ClientServicesComponent implements OnInit {
     const hours = String(value.getHours()).padStart(2, '0');
     const minutes = String(value.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  private extractApiErrorMessage(error: any, fallback: string): string {
+    const message = error?.error?.message || error?.message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+    return fallback;
   }
 }

@@ -1,0 +1,143 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Ficha do Paciente">
+      <div class="chart-toolbar mb-3">
+        <div class="toolbar-actions">
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="goBackToClients()">
+            <i class="ti ti-arrow-left me-1"></i>
+            Voltar para clientes
+          </button>
+          <button class="btn btn-sm btn-primary" type="button" (click)="openServiceShortcut()" [disabled]="!client">
+            <i class="ti ti-plus me-1"></i>
+            Novo serviço
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="loadData()" [disabled]="loading">
+            <i class="ti ti-refresh me-1"></i>
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando ficha do paciente...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && client">
+        <div class="client-summary mb-3">
+          <div class="summary-grid">
+            <div>
+              <small class="text-muted">Paciente</small>
+              <div class="fw-semibold">{{ client.fullName }}</div>
+            </div>
+            <div>
+              <small class="text-muted">Telefone</small>
+              <div>{{ client.phone }}</div>
+            </div>
+            <div>
+              <small class="text-muted">CPF</small>
+              <div>{{ client.cpf || '—' }}</div>
+            </div>
+            <div>
+              <small class="text-muted">E-mail</small>
+              <div>{{ client.email || '—' }}</div>
+            </div>
+            <div>
+              <small class="text-muted">Origem</small>
+              <div>{{ getOriginLabel(client.origin) }}</div>
+            </div>
+            <div>
+              <small class="text-muted">Status do negócio</small>
+              <div>{{ getBusinessStatusLabel(client.businessStatus) }}</div>
+            </div>
+          </div>
+          <div class="mt-2" *ngIf="client.notes">
+            <small class="text-muted">Observações gerais</small>
+            <div>{{ client.notes }}</div>
+          </div>
+        </div>
+
+        <div *ngIf="!hasOrders" class="empty-state">
+          <p class="mb-1">Nenhum serviço registrado para este paciente.</p>
+          <small class="text-muted">Use o botão "Novo serviço" para iniciar um orçamento e seguir o fluxo.</small>
+        </div>
+
+        <div class="orders-list" *ngIf="hasOrders">
+          <div class="order-card" *ngFor="let order of orders">
+            <div class="order-header">
+              <div>
+                <div class="fw-semibold">Serviço #{{ order.id }}</div>
+                <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+              </div>
+              <div class="order-statuses">
+                <span class="status-pill service">{{ getServiceFlowStatusLabel(order) }}</span>
+                <span class="status-pill payment">{{ getPaymentStatusLabel(order) }}</span>
+              </div>
+            </div>
+
+            <div class="order-grid">
+              <div>
+                <small class="text-muted">Valor final</small>
+                <div class="fw-semibold">{{ order.finalTotal | currency: 'BRL' }}</div>
+              </div>
+              <div>
+                <small class="text-muted">Forma de pagamento</small>
+                <div>{{ order.paymentMethod || '—' }}</div>
+              </div>
+              <div>
+                <small class="text-muted">Parcelas pagas</small>
+                <div>{{ order.paidInstallmentCount || 0 }} / {{ order.installmentCount || 0 }}</div>
+              </div>
+              <div>
+                <small class="text-muted">Próximo retorno</small>
+                <div>{{ order.nextReturnAt ? (order.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</div>
+              </div>
+            </div>
+
+            <div class="order-section">
+              <small class="text-muted d-block mb-1">Serviços executados</small>
+              <ul class="mb-0 ps-3">
+                <li *ngFor="let service of order.services">{{ service.serviceName }} - {{ service.servicePrice | currency: 'BRL' }}</li>
+              </ul>
+            </div>
+
+            <div class="order-section" *ngIf="order.products.length > 0">
+              <small class="text-muted d-block mb-1">Produtos utilizados</small>
+              <ul class="mb-0 ps-3">
+                <li *ngFor="let product of order.products">
+                  {{ product.productName }} | Quantidade: {{ product.quantityUsed }} | Origem: {{ product.source === 'EXTRA' ? 'Extra' : 'Composição' }}
+                </li>
+              </ul>
+            </div>
+
+            <div class="order-section" *ngIf="order.observations.length > 0">
+              <small class="text-muted d-block mb-1">Observações clínicas</small>
+              <ul class="mb-0 ps-3">
+                <li *ngFor="let observation of order.observations">
+                  {{ observation.createdAt | date: 'dd/MM/yyyy HH:mm' }} - {{ observation.note }}
+                </li>
+              </ul>
+            </div>
+
+            <div class="order-section" *ngIf="order.returns.length > 0">
+              <small class="text-muted d-block mb-1">Retornos</small>
+              <ul class="mb-0 ps-3">
+                <li *ngFor="let item of order.returns">
+                  Retorno para {{ item.returnAt | date: 'dd/MM/yyyy HH:mm' }} (registrado em {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }})
+                </li>
+              </ul>
+            </div>
+
+            <div class="order-section" *ngIf="order.notes">
+              <small class="text-muted d-block mb-1">Observações do orçamento</small>
+              <div>{{ order.notes }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>

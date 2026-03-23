@@ -61,6 +61,10 @@ public class ClientServiceOrder {
     private ClientServiceOrderStatus status;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false, length = 40)
+    private ClientServiceOrderPaymentStatus paymentStatus;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", length = 40)
     private ServicePaymentMethod paymentMethod;
 
@@ -72,6 +76,9 @@ public class ClientServiceOrder {
 
     @Column(name = "paid_at")
     private Instant paidAt;
+
+    @Column(name = "scheduled_at")
+    private Instant scheduledAt;
 
     @Column(name = "next_return_at")
     private Instant nextReturnAt;
@@ -117,6 +124,7 @@ public class ClientServiceOrder {
         order.finalTotal = finalTotal;
         order.notes = notes;
         order.status = ClientServiceOrderStatus.ORCADO;
+        order.paymentStatus = ClientServiceOrderPaymentStatus.ORCADO;
         order.paidInstallmentCount = 0;
         return order;
     }
@@ -138,23 +146,55 @@ public class ClientServiceOrder {
         this.finalTotal = finalTotal;
         this.notes = notes;
         this.status = ClientServiceOrderStatus.ORCADO;
+        this.paymentStatus = ClientServiceOrderPaymentStatus.ORCADO;
         this.paymentMethod = null;
         this.installmentCount = null;
         this.paidInstallmentCount = 0;
         this.paidAt = null;
+        this.scheduledAt = null;
         this.nextReturnAt = null;
         this.observations.clear();
         this.returns.clear();
     }
 
     public void applyPaymentStatus(ServicePaymentMethod paymentMethod, int installmentCount, int paidInstallmentCount) {
-        this.status = paidInstallmentCount >= installmentCount
-                ? ClientServiceOrderStatus.PAGO
-                : ClientServiceOrderStatus.AGUARDANDO_PAGAMENTO;
         this.paymentMethod = paymentMethod;
         this.installmentCount = installmentCount;
         this.paidInstallmentCount = paidInstallmentCount;
-        this.paidAt = this.status == ClientServiceOrderStatus.PAGO ? Instant.now() : null;
+        this.paymentStatus = resolvePaymentStatus(installmentCount, paidInstallmentCount);
+        this.paidAt = this.paymentStatus == ClientServiceOrderPaymentStatus.PAGAMENTO_CONCLUIDO ? Instant.now() : null;
+    }
+
+    public void initializePaymentPlan(ServicePaymentMethod paymentMethod, int invoiceCount) {
+        this.paymentMethod = paymentMethod;
+        this.installmentCount = invoiceCount;
+        this.paidInstallmentCount = 0;
+        this.paymentStatus = ClientServiceOrderPaymentStatus.AGUARDANDO_PAGAMENTO;
+        this.paidAt = null;
+    }
+
+    public void syncPaymentProgress(int invoiceCount, int paidInvoiceCount) {
+        this.installmentCount = invoiceCount;
+        this.paidInstallmentCount = paidInvoiceCount;
+
+        if (invoiceCount <= 0) {
+            this.paymentStatus = this.status == ClientServiceOrderStatus.ORCADO
+                    ? ClientServiceOrderPaymentStatus.ORCADO
+                    : ClientServiceOrderPaymentStatus.AGUARDANDO_PAGAMENTO;
+            this.paidAt = null;
+            return;
+        }
+
+        this.paymentStatus = resolvePaymentStatus(invoiceCount, paidInvoiceCount);
+        this.paidAt = this.paymentStatus == ClientServiceOrderPaymentStatus.PAGAMENTO_CONCLUIDO ? Instant.now() : null;
+    }
+
+    public void scheduleService(Instant scheduleAt) {
+        this.scheduledAt = scheduleAt;
+        this.status = ClientServiceOrderStatus.AGENDADO;
+        if (this.paymentStatus == ClientServiceOrderPaymentStatus.ORCADO) {
+            this.paymentStatus = ClientServiceOrderPaymentStatus.AGUARDANDO_PAGAMENTO;
+        }
     }
 
     public void addObservation(String note) {
@@ -164,7 +204,7 @@ public class ClientServiceOrder {
     public void scheduleReturn(Instant returnAt) {
         returns.add(ClientServiceOrderReturn.of(this, returnAt));
         this.nextReturnAt = returnAt;
-        this.status = ClientServiceOrderStatus.RETORNO_AGENDADO;
+        this.status = ClientServiceOrderStatus.AGUARDANDO_RETORNO;
     }
 
     public void finalizeService() {
@@ -186,6 +226,18 @@ public class ClientServiceOrder {
 
     public void clearProductItems() {
         products.clear();
+    }
+
+    private ClientServiceOrderPaymentStatus resolvePaymentStatus(int installmentCount, int paidInstallmentCount) {
+        if (paidInstallmentCount <= 0) {
+            return ClientServiceOrderPaymentStatus.AGUARDANDO_PAGAMENTO;
+        }
+
+        if (paidInstallmentCount >= installmentCount) {
+            return ClientServiceOrderPaymentStatus.PAGAMENTO_CONCLUIDO;
+        }
+
+        return ClientServiceOrderPaymentStatus.PAGAMENTO_PARCIAL;
     }
 
     @PrePersist
@@ -244,6 +296,10 @@ public class ClientServiceOrder {
         return paymentMethod;
     }
 
+    public ClientServiceOrderPaymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
+
     public Integer getInstallmentCount() {
         return installmentCount;
     }
@@ -254,6 +310,10 @@ public class ClientServiceOrder {
 
     public Instant getPaidAt() {
         return paidAt;
+    }
+
+    public Instant getScheduledAt() {
+        return scheduledAt;
     }
 
     public Instant getNextReturnAt() {

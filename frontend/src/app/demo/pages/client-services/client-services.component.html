@@ -6,10 +6,9 @@
           <input class="form-control form-control-sm" placeholder="Buscar por cliente ou observação" [(ngModel)]="searchTerm" />
           <select class="form-select form-select-sm" [(ngModel)]="selectedStatus">
             <option value="">Todos os status</option>
-            <option value="ORCADO">Orçado</option>
-            <option value="AGUARDANDO_PAGAMENTO">Aguardando pagamento</option>
-            <option value="PAGO">Pago/em atendimento</option>
-            <option value="RETORNO_AGENDADO">Retorno agendado</option>
+            <option value="ORCADO">Aguardando agendamento</option>
+            <option value="AGENDADO">Agendado</option>
+            <option value="AGUARDANDO_RETORNO">Aguardando retorno</option>
             <option value="FINALIZADO">Finalizado</option>
           </select>
         </div>
@@ -49,7 +48,8 @@
               <thead class="services-thead">
                 <tr>
                   <th>Cliente</th>
-                  <th>Status</th>
+                  <th>Status do serviço</th>
+                  <th>Status pagamento</th>
                   <th>Valor</th>
                   <th>Próximo retorno</th>
                   <th>Criado em</th>
@@ -63,24 +63,62 @@
                     <small class="text-muted">Serviços: {{ order.services.length }} | Produtos: {{ order.products.length }}</small>
                   </td>
                   <td>
-                    <span class="history-status" [class.quoted]="isStatusQuoted(order.status)" [class.awaiting]="isStatusAwaiting(order.status)" [class.paid]="isStatusPaid(order.status)">
-                      {{ getOrderStatusLabel(order.status) }}
+                    <span class="history-status" [class.quoted]="isStatusQuoted(order.serviceStatus)" [class.awaiting]="isStatusAwaiting(order.serviceStatus)" [class.paid]="isStatusPaid(order.serviceStatus)">
+                      {{ getOrderStatusLabel(order.serviceStatus) }}
                     </span>
                   </td>
+                  <td>{{ getPaymentStatusLabel(order.paymentStatus) }}</td>
                   <td>{{ order.finalTotal | currency: 'BRL' }}</td>
                   <td>{{ order.nextReturnAt ? (order.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</td>
                   <td>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
                   <td class="text-end">
                     <div class="table-actions">
-                      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)">Detalhes</button>
-                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openOrderPayments(order)">Financeiro</button>
+                      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)" title="Detalhes" aria-label="Detalhes">
+                        <i class="ti ti-eye"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openOrderPayments(order)" title="Pagamento" aria-label="Pagamento">
+                        <i class="ti ti-cash"></i>
+                      </button>
                       <button
                         class="btn btn-sm btn-outline-success"
                         type="button"
-                        (click)="openServiceManagement(order)"
-                        *ngIf="canManageServiceLifecycle(order.status)"
+                        (click)="openScheduleAction(order)"
+                        *ngIf="canScheduleService(order.serviceStatus)"
+                        title="Agendar"
+                        aria-label="Agendar"
                       >
-                        Gerenciar
+                        <i class="ti ti-calendar-plus"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-warning"
+                        type="button"
+                        (click)="openReturnAction(order)"
+                        *ngIf="canScheduleServiceReturn(order.serviceStatus)"
+                        title="Marcar retorno"
+                        aria-label="Marcar retorno"
+                      >
+                        <i class="ti ti-calendar-event"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-success"
+                        type="button"
+                        (click)="finalizeOrder(order)"
+                        *ngIf="canFinalizeServiceLifecycle(order.serviceStatus)"
+                        title="Finalizar serviço"
+                        aria-label="Finalizar serviço"
+                        [disabled]="saving"
+                      >
+                        <i class="ti ti-check"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-danger"
+                        type="button"
+                        (click)="deleteServiceOrder(order)"
+                        *ngIf="canDeleteServiceOrders()"
+                        title="Excluir serviço"
+                        aria-label="Excluir serviço"
+                      >
+                        <i class="ti ti-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -93,7 +131,8 @@
         <div class="mobile-list d-block d-md-none">
           <div class="mobile-service-card" *ngFor="let order of filteredOrders">
             <div class="mobile-service-row"><span class="mobile-label">Cliente</span><span>{{ order.clientName }}</span></div>
-            <div class="mobile-service-row"><span class="mobile-label">Status</span><span>{{ getOrderStatusLabel(order.status) }}</span></div>
+            <div class="mobile-service-row"><span class="mobile-label">Status serviço</span><span>{{ getOrderStatusLabel(order.serviceStatus) }}</span></div>
+            <div class="mobile-service-row"><span class="mobile-label">Status pagamento</span><span>{{ getPaymentStatusLabel(order.paymentStatus) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Valor</span><span>{{ order.finalTotal | currency: 'BRL' }}</span></div>
             <div class="mobile-service-row">
               <span class="mobile-label">Próx. retorno</span>
@@ -101,10 +140,20 @@
             </div>
             <div class="mobile-service-row"><span class="mobile-label">Criado em</span><span>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span></div>
             <div class="mobile-actions">
-              <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)">Detalhes</button>
-              <button class="btn btn-sm btn-outline-primary" type="button" (click)="openOrderPayments(order)">Financeiro</button>
-              <button class="btn btn-sm btn-outline-success" type="button" (click)="openServiceManagement(order)" *ngIf="canManageServiceLifecycle(order.status)">
-                Gerenciar
+              <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)">
+                <i class="ti ti-eye"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-primary" type="button" (click)="openOrderPayments(order)">
+                <i class="ti ti-cash"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-success" type="button" (click)="openScheduleAction(order)" *ngIf="canScheduleService(order.serviceStatus)">
+                <i class="ti ti-calendar-plus"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-warning" type="button" (click)="openReturnAction(order)" *ngIf="canScheduleServiceReturn(order.serviceStatus)">
+                <i class="ti ti-calendar-event"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteServiceOrder(order)" *ngIf="canDeleteServiceOrders()">
+                <i class="ti ti-trash"></i>
               </button>
             </div>
           </div>
@@ -218,6 +267,10 @@
       </div>
 
       <div *ngIf="createWizardStep === 4">
+        <div class="alert alert-warning" role="alert" *ngIf="isWizardWaitingScheduling">
+            Serviço ainda aguardando agendamento. Agende o serviço na listagem para liberar o pagamento.
+        </div>
+
         <div class="mb-3">
           <label class="form-label">Forma de pagamento</label>
           <select class="form-select" [ngModel]="paymentMethod" (ngModelChange)="onPaymentMethodChange($event)">
@@ -255,8 +308,159 @@
         Próximo
       </button>
 
-      <button class="btn btn-primary" type="button" (click)="confirmServicePayment()" *ngIf="createWizardStep === 4" [disabled]="saving || !serviceOrderId">
+      <button class="btn btn-primary" type="button" (click)="confirmServicePayment()" *ngIf="createWizardStep === 4" [disabled]="saving || !serviceOrderId || !canConfirmPaymentInWizard">
         Confirmar pagamento
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="app-modal-backdrop" *ngIf="paymentModalOpen && selectedOrderForPayment">
+  <div class="app-modal app-modal-lg">
+    <div class="app-modal-header">
+      <h5 class="mb-0">Pagamento do serviço</h5>
+      <button type="button" class="btn-close" (click)="closePaymentModal()"></button>
+    </div>
+
+    <div class="app-modal-body">
+      <div class="alert alert-danger" role="alert" *ngIf="paymentModalErrorMessage">
+        {{ paymentModalErrorMessage }}
+      </div>
+      <div class="alert alert-success" role="alert" *ngIf="paymentModalInfoMessage">
+        {{ paymentModalInfoMessage }}
+      </div>
+
+      <p class="mb-1"><strong>Cliente:</strong> {{ selectedOrderForPayment.clientName }}</p>
+      <p class="mb-3"><strong>Valor total do serviço:</strong> {{ selectedOrderForPayment.finalTotal | currency: 'BRL' }}</p>
+
+      <div class="payment-summary mb-3" *ngIf="hasPaymentInvoices">
+        <div>
+          <small class="text-muted">Total faturado</small>
+          <div class="fw-semibold">{{ paymentTotalInvoiced | currency: 'BRL' }}</div>
+        </div>
+        <div>
+          <small class="text-muted">Total pago</small>
+          <div class="fw-semibold text-success">{{ paymentTotalPaid | currency: 'BRL' }}</div>
+        </div>
+        <div>
+          <small class="text-muted">Falta pagar</small>
+          <div class="fw-semibold text-danger">{{ paymentTotalPending | currency: 'BRL' }}</div>
+        </div>
+      </div>
+
+      <div class="payment-plan-box mb-3" *ngIf="!hasPaymentInvoices">
+        <h6 class="mb-3">Configurar faturas</h6>
+
+        <div class="mb-3">
+          <label class="form-label">Forma de pagamento</label>
+          <select class="form-select" [ngModel]="paymentPlanSelection" (ngModelChange)="onPaymentPlanMethodChange($event)">
+            <option value="CUSTOM_SPLIT">Pagamento personalizado (duas formas)</option>
+            <option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+        </div>
+
+        <div class="custom-split-box mb-3" *ngIf="paymentPlanCustomSplitEnabled">
+          <div class="custom-split-grid">
+            <div>
+              <label class="form-label">Forma da entrada</label>
+              <select class="form-select" [(ngModel)]="paymentPlanDownPaymentMethod">
+                <option value="PIX">Pix</option>
+                <option value="CASH">Dinheiro</option>
+                <option value="TRADE">Troca</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Forma do restante</label>
+              <select class="form-select" [ngModel]="paymentPlanRemainingPaymentMethod" (ngModelChange)="onRemainingPaymentMethodChange($event)">
+                <option value="CREDIT_CARD">Cartão de crédito</option>
+                <option value="PIX_INSTALLMENT">Pix parcelado</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Valor da entrada</label>
+              <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="paymentPlanDownPaymentAmount" />
+            </div>
+            <div *ngIf="paymentPlanEffectiveAllowsInstallments">
+              <label class="form-label">Quantidade de parcelas</label>
+              <select class="form-select" [(ngModel)]="paymentPlanInstallments">
+                <option *ngFor="let option of installmentOptions" [ngValue]="option.value">{{ option.label }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-2 form-check" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
+          <input class="form-check-input" type="checkbox" id="downPaymentEnabled" [(ngModel)]="paymentPlanDownPaymentEnabled" />
+          <label class="form-check-label" for="downPaymentEnabled">Entrada + parcelas?</label>
+        </div>
+
+        <div class="row g-2 mb-2" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
+          <div class="col-md-6">
+            <label class="form-label">Quantidade de parcelas</label>
+            <select class="form-select" [(ngModel)]="paymentPlanInstallments">
+              <option *ngFor="let option of installmentOptions" [ngValue]="option.value">{{ option.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-2" *ngIf="paymentPlanEffectiveAllowsInstallments && paymentPlanDownPaymentEnabled && !paymentPlanCustomSplitEnabled">
+          <div class="col-md-6">
+            <label class="form-label">Valor da entrada</label>
+            <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="paymentPlanDownPaymentAmount" />
+          </div>
+        </div>
+
+        <div class="alert alert-info" role="alert" *ngIf="!paymentPlanEffectiveAllowsInstallments">
+          Este método é à vista. Para parcelar, selecione <strong>Pix parcelado</strong> ou <strong>Cartão de crédito</strong>.
+        </div>
+
+      </div>
+
+      <div *ngIf="hasPaymentInvoices">
+        <h6 class="mb-2">Faturas</h6>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Vencimento</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Valor</th>
+                <th>Observação</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let invoice of paymentInvoices">
+                <td>{{ invoice.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ invoice.description || '-' }}</td>
+                <td>{{ getInvoiceStatusLabel(invoice.paymentStatus) }}</td>
+                <td>{{ invoice.amount | currency: 'BRL' }}</td>
+                <td>
+                  <input class="form-control form-control-sm" [(ngModel)]="invoiceNotesDraft[invoice.id]" placeholder="Observação" />
+                </td>
+                <td class="text-end">
+                  <div class="invoice-actions">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="saving" (click)="saveInvoiceNotes(invoice)">Salvar obs</button>
+                    <button class="btn btn-sm btn-outline-success" type="button" [disabled]="saving || invoice.paymentStatus === 'PAGO'" (click)="confirmInvoicePayment(invoice)">Pagar</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-modal-footer">
+      <button
+        class="btn btn-primary"
+        type="button"
+        [disabled]="saving"
+        (click)="createPaymentPlanForOrder()"
+        *ngIf="!hasPaymentInvoices"
+      >
+        Gerar Fatura(s)
       </button>
     </div>
   </div>
@@ -270,12 +474,18 @@
     </div>
     <div class="app-modal-body">
       <p class="mb-1"><strong>Cliente:</strong> {{ selectedOrderForDetails.clientName }}</p>
-      <p class="mb-1"><strong>Status:</strong> {{ getOrderStatusLabel(selectedOrderForDetails.status) }}</p>
+      <p class="mb-1"><strong>Status do serviço:</strong> {{ getOrderStatusLabel(selectedOrderForDetails.serviceStatus) }}</p>
+      <p class="mb-1"><strong>Status do pagamento:</strong> {{ getPaymentStatusLabel(selectedOrderForDetails.paymentStatus) }}</p>
       <p class="mb-1"><strong>Total:</strong> {{ selectedOrderForDetails.finalTotal | currency: 'BRL' }}</p>
       <p class="mb-3"><strong>Observações:</strong> {{ selectedOrderForDetails.notes || '-' }}</p>
 
       <h6 class="mb-2">Histórico de observações</h6>
       <div class="history-list mb-3" *ngIf="selectedOrderForDetails.observations?.length; else noObs">
+        <div class="mb-3 form-check">
+          <input class="form-check-input" type="checkbox" id="customSplitPayment" [ngModel]="paymentPlanCustomSplitEnabled" (ngModelChange)="onPaymentPlanCustomSplitChange($event)" />
+          <label class="form-check-label" for="customSplitPayment">Pagamento personalizado (duas formas)</label>
+        </div>
+
         <div class="history-item" *ngFor="let obs of selectedOrderForDetails.observations">
           <div>{{ obs.note }}</div>
           <small class="text-muted">{{ obs.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
@@ -297,6 +507,22 @@
       </ng-template>
     </div>
     <div class="app-modal-footer">
+      <button
+        class="btn btn-outline-primary"
+        type="button"
+        (click)="openScheduleFromDetails()"
+        *ngIf="canScheduleService(selectedOrderForDetails.serviceStatus)"
+      >
+        Agendar
+      </button>
+      <button
+        class="btn btn-outline-warning"
+        type="button"
+        (click)="openReturnFromDetails()"
+        *ngIf="canScheduleServiceReturn(selectedOrderForDetails.serviceStatus)"
+      >
+        Marcar retorno
+      </button>
       <button class="btn btn-outline-secondary" type="button" (click)="closeOrderDetails()">Fechar</button>
     </div>
   </div>
@@ -305,20 +531,28 @@
 <div class="app-modal-backdrop" *ngIf="serviceManagementModalOpen && selectedOrderForManagement">
   <div class="app-modal app-modal-lg">
     <div class="app-modal-header">
-      <h5 class="mb-0">Gerenciar serviço</h5>
+      <h5 class="mb-0">Ações do serviço</h5>
       <button type="button" class="btn-close" (click)="closeServiceManagementModal()"></button>
     </div>
     <div class="app-modal-body">
       <p class="mb-1"><strong>Cliente:</strong> {{ selectedOrderForManagement.clientName }}</p>
-      <p class="mb-3"><strong>Status atual:</strong> {{ getOrderStatusLabel(selectedOrderForManagement.status) }}</p>
+      <p class="mb-3"><strong>Status atual:</strong> {{ getOrderStatusLabel(selectedOrderForManagement.serviceStatus) }}</p>
 
-      <div class="mb-3">
+      <div class="mb-3" *ngIf="canScheduleService(selectedOrderForManagement.serviceStatus)">
+        <label class="form-label">Agendar serviço</label>
+        <div class="d-flex gap-2">
+          <input class="form-control" type="datetime-local" [(ngModel)]="serviceManagementScheduleAt" />
+          <button class="btn btn-outline-primary" type="button" (click)="scheduleService()" [disabled]="saving">Agendar</button>
+        </div>
+      </div>
+
+      <div class="mb-3" *ngIf="!canScheduleService(selectedOrderForManagement.serviceStatus)">
         <label class="form-label">Adicionar observação</label>
         <textarea class="form-control" rows="3" [(ngModel)]="serviceManagementObservation"></textarea>
         <button class="btn btn-sm btn-outline-primary mt-2" type="button" (click)="addServiceObservation()" [disabled]="saving">Salvar observação</button>
       </div>
 
-      <div class="mb-3" *ngIf="canScheduleServiceReturn(selectedOrderForManagement.status)">
+      <div class="mb-3" *ngIf="canScheduleServiceReturn(selectedOrderForManagement.serviceStatus)">
         <label class="form-label">Agendar retorno</label>
         <div class="d-flex gap-2">
           <input class="form-control" type="datetime-local" [(ngModel)]="serviceManagementReturnAt" />
@@ -326,12 +560,34 @@
         </div>
       </div>
 
-      <div *ngIf="canFinalizeServiceLifecycle(selectedOrderForManagement.status)">
+      <div *ngIf="canFinalizeServiceLifecycle(selectedOrderForManagement.serviceStatus)">
         <button class="btn btn-outline-success" type="button" (click)="finalizeServiceLifecycle()" [disabled]="saving">Finalizar serviço</button>
       </div>
     </div>
     <div class="app-modal-footer">
       <button class="btn btn-outline-secondary" type="button" (click)="closeServiceManagementModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-modal-backdrop" *ngIf="deleteServiceOrderModalOpen && selectedOrderForDeletion">
+  <div class="app-modal">
+    <div class="app-modal-header">
+      <h5 class="mb-0">Excluir serviço</h5>
+      <button type="button" class="btn-close" (click)="closeDeleteServiceOrderModal()" [disabled]="saving"></button>
+    </div>
+    <div class="app-modal-body">
+      <p class="mb-0">Confirma excluir o serviço de <strong>{{ selectedOrderForDeletion.clientName }}</strong> e as faturas vinculadas?</p>
+    </div>
+    <div class="app-modal-footer">
+      <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteServiceOrderModal()">Cancelar</button>
+      <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteServiceOrder()">
+        <span *ngIf="!saving">Excluir serviço</span>
+        <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          Excluindo...
+        </span>
+      </button>
     </div>
   </div>
 </div>

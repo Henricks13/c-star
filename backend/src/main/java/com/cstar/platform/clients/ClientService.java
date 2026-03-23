@@ -1,5 +1,7 @@
 package com.cstar.platform.clients;
 
+import com.cstar.platform.auth.security.AuthUserPrincipal;
+import com.cstar.platform.clientorders.ClientServiceOrderRepository;
 import com.cstar.platform.clients.dto.ClientListItemResponse;
 import com.cstar.platform.clients.dto.CreateClientRequest;
 import com.cstar.platform.clients.model.Client;
@@ -22,10 +24,14 @@ public class ClientService {
 
     private final ClientRepository clientRepository;
     private final ContactRepository contactRepository;
+    private final ClientServiceOrderRepository clientServiceOrderRepository;
 
-    public ClientService(ClientRepository clientRepository, ContactRepository contactRepository) {
+    public ClientService(ClientRepository clientRepository,
+                         ContactRepository contactRepository,
+                         ClientServiceOrderRepository clientServiceOrderRepository) {
         this.clientRepository = clientRepository;
         this.contactRepository = contactRepository;
+        this.clientServiceOrderRepository = clientServiceOrderRepository;
     }
 
     @Transactional(readOnly = true)
@@ -89,6 +95,21 @@ public class ClientService {
         }
 
         return toResponse(saved);
+    }
+
+    @Transactional
+    public void delete(UUID clientId, AuthUserPrincipal principal) {
+        validateClientDeletionAccess(principal);
+
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));
+
+        if (clientServiceOrderRepository.existsByClientId(clientId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Não é possível excluir cliente com serviços vinculados. Exclua os serviços primeiro.");
+        }
+
+        clientRepository.delete(client);
     }
 
     private ClientListItemResponse toResponse(Client client) {
@@ -180,6 +201,25 @@ public class ClientService {
             return ClientOrigin.valueOf(rawOrigin.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Origem inválida");
+        }
+    }
+
+    private void validateClientDeletionAccess(AuthUserPrincipal principal) {
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão para excluir cliente.");
+        }
+
+        String email = principal.getUsername() == null ? "" : principal.getUsername().trim().toLowerCase();
+        if ("carol@gmail.com".equals(email)) {
+            return;
+        }
+
+        boolean authorizedByRole = principal.getRoleCodes().stream()
+                .map(code -> code == null ? "" : code.trim().toUpperCase())
+                .anyMatch(code -> "DEV_SUPORTE".equals(code) || "MASTER_ADMIN".equals(code));
+
+        if (!authorizedByRole) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão para excluir cliente.");
         }
     }
 }

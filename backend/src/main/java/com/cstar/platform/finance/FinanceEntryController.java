@@ -5,6 +5,7 @@ import com.cstar.platform.finance.dto.FinanceExpenseRequest;
 import com.cstar.platform.finance.dto.FinanceExpenseResponse;
 import com.cstar.platform.finance.dto.FinanceIncomeRequest;
 import com.cstar.platform.finance.dto.FinanceIncomeResponse;
+import com.cstar.platform.finance.dto.UpdateFinanceIncomeNotesRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,6 +37,11 @@ public class FinanceEntryController {
         return financeEntryService.listIncomes();
     }
 
+    @GetMapping("/incomes/service-order/{orderId}")
+    public List<FinanceIncomeResponse> listServiceOrderIncomes(@PathVariable UUID orderId) {
+        return financeEntryService.listServiceOrderIncomes(orderId);
+    }
+
     @PostMapping("/incomes")
     @ResponseStatus(HttpStatus.CREATED)
     public FinanceIncomeResponse createIncome(@Valid @RequestBody FinanceIncomeRequest request) {
@@ -51,6 +57,12 @@ public class FinanceEntryController {
     @PostMapping("/incomes/{id}/confirm-payment")
     public FinanceIncomeResponse confirmIncomePayment(@PathVariable UUID id) {
         return financeEntryService.confirmIncomePayment(id);
+    }
+
+    @PutMapping("/incomes/{id}/notes")
+    public FinanceIncomeResponse updateIncomeNotes(@PathVariable UUID id,
+                                                   @Valid @RequestBody UpdateFinanceIncomeNotesRequest request) {
+        return financeEntryService.updateIncomeNotes(id, request);
     }
 
     @DeleteMapping("/incomes/{id}")

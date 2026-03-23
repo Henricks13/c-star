@@ -4,6 +4,15 @@
       <div class="types-toolbar mb-3">
         <div class="types-toolbar-actions">
           <span class="filter-indicator" *ngIf="hasOrderFilter">Exibindo pagamentos do orçamento especificado</span>
+          <span class="filter-indicator" *ngIf="selectedCount > 0">{{ selectedCount }} selecionada(s)</span>
+          <button class="btn btn-sm btn-outline-success" type="button" [disabled]="saving || selectedPendingCount === 0" (click)="openBulkConfirmPaymentModal()">
+            <i class="ti ti-checks me-1"></i>
+            Dar baixa em massa
+          </button>
+          <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="saving || selectedCount === 0" (click)="openBulkDeleteModal()">
+            <i class="ti ti-trash me-1"></i>
+            Excluir em massa
+          </button>
           <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
             <i class="ti ti-plus me-1"></i>
             Lançar receita
@@ -40,6 +49,15 @@
             <table class="table table-hover align-middle types-table mb-0">
               <thead class="types-thead">
                 <tr>
+                  <th class="select-col">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [checked]="allFilteredSelected"
+                      [disabled]="saving"
+                      (change)="toggleSelectAllFiltered($any($event.target).checked)"
+                    />
+                  </th>
                   <th>Data</th>
                   <th>Tipo</th>
                   <th>Descrição</th>
@@ -50,6 +68,15 @@
               </thead>
               <tbody>
                 <tr *ngFor="let income of filteredIncomes">
+                  <td class="select-col">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [checked]="isIncomeSelected(income.id)"
+                      [disabled]="saving"
+                      (change)="toggleIncomeSelection(income.id, $any($event.target).checked)"
+                    />
+                  </td>
                   <td>{{ income.occurredOn | date: 'dd/MM/yyyy' }}</td>
                   <td>{{ income.incomeTypeName }}</td>
                   <td>{{ income.description || '—' }}</td>
@@ -95,6 +122,18 @@
               <span class="income-status-pill" [ngClass]="getPaymentStatusClass(income.paymentStatus)">
                 {{ getPaymentStatusLabel(income.paymentStatus) }}
               </span>
+            </div>
+
+            <div class="form-check mb-2">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                [id]="'income-select-' + income.id"
+                [checked]="isIncomeSelected(income.id)"
+                [disabled]="saving"
+                (change)="toggleIncomeSelection(income.id, $any($event.target).checked)"
+              />
+              <label class="form-check-label" [for]="'income-select-' + income.id">Selecionar</label>
             </div>
 
             <div class="mobile-card-body">
@@ -246,6 +285,36 @@
       <div class="d-flex justify-content-end gap-2 mt-3">
         <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
         <button class="btn btn-danger" type="button" [disabled]="saving" (click)="deleteIncome()">Excluir</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="bulkConfirmPaymentModalOpen">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-income-bulk-payment-title">
+    <div class="types-modal types-modal-sm">
+      <h6 id="confirm-income-bulk-payment-title" class="mb-3">Dar baixa em massa</h6>
+      <p class="mb-3">
+        Confirmar baixa de <strong>{{ selectedPendingCount }}</strong> receita(s) pendente(s) selecionada(s)?
+      </p>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeBulkConfirmPaymentModal()">Cancelar</button>
+        <button class="btn btn-success" type="button" [disabled]="saving" (click)="confirmBulkPayment()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="bulkDeleteModalOpen">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-income-bulk-delete-title">
+    <div class="types-modal types-modal-sm">
+      <h6 id="confirm-income-bulk-delete-title" class="mb-3">Excluir em massa</h6>
+      <p class="mb-3">
+        Deseja excluir <strong>{{ selectedCount }}</strong> receita(s) selecionada(s)?
+      </p>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeBulkDeleteModal()">Cancelar</button>
+        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="deleteIncomesBulk()">Excluir</button>
       </div>
     </div>
   </div>

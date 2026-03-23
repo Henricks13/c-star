@@ -22,9 +22,11 @@ export class FinanceExpensesComponent implements OnInit {
   expenses: FinanceExpenseItem[] = [];
   expenseTypes: FinanceTypeItem[] = [];
   selectedExpense: FinanceExpenseItem | null = null;
+  selectedExpenseForDeletion: FinanceExpenseItem | null = null;
 
   createModalOpen = false;
   editModalOpen = false;
+  deleteModalOpen = false;
 
   createForm: FinanceExpenseRequest = this.defaultForm();
   editForm: FinanceExpenseRequest = this.defaultForm();
@@ -151,19 +153,40 @@ export class FinanceExpensesComponent implements OnInit {
   }
 
   deleteExpense(expense: FinanceExpenseItem): void {
-    if (!confirm(`Deseja excluir a despesa de ${this.formatCurrency(expense.amount)}?`)) {
+    if (this.saving) {
       return;
     }
+
+    this.selectedExpenseForDeletion = expense;
+    this.deleteModalOpen = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeDeleteModal(): void {
+    this.deleteModalOpen = false;
+    this.selectedExpenseForDeletion = null;
+  }
+
+  confirmDeleteExpense(): void {
+    if (!this.selectedExpenseForDeletion || this.saving) {
+      return;
+    }
+
+    this.saving = true;
 
     this.errorMessage = null;
     this.infoMessage = null;
 
-    this.financeService.deleteExpense(expense.id).subscribe({
+    this.financeService.deleteExpense(this.selectedExpenseForDeletion.id).subscribe({
       next: () => {
+        this.saving = false;
+        this.closeDeleteModal();
         this.infoMessage = 'Despesa removida com sucesso.';
         this.loadAll();
       },
       error: (error) => {
+        this.saving = false;
         this.errorMessage = error?.error?.message || 'Não foi possível excluir a despesa.';
       }
     });

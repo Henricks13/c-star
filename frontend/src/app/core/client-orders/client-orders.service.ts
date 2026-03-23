@@ -6,7 +6,9 @@ import {
   AddClientServiceOrderObservationRequest,
   ClientServiceOrderItem,
   ConfirmClientServiceOrderPaymentRequest,
+  CreateClientServiceOrderPaymentPlanRequest,
   CreateClientServiceOrderRequest,
+  ScheduleClientServiceOrderRequest,
   ScheduleClientServiceOrderReturnRequest
 } from './client-orders.types';
 
@@ -30,6 +32,14 @@ export class ClientOrdersService {
 
   confirmPayment(orderId: string, payload: ConfirmClientServiceOrderPaymentRequest): Observable<ClientServiceOrderItem> {
     return this.http.post<ClientServiceOrderItem>(`/api/client-service-orders/${orderId}/payment`, payload);
+  }
+
+  createPaymentPlan(orderId: string, payload: CreateClientServiceOrderPaymentPlanRequest): Observable<ClientServiceOrderItem> {
+    return this.http.post<ClientServiceOrderItem>(`/api/client-service-orders/${orderId}/payment-plan`, payload);
+  }
+
+  scheduleService(orderId: string, payload: ScheduleClientServiceOrderRequest): Observable<ClientServiceOrderItem> {
+    return this.http.post<ClientServiceOrderItem>(`/api/client-service-orders/${orderId}/schedule`, payload);
   }
 
   addObservation(orderId: string, payload: AddClientServiceOrderObservationRequest): Observable<ClientServiceOrderItem> {

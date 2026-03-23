@@ -58,6 +58,10 @@ export class FinanceService {
     return this.http.get<FinanceIncomeItem[]>(`${this.apiBase}/incomes`);
   }
 
+  listServiceOrderIncomes(orderId: string): Observable<FinanceIncomeItem[]> {
+    return this.http.get<FinanceIncomeItem[]>(`${this.apiBase}/incomes/service-order/${orderId}`);
+  }
+
   createIncome(payload: FinanceIncomeRequest): Observable<FinanceIncomeItem> {
     return this.http.post<FinanceIncomeItem>(`${this.apiBase}/incomes`, payload);
   }
@@ -68,6 +72,10 @@ export class FinanceService {
 
   confirmIncomePayment(id: string): Observable<FinanceIncomeItem> {
     return this.http.post<FinanceIncomeItem>(`${this.apiBase}/incomes/${id}/confirm-payment`, {});
+  }
+
+  updateIncomeNotes(id: string, notes: string | null): Observable<FinanceIncomeItem> {
+    return this.http.put<FinanceIncomeItem>(`${this.apiBase}/incomes/${id}/notes`, { notes });
   }
 
   deleteIncome(id: string): Observable<void> {

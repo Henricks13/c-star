@@ -22,9 +22,11 @@ export class ProductTypesComponent implements OnInit {
 
   types: ProductTypeItem[] = [];
   selectedType: ProductTypeItem | null = null;
+  selectedTypeForDeletion: ProductTypeItem | null = null;
 
   createModalOpen = false;
   editModalOpen = false;
+  deleteModalOpen = false;
 
   createForm: CreateProductTypeRequest = this.defaultCreateForm();
   editForm: UpdateProductTypeRequest = this.defaultEditForm();
@@ -146,19 +148,40 @@ export class ProductTypesComponent implements OnInit {
   }
 
   deleteType(type: ProductTypeItem): void {
-    if (!confirm(`Deseja excluir o tipo "${type.name}"?`)) {
+    if (this.saving) {
       return;
     }
+
+    this.selectedTypeForDeletion = type;
+    this.deleteModalOpen = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeDeleteModal(): void {
+    this.deleteModalOpen = false;
+    this.selectedTypeForDeletion = null;
+  }
+
+  confirmDeleteType(): void {
+    if (!this.selectedTypeForDeletion || this.saving) {
+      return;
+    }
+
+    this.saving = true;
 
     this.errorMessage = null;
     this.infoMessage = null;
 
-    this.productTypesService.delete(type.id).subscribe({
+    this.productTypesService.delete(this.selectedTypeForDeletion.id).subscribe({
       next: () => {
+        this.saving = false;
+        this.closeDeleteModal();
         this.infoMessage = 'Tipo de produto removido com sucesso.';
         this.loadTypes();
       },
       error: (error) => {
+        this.saving = false;
         this.errorMessage = error?.error?.message || 'Não foi possível excluir o tipo de produto.';
       }
     });

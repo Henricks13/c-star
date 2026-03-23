@@ -57,8 +57,10 @@ export class ClientsComponent implements OnInit {
   serviceWizardOpen = false;
   serviceWizardStep = 1;
   serviceWizardLoading = false;
+  deleteClientModalOpen = false;
   deleteOrderInvoicesModalOpen = false;
   selectedClientForService: ClientListItem | null = null;
+  selectedClientForDeletion: ClientListItem | null = null;
   selectedOrderForInvoiceDeletion: ClientServiceOrderItem | null = null;
   selectedOrderForManagement: ClientServiceOrderItem | null = null;
   serviceOrderId: string | null = null;
@@ -311,53 +313,7 @@ export class ClientsComponent implements OnInit {
   }
 
   openServiceWizard(client: ClientListItem): void {
-    this.selectedClientForService = client;
-    this.serviceWizardOpen = true;
-    this.serviceWizardStep = 1;
-    this.serviceWizardLoading = true;
-    this.errorMessage = null;
-    this.infoMessage = null;
-    this.serviceOrderId = null;
-    this.serviceHistoryAccordionOpen = false;
-    this.selectedServiceIds = [''];
-    this.extraProductRows = [];
-    this.wizardNotes = '';
-    this.wizardDiscountAmount = 0;
-    this.wizardCustomTotalEnabled = false;
-    this.wizardCustomTotalValue = null;
-    this.paymentMethod = 'PIX';
-    this.paymentInstallmentCount = 1;
-    this.paymentPaid = false;
-    this.paymentFirstInstallmentPaid = false;
-
-    this.servicesService.list().subscribe({
-      next: (services) => {
-        this.availableServices = services.filter((service) => service.active);
-        this.productsService.list().subscribe({
-          next: (products) => {
-            this.availableProducts = products.filter((product) => product.active);
-            this.clientOrdersService.listByClient(client.id).subscribe({
-              next: (history) => {
-                this.clientServiceHistory = history;
-                this.serviceWizardLoading = false;
-              },
-              error: () => {
-                this.errorMessage = 'Não foi possível carregar o histórico de serviços deste cliente.';
-                this.serviceWizardLoading = false;
-              }
-            });
-          },
-          error: () => {
-            this.errorMessage = 'Não foi possível carregar os produtos para composição de serviço.';
-            this.serviceWizardLoading = false;
-          }
-        });
-      },
-      error: () => {
-        this.errorMessage = 'Não foi possível carregar os serviços disponíveis.';
-        this.serviceWizardLoading = false;
-      }
-    });
+    this.router.navigate(['/clients', client.id]);
   }
 
   closeServiceWizard(): void {
@@ -503,6 +459,54 @@ export class ClientsComponent implements OnInit {
 
     const roles = (user.roles || []).map((role) => (role || '').trim().toUpperCase());
     return roles.includes('DEV_SUPORTE') || roles.includes('MASTER_ADMIN');
+  }
+
+  canDeleteClient(): boolean {
+    return this.canDeleteOrderInvoices();
+  }
+
+  deleteClient(client: ClientListItem): void {
+    if (this.saving) {
+      return;
+    }
+
+    if (!this.canDeleteClient()) {
+      this.errorMessage = 'Sem permissão para excluir cliente.';
+      return;
+    }
+
+    this.selectedClientForDeletion = client;
+    this.deleteClientModalOpen = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeDeleteClientModal(): void {
+    this.deleteClientModalOpen = false;
+    this.selectedClientForDeletion = null;
+  }
+
+  confirmDeleteClient(): void {
+    if (!this.selectedClientForDeletion || this.saving) {
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    this.clientsService.delete(this.selectedClientForDeletion.id).subscribe({
+      next: () => {
+        this.saving = false;
+        this.closeDeleteClientModal();
+        this.infoMessage = 'Cliente excluído com sucesso.';
+        this.loadClients();
+      },
+      error: (error) => {
+        this.saving = false;
+        this.errorMessage = error?.error?.message || 'Não foi possível excluir o cliente.';
+      }
+    });
   }
 
   finalizeHistoryOrder(order: ClientServiceOrderItem): void {

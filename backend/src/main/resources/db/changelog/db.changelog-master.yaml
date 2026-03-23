@@ -31,3 +31,5 @@ databaseChangeLog:
       file: db/changelog/015-agenda-foundation.yaml
   - include:
       file: db/changelog/016-client-service-followup.yaml
+  - include:
+      file: db/changelog/017-client-service-status-split-and-scheduling.yaml

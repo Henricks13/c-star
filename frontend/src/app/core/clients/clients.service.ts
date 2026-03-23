@@ -19,4 +19,8 @@ export class ClientsService {
   create(payload: CreateClientRequest): Observable<ClientListItem> {
     return this.http.post<ClientListItem>(this.apiBase, payload);
   }
+
+  delete(clientId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiBase}/${clientId}`);
+  }
 }

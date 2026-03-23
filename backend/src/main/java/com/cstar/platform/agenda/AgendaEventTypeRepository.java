@@ -1,6 +1,7 @@
 package com.cstar.platform.agenda;
 
 import com.cstar.platform.agenda.model.AgendaEventType;
+import com.cstar.platform.agenda.model.AgendaEventKind;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -12,4 +13,6 @@ public interface AgendaEventTypeRepository extends JpaRepository<AgendaEventType
     List<AgendaEventType> findByActiveTrueOrderByNameAsc();
 
     Optional<AgendaEventType> findByIdAndActiveTrue(UUID id);
+
+    Optional<AgendaEventType> findFirstByKindAndActiveTrue(AgendaEventKind kind);
 }

@@ -175,3 +175,22 @@
     </div>
   </div>
 </ng-container>
+
+<ng-container *ngIf="deleteModalOpen && selectedExpenseForDeletion">
+  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-expense-title">
+    <div class="types-modal">
+      <h6 id="delete-expense-title" class="mb-3">Confirmar exclusão</h6>
+      <p class="mb-3">Deseja excluir a despesa de <strong>{{ formatCurrency(selectedExpenseForDeletion.amount) }}</strong>?</p>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteExpense()">
+          <span *ngIf="!saving">Excluir despesa</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Excluindo...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>

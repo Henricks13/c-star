@@ -61,6 +61,10 @@ const routes: Routes = [
         loadComponent: () => import('./demo/pages/client-services/client-services.component').then((c) => c.ClientServicesComponent)
       },
       {
+        path: 'clients/:clientId',
+        loadComponent: () => import('./demo/pages/client-chart/client-chart.component').then((c) => c.ClientChartComponent)
+      },
+      {
         path: 'clients',
         loadComponent: () => import('./demo/pages/clients/clients.component').then((c) => c.ClientsComponent)
       },

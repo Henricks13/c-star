@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import { FinanceService } from 'src/app/core/finance/finance.service';
 import {
@@ -31,11 +33,14 @@ export class FinanceIncomesComponent implements OnInit {
   selectedIncome: FinanceIncomeItem | null = null;
   filterSource: IncomeSource | null = null;
   filterReferenceId: string | null = null;
+  selectedIncomeIds = new Set<string>();
 
   createModalOpen = false;
   editModalOpen = false;
   confirmPaymentModalOpen = false;
   confirmDeleteModalOpen = false;
+  bulkConfirmPaymentModalOpen = false;
+  bulkDeleteModalOpen = false;
 
   createForm: FinanceIncomeRequest = this.defaultForm();
   editForm: FinanceIncomeRequest = this.defaultForm();
@@ -59,6 +64,22 @@ export class FinanceIncomesComponent implements OnInit {
     return this.incomes.filter((income) => income.source === this.filterSource && income.referenceId === this.filterReferenceId);
   }
 
+  get selectedIncomes(): FinanceIncomeItem[] {
+    return this.filteredIncomes.filter((income) => this.selectedIncomeIds.has(income.id));
+  }
+
+  get selectedCount(): number {
+    return this.selectedIncomes.length;
+  }
+
+  get selectedPendingCount(): number {
+    return this.selectedIncomes.filter((income) => income.paymentStatus === 'AGUARDANDO_PAGAMENTO').length;
+  }
+
+  get allFilteredSelected(): boolean {
+    return this.filteredIncomes.length > 0 && this.filteredIncomes.every((income) => this.selectedIncomeIds.has(income.id));
+  }
+
   get hasOrderFilter(): boolean {
     return !!(this.filterSource && this.filterReferenceId);
   }
@@ -75,6 +96,7 @@ export class FinanceIncomesComponent implements OnInit {
 
     this.filterSource = null;
     this.filterReferenceId = null;
+    this.clearSelection();
   }
 
   loadAll(): void {
@@ -87,6 +109,7 @@ export class FinanceIncomesComponent implements OnInit {
         this.financeService.listIncomes().subscribe({
           next: (items) => {
             this.incomes = items;
+            this.syncSelectionWithLoadedIncomes();
             this.loading = false;
           },
           error: () => {
@@ -206,6 +229,19 @@ export class FinanceIncomesComponent implements OnInit {
     this.selectedIncome = null;
   }
 
+  openBulkConfirmPaymentModal(): void {
+    if (this.selectedPendingCount === 0 || this.saving) {
+      return;
+    }
+    this.errorMessage = null;
+    this.infoMessage = null;
+    this.bulkConfirmPaymentModalOpen = true;
+  }
+
+  closeBulkConfirmPaymentModal(): void {
+    this.bulkConfirmPaymentModalOpen = false;
+  }
+
   confirmPayment(): void {
     if (!this.selectedIncome || this.saving) {
       return;
@@ -241,6 +277,19 @@ export class FinanceIncomesComponent implements OnInit {
     this.selectedIncome = null;
   }
 
+  openBulkDeleteModal(): void {
+    if (this.selectedCount === 0 || this.saving) {
+      return;
+    }
+    this.errorMessage = null;
+    this.infoMessage = null;
+    this.bulkDeleteModalOpen = true;
+  }
+
+  closeBulkDeleteModal(): void {
+    this.bulkDeleteModalOpen = false;
+  }
+
   deleteIncome(): void {
     if (!this.selectedIncome || this.saving) {
       return;
@@ -261,6 +310,121 @@ export class FinanceIncomesComponent implements OnInit {
         this.errorMessage = error?.error?.message || 'Não foi possível excluir a receita.';
         this.saving = false;
       }
+    });
+  }
+
+  toggleSelectAllFiltered(checked: boolean): void {
+    if (checked) {
+      this.filteredIncomes.forEach((income) => this.selectedIncomeIds.add(income.id));
+      return;
+    }
+    this.filteredIncomes.forEach((income) => this.selectedIncomeIds.delete(income.id));
+  }
+
+  toggleIncomeSelection(incomeId: string, checked: boolean): void {
+    if (checked) {
+      this.selectedIncomeIds.add(incomeId);
+      return;
+    }
+    this.selectedIncomeIds.delete(incomeId);
+  }
+
+  isIncomeSelected(incomeId: string): boolean {
+    return this.selectedIncomeIds.has(incomeId);
+  }
+
+  clearSelection(): void {
+    this.selectedIncomeIds.clear();
+  }
+
+  confirmBulkPayment(): void {
+    if (this.saving) {
+      return;
+    }
+
+    const targetIds = this.selectedIncomes
+      .filter((income) => income.paymentStatus === 'AGUARDANDO_PAGAMENTO')
+      .map((income) => income.id);
+
+    if (targetIds.length === 0) {
+      this.errorMessage = 'Nenhuma receita pendente selecionada para dar baixa.';
+      this.closeBulkConfirmPaymentModal();
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    const requests = targetIds.map((id) =>
+      this.financeService.confirmIncomePayment(id).pipe(
+        map(() => ({ success: true, message: '' })),
+        catchError((error) => of({ success: false, message: this.extractApiErrorMessage(error) }))
+      )
+    );
+
+    forkJoin(requests).subscribe((results) => {
+      const successCount = results.filter((result) => result.success).length;
+      const failed = results.filter((result) => !result.success);
+      const failedCount = failed.length;
+
+      this.saving = false;
+      this.closeBulkConfirmPaymentModal();
+
+      if (successCount > 0) {
+        this.infoMessage = `Baixa em massa concluída para ${successCount} receita(s).`;
+      }
+      if (failedCount > 0) {
+        const firstError = failed[0]?.message || 'Erro ao processar uma ou mais receitas.';
+        this.errorMessage = `${failedCount} receita(s) não puderam ser baixadas. ${firstError}`;
+      }
+
+      this.clearSelection();
+      this.loadAll();
+    });
+  }
+
+  deleteIncomesBulk(): void {
+    if (this.saving) {
+      return;
+    }
+
+    const targetIds = this.selectedIncomes.map((income) => income.id);
+    if (targetIds.length === 0) {
+      this.errorMessage = 'Selecione ao menos uma receita para excluir.';
+      this.closeBulkDeleteModal();
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+
+    const requests = targetIds.map((id) =>
+      this.financeService.deleteIncome(id).pipe(
+        map(() => ({ success: true, message: '' })),
+        catchError((error) => of({ success: false, message: this.extractApiErrorMessage(error) }))
+      )
+    );
+
+    forkJoin(requests).subscribe((results) => {
+      const successCount = results.filter((result) => result.success).length;
+      const failed = results.filter((result) => !result.success);
+      const failedCount = failed.length;
+
+      this.saving = false;
+      this.closeBulkDeleteModal();
+
+      if (successCount > 0) {
+        this.infoMessage = `Exclusão em massa concluída para ${successCount} receita(s).`;
+      }
+      if (failedCount > 0) {
+        const firstError = failed[0]?.message || 'Erro ao processar uma ou mais receitas.';
+        this.errorMessage = `${failedCount} receita(s) não puderam ser excluídas. ${firstError}`;
+      }
+
+      this.clearSelection();
+      this.loadAll();
     });
   }
 
@@ -335,5 +499,22 @@ export class FinanceIncomesComponent implements OnInit {
 
   private today(): string {
     return new Date().toISOString().slice(0, 10);
+  }
+
+  private syncSelectionWithLoadedIncomes(): void {
+    const loadedIds = new Set(this.incomes.map((income) => income.id));
+    this.selectedIncomeIds.forEach((id) => {
+      if (!loadedIds.has(id)) {
+        this.selectedIncomeIds.delete(id);
+      }
+    });
+  }
+
+  private extractApiErrorMessage(error: any): string {
+    const message = error?.error?.message || error?.message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+    return 'Erro inesperado.';
   }
 }

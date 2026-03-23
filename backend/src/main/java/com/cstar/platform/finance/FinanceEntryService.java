@@ -3,10 +3,12 @@ package com.cstar.platform.finance;
 import com.cstar.platform.auth.security.AuthUserPrincipal;
 import com.cstar.platform.clientorders.ClientServiceOrderRepository;
 import com.cstar.platform.clientorders.model.ClientServiceOrder;
+import com.cstar.platform.clientorders.model.ClientServiceOrderPaymentStatus;
 import com.cstar.platform.finance.dto.FinanceExpenseRequest;
 import com.cstar.platform.finance.dto.FinanceExpenseResponse;
 import com.cstar.platform.finance.dto.FinanceIncomeRequest;
 import com.cstar.platform.finance.dto.FinanceIncomeResponse;
+import com.cstar.platform.finance.dto.UpdateFinanceIncomeNotesRequest;
 import com.cstar.platform.finance.model.FinanceExpense;
 import com.cstar.platform.finance.model.FinanceExpenseType;
 import com.cstar.platform.finance.model.FinanceIncome;
@@ -42,6 +44,14 @@ public class FinanceEntryService {
     @Transactional(readOnly = true)
     public List<FinanceIncomeResponse> listIncomes() {
         return incomeRepository.findAll().stream()
+                .map(this::toIncomeResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<FinanceIncomeResponse> listServiceOrderIncomes(UUID orderId) {
+        return incomeRepository.findBySourceAndReferenceIdOrderByOccurredOnAscCreatedAtAsc(IncomeSource.SERVICE_ORDER, orderId)
+                .stream()
                 .map(this::toIncomeResponse)
                 .toList();
     }
@@ -86,6 +96,24 @@ public class FinanceEntryService {
         }
 
         income.markPaid();
+        FinanceIncome saved = incomeRepository.save(income);
+        syncServiceOrderPaymentProgress(saved);
+        return toIncomeResponse(saved);
+    }
+
+    @Transactional
+    public FinanceIncomeResponse updateIncomeNotes(UUID id, UpdateFinanceIncomeNotesRequest request) {
+        FinanceIncome income = incomeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receita não encontrada"));
+
+        income.update(
+                income.getIncomeType(),
+                income.getAmount(),
+                income.getDescription(),
+                trimToNull(request.notes()),
+                income.getOccurredOn()
+        );
+
         FinanceIncome saved = incomeRepository.save(income);
         return toIncomeResponse(saved);
     }
@@ -209,5 +237,31 @@ public class FinanceEntryService {
         if (!authorizedByRole) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão para excluir faturas do orçamento.");
         }
+    }
+
+    private void syncServiceOrderPaymentProgress(FinanceIncome income) {
+        if (income.getSource() != IncomeSource.SERVICE_ORDER || income.getReferenceId() == null) {
+            return;
+        }
+
+        clientServiceOrderRepository.findById(income.getReferenceId()).ifPresent(order -> {
+            List<FinanceIncome> invoices = incomeRepository.findByReferenceIdAndSourceOrderByOccurredOnAscCreatedAtAsc(
+                    order.getId(),
+                    IncomeSource.SERVICE_ORDER
+            );
+
+            int invoiceCount = invoices.size();
+            int paidCount = (int) invoices.stream()
+                    .filter(item -> item.getPaymentStatus() == FinanceIncomeStatus.PAGO)
+                    .count();
+
+            order.syncPaymentProgress(invoiceCount, paidCount);
+            clientServiceOrderRepository.save(order);
+
+            if (order.getPaymentStatus() == ClientServiceOrderPaymentStatus.PAGAMENTO_CONCLUIDO) {
+                order.getClient().transitionToClosedDeal();
+                clientServiceOrderRepository.flush();
+            }
+        });
     }
 }

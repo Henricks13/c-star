@@ -1,0 +1,58 @@
+databaseChangeLog:
+  - changeSet:
+      id: 063-client-service-status-split-and-scheduling
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: client_service_orders
+            columns:
+              - column:
+                  name: payment_status
+                  type: VARCHAR(40)
+                  defaultValue: ORCADO
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scheduled_at
+                  type: TIMESTAMP
+
+        - sql:
+            sql: |
+              UPDATE client_service_orders
+              SET payment_status =
+                CASE
+                  WHEN status = 'ORCADO' THEN 'ORCADO'
+                  WHEN status = 'AGUARDANDO_PAGAMENTO' THEN 'AGUARDANDO_PAGAMENTO'
+                  WHEN status IN ('PAGO', 'RETORNO_AGENDADO', 'FINALIZADO') THEN 'PAGAMENTO_CONCLUIDO'
+                  ELSE 'ORCADO'
+                END;
+
+        - sql:
+            sql: |
+              UPDATE client_service_orders
+              SET status =
+                CASE
+                  WHEN status = 'ORCADO' THEN 'ORCADO'
+                  WHEN status = 'AGUARDANDO_PAGAMENTO' THEN 'AGENDADO'
+                  WHEN status = 'PAGO' THEN 'AGENDADO'
+                  WHEN status = 'RETORNO_AGENDADO' THEN 'AGUARDANDO_RETORNO'
+                  WHEN status = 'FINALIZADO' THEN 'FINALIZADO'
+                  ELSE 'ORCADO'
+                END;
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              DROP CONSTRAINT IF EXISTS ck_client_service_orders_status;
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_status
+              CHECK (status IN ('ORCADO', 'AGENDADO', 'AGUARDANDO_RETORNO', 'FINALIZADO'));
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              ADD CONSTRAINT ck_client_service_orders_payment_status
+              CHECK (payment_status IN ('ORCADO', 'AGUARDANDO_PAGAMENTO', 'PAGAMENTO_PARCIAL', 'PAGAMENTO_CONCLUIDO'));

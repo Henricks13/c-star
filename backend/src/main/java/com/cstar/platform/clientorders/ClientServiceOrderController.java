@@ -3,7 +3,9 @@ package com.cstar.platform.clientorders;
 import com.cstar.platform.clientorders.dto.ClientServiceOrderResponse;
 import com.cstar.platform.clientorders.dto.ConfirmClientServiceOrderPaymentRequest;
 import com.cstar.platform.clientorders.dto.CreateClientServiceOrderRequest;
+import com.cstar.platform.clientorders.dto.CreateClientServiceOrderPaymentPlanRequest;
 import com.cstar.platform.clientorders.dto.AddClientServiceOrderObservationRequest;
+import com.cstar.platform.clientorders.dto.ScheduleClientServiceOrderRequest;
 import com.cstar.platform.clientorders.dto.ScheduleClientServiceOrderReturnRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +45,22 @@ public class ClientServiceOrderController {
             @RequestBody @Valid ConfirmClientServiceOrderPaymentRequest request
     ) {
         return clientServiceOrderService.confirmPayment(orderId, request);
+    }
+
+    @PostMapping("/client-service-orders/{orderId}/payment-plan")
+    public ClientServiceOrderResponse createPaymentPlan(
+            @PathVariable UUID orderId,
+            @RequestBody @Valid CreateClientServiceOrderPaymentPlanRequest request
+    ) {
+        return clientServiceOrderService.createPaymentPlan(orderId, request);
+    }
+
+    @PostMapping("/client-service-orders/{orderId}/schedule")
+    public ClientServiceOrderResponse scheduleService(
+            @PathVariable UUID orderId,
+            @RequestBody @Valid ScheduleClientServiceOrderRequest request
+    ) {
+        return clientServiceOrderService.scheduleService(orderId, request);
     }
 
     @PostMapping("/client-service-orders/{orderId}/observations")

@@ -42,9 +42,11 @@ export class ServicesComponent implements OnInit {
   services: ServiceItem[] = [];
   availableProducts: ProductItem[] = [];
   selectedService: ServiceItem | null = null;
+  selectedServiceForDeletion: ServiceItem | null = null;
 
   createModalOpen = false;
   editModalOpen = false;
+  deleteModalOpen = false;
 
   readonly stageOptions = SERVICE_STAGE_OPTIONS;
 
@@ -176,19 +178,40 @@ export class ServicesComponent implements OnInit {
   }
 
   deleteService(service: ServiceItem): void {
-    if (!confirm(`Deseja excluir o serviço "${service.name}"?`)) {
+    if (this.saving) {
       return;
     }
+
+    this.selectedServiceForDeletion = service;
+    this.deleteModalOpen = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeDeleteModal(): void {
+    this.deleteModalOpen = false;
+    this.selectedServiceForDeletion = null;
+  }
+
+  confirmDeleteService(): void {
+    if (!this.selectedServiceForDeletion || this.saving) {
+      return;
+    }
+
+    this.saving = true;
 
     this.errorMessage = null;
     this.infoMessage = null;
 
-    this.servicesService.delete(service.id).subscribe({
+    this.servicesService.delete(this.selectedServiceForDeletion.id).subscribe({
       next: () => {
+        this.saving = false;
+        this.closeDeleteModal();
         this.infoMessage = 'Serviço removido com sucesso.';
         this.loadAll();
       },
       error: (error) => {
+        this.saving = false;
         this.errorMessage = error?.error?.message || 'Não foi possível excluir o serviço.';
       }
     });

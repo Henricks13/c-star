@@ -168,6 +168,25 @@
   </div>
 </ng-container>
 
+<ng-container *ngIf="deleteModalOpen && selectedServiceForDeletion">
+  <div class="services-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-service-title">
+    <div class="services-modal">
+      <h6 id="delete-service-title" class="mb-3">Confirmar exclusão</h6>
+      <p class="mb-3">Deseja excluir o serviço <strong>{{ selectedServiceForDeletion.name }}</strong>?</p>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteService()">
+          <span *ngIf="!saving">Excluir serviço</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Excluindo...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
 <ng-template #serviceFormTemplate let-formModel="formModel" let-editing="editing">
   <div class="d-flex flex-column gap-2">
     <div>

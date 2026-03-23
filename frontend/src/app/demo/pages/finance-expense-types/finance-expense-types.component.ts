@@ -21,9 +21,11 @@ export class FinanceExpenseTypesComponent implements OnInit {
 
   types: FinanceTypeItem[] = [];
   selectedType: FinanceTypeItem | null = null;
+  selectedTypeForDeletion: FinanceTypeItem | null = null;
 
   createModalOpen = false;
   editModalOpen = false;
+  deleteModalOpen = false;
 
   createForm: FinanceTypeRequest = this.defaultForm();
   editForm: FinanceTypeRequest = this.defaultForm();
@@ -142,19 +144,40 @@ export class FinanceExpenseTypesComponent implements OnInit {
   }
 
   deleteType(type: FinanceTypeItem): void {
-    if (!confirm(`Deseja excluir o tipo "${type.name}"?`)) {
+    if (this.saving) {
       return;
     }
+
+    this.selectedTypeForDeletion = type;
+    this.deleteModalOpen = true;
+    this.errorMessage = null;
+    this.infoMessage = null;
+  }
+
+  closeDeleteModal(): void {
+    this.deleteModalOpen = false;
+    this.selectedTypeForDeletion = null;
+  }
+
+  confirmDeleteType(): void {
+    if (!this.selectedTypeForDeletion || this.saving) {
+      return;
+    }
+
+    this.saving = true;
 
     this.errorMessage = null;
     this.infoMessage = null;
 
-    this.financeService.deleteExpenseType(type.id).subscribe({
+    this.financeService.deleteExpenseType(this.selectedTypeForDeletion.id).subscribe({
       next: () => {
+        this.saving = false;
+        this.closeDeleteModal();
         this.infoMessage = 'Tipo de despesa removido com sucesso.';
         this.loadTypes();
       },
       error: (error) => {
+        this.saving = false;
         this.errorMessage = error?.error?.message || 'Não foi possível excluir o tipo de despesa.';
       }
     });
