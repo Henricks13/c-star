@@ -99,13 +99,24 @@ echo "Deploy concluído."
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
 
 echo "[health] aguardando backend responder em ${HEALTH_URL}"
-for _ in $(seq 1 30); do
+for attempt in $(seq 1 80); do
   if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
     echo "[health] OK"
     exit 0
   fi
+
+  if [ "$attempt" -eq 1 ] || [ $((attempt % 10)) -eq 0 ]; then
+    echo "[health] tentativa ${attempt}/80 ainda sem resposta"
+  fi
+
   sleep 3
 done
 
 echo "[health] FALHOU: backend não respondeu em tempo hábil"
+echo "[health] status atual dos containers"
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps || true
+
+echo "[health] últimas linhas do backend"
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail 200 backend || true
+
 exit 1
