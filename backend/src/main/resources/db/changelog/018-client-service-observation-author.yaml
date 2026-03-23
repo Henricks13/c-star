@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 064-client-service-observation-author
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: client_service_order_observations
+            columns:
+              - column:
+                  name: created_by_name
+                  type: VARCHAR(120)

@@ -55,7 +55,7 @@ export class BajajChartComponent implements OnChanges {
           show: false
         }
       },
-      colors: ['#FFD700']
+      colors: ['#d4af37']
     };
   }
 

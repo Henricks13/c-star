@@ -7,19 +7,36 @@ body.berry-dark .tab-content {
   background: none !important;
 }
 
+.earning-card.bg-secondary-dark {
+  background: linear-gradient(135deg, #c79b2d 0%, #b88717 100%) !important;
+}
+
+.earning-card.bg-primary-dark {
+  background: linear-gradient(135deg, #7d6215 0%, #916f12 58%, #ab8622 100%) !important;
+}
+
+.total-income-card.bg-secondary-dark {
+  background: linear-gradient(130deg, #b88717 0%, #d0a43a 100%) !important;
+}
+
+.total-income-card.warning {
+  background: linear-gradient(130deg, #fffaf0 0%, #f2e7d4 100%);
+  border: 1px solid rgba(184, 135, 23, 0.16);
+}
+
 .earning-card {
   .round {
     &.secondary-round {
-      background: #4527a0;
+      background: rgba(123, 136, 153, 0.4);
     }
     &.primary-round {
-      background: #1565c0;
+      background: rgba(146, 109, 28, 0.46);
     }
   }
 }
 
 .total-income-card {
   .avatar {
-    background: #4527a0;
+    background: linear-gradient(135deg, #d4af37 0%, #ba8f21 100%);
   }
 }

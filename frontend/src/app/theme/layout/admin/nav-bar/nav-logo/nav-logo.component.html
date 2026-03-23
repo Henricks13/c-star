@@ -1,6 +1,6 @@
-<div class="m-header">
-  <a (click)="returnToHome()" class="b-brand">
-    <span class="brand-title">C-STAR Development</span>
+<div class="m-header" [ngClass]="{ 'is-collapsed': navCollapsed }">
+  <a (click)="returnToHome()" class="b-brand" [ngClass]="{ 'is-collapsed': navCollapsed }">
+    <img src="assets/images/logo.svg" alt="Logo Dra." class="brand-logo" />
   </a>
   <!-- ======= Menu collapse Icon ===== -->
   <div class="pc-h-item">

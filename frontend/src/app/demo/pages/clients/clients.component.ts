@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { Router } from '@angular/router';
 import { AnamnesisService } from 'src/app/core/anamnesis/anamnesis.service';
 import { PublicAnamnesisForm } from 'src/app/core/anamnesis/anamnesis.types';
@@ -29,7 +30,7 @@ interface ExtraProductRow {
 
 @Component({
   selector: 'app-clients',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './clients.component.html',
   styleUrls: ['./clients.component.scss']
 })

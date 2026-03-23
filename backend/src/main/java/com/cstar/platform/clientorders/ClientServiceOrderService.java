@@ -1,6 +1,7 @@
 package com.cstar.platform.clientorders;
 
 import com.cstar.platform.agenda.AgendaEventTypeRepository;
+import com.cstar.platform.auth.security.AuthUserPrincipal;
 import com.cstar.platform.agenda.model.AgendaEventKind;
 import com.cstar.platform.agenda.model.AgendaEventType;
 import com.cstar.platform.agenda.model.AgendaEvent;
@@ -407,20 +408,17 @@ public class ClientServiceOrderService {
     }
 
     @Transactional
-    public ClientServiceOrderResponse addObservation(UUID orderId, AddClientServiceOrderObservationRequest request) {
+    public ClientServiceOrderResponse addObservation(UUID orderId, AddClientServiceOrderObservationRequest request, AuthUserPrincipal principal) {
         ClientServiceOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Serviço não encontrado"));
-
-        if (order.getStatus() == ClientServiceOrderStatus.ORCADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Agende o serviço para registrar observações");
-        }
 
         String note = normalizeNotes(request.note());
         if (note == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Observação inválida");
         }
 
-        order.addObservation(note);
+        String createdByName = resolveObservationAuthor(principal);
+        order.addObservation(note, createdByName);
         return toResponse(orderRepository.save(order));
     }
 
@@ -807,6 +805,7 @@ public class ClientServiceOrderService {
                 .map(item -> new ClientServiceOrderObservationResponse(
                     item.getId(),
                     item.getNote(),
+                    item.getCreatedByName(),
                     item.getCreatedAt()
                 ))
                 .toList();
@@ -847,5 +846,23 @@ public class ClientServiceOrderService {
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );
+    }
+
+    private String resolveObservationAuthor(AuthUserPrincipal principal) {
+        if (principal == null) {
+            return "Equipe C-Star";
+        }
+
+        String fullName = principal.getFullName();
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName.trim();
+        }
+
+        String email = principal.getUsername();
+        if (email != null && !email.isBlank()) {
+            return email.trim();
+        }
+
+        return "Equipe C-Star";
     }
 }

@@ -104,9 +104,9 @@
       <div class="d-flex flex-column gap-2">
         <div>
           <label class="form-label" for="createExpenseTypeId">Tipo de despesa</label>
-          <select id="createExpenseTypeId" class="form-select" [(ngModel)]="createForm.expenseTypeId">
-            <option *ngFor="let type of expenseTypes" [ngValue]="type.id">{{ type.name }}</option>
-          </select>
+          <ng-select id="createExpenseTypeId" class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="createForm.expenseTypeId">
+            <ng-option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</ng-option>
+          </ng-select>
         </div>
         <div class="row g-2">
           <div class="col-md-6">
@@ -144,9 +144,9 @@
       <div class="d-flex flex-column gap-2">
         <div>
           <label class="form-label" for="editExpenseTypeId">Tipo de despesa</label>
-          <select id="editExpenseTypeId" class="form-select" [(ngModel)]="editForm.expenseTypeId">
-            <option *ngFor="let type of expenseTypes" [ngValue]="type.id">{{ type.name }}</option>
-          </select>
+          <ng-select id="editExpenseTypeId" class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="editForm.expenseTypeId">
+            <ng-option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</ng-option>
+          </ng-select>
         </div>
         <div class="row g-2">
           <div class="col-md-6">

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -17,7 +18,7 @@ import { CardComponent } from 'src/app/theme/shared/components/card/card.compone
 
 @Component({
   selector: 'app-finance-incomes',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './finance-incomes.component.html',
   styleUrls: ['./finance-incomes.component.scss']
 })

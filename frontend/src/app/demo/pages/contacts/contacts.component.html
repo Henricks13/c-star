@@ -5,14 +5,15 @@
         <div class="stage-search" *ngIf="viewMode === 'geral'">
           <label class="mb-1" for="stageQuery">Filtrar por etapa</label>
           <div class="stage-filter-actions">
-            <select
+            <ng-select
               id="stageQuery"
-              class="form-select form-select-sm"
-              [value]="selectedStageDraft"
-              (change)="selectedStageDraft = $any($event.target).value"
+              class="cstar-ng-select cstar-ng-select-sm"
+              [searchable]="false"
+              [clearable]="false"
+              [(ngModel)]="selectedStageDraft"
             >
-              <option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</option>
-            </select>
+              <ng-option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</ng-option>
+            </ng-select>
             <button class="btn btn-sm btn-primary btn-search" type="button" (click)="searchStage()">
               <i class="ti ti-search"></i>
               <span>Buscar</span>
@@ -28,14 +29,15 @@
         <div class="stage-search" *ngIf="viewMode === 'nao-lidas'">
           <label class="mb-1" for="periodQuery">Filtrar por período</label>
           <div class="stage-filter-actions">
-            <select
+            <ng-select
               id="periodQuery"
-              class="form-select form-select-sm"
-              [value]="selectedUnreadPeriodDraft"
-              (change)="selectedUnreadPeriodDraft = $any($event.target).value"
+              class="cstar-ng-select cstar-ng-select-sm"
+              [searchable]="false"
+              [clearable]="false"
+              [(ngModel)]="selectedUnreadPeriodDraft"
             >
-              <option *ngFor="let option of unreadPeriodOptions" [value]="option.value">{{ option.label }}</option>
-            </select>
+              <ng-option *ngFor="let option of unreadPeriodOptions" [value]="option.value">{{ option.label }}</ng-option>
+            </ng-select>
             <button class="btn btn-sm btn-primary btn-search" type="button" (click)="searchUnreadPeriod()">
               <i class="ti ti-search"></i>
               <span>Buscar</span>
@@ -271,14 +273,24 @@
 </div>
 
 <ng-container *ngIf="messagesModalOpen">
-  <div class="messages-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="messages-title">
-    <div class="messages-modal">
-      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-        <div>
-          <h6 id="messages-title" class="mb-1">Últimas 5 mensagens</h6>
-          <small class="text-muted">{{ selectedContact?.fullName || selectedContact?.phone }}</small>
+  <div
+    class="messages-modal-backdrop messages-modern-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="messages-title"
+    (click)="closeMessagesModal()"
+  >
+    <div class="messages-modal messages-modern-modal" (click)="$event.stopPropagation()">
+      <button class="messages-close-btn" type="button" aria-label="Fechar mensagens" (click)="closeMessagesModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="messages-modern-header mb-3">
+        <div class="messages-modern-avatar">{{ getInitials(selectedContact?.fullName || selectedContact?.phone || null) }}</div>
+        <div class="messages-modern-header-text">
+          <h6 id="messages-title" class="mb-1">{{ selectedContact?.fullName || selectedContact?.phone }}</h6>
+          <small class="text-muted">Últimas 5 mensagens</small>
         </div>
-        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeMessagesModal()">Fechar</button>
       </div>
 
       <ng-container *ngIf="modalLoading">
@@ -291,10 +303,10 @@
 
       <ng-container *ngIf="!modalLoading && !modalError">
         <ng-container *ngIf="selectedMessages.length > 0; else noMessages">
-          <div class="messages-list">
+          <div class="messages-list messages-modern-list">
             <div class="message-item" *ngFor="let message of selectedMessages" [ngClass]="getDirectionClass(message.direction)">
               <div class="message-meta">
-                <strong>{{ getDirectionLabel(message.direction) }}</strong>
+                <strong class="message-author">{{ getDirectionLabel(message.direction) }}</strong>
                 <small>{{ message.sentAt | date: 'dd/MM/yyyy HH:mm' }}</small>
               </div>
               <p class="mb-0">{{ message.body || '(sem texto)' }}</p>
@@ -302,30 +314,46 @@
           </div>
         </ng-container>
         <ng-template #noMessages>
-          <p class="mb-2">Nenhuma mensagem encontrada para este contato.</p>
+          <div class="messages-empty-state">Nenhuma mensagem encontrada para este contato.</div>
         </ng-template>
       </ng-container>
 
       <div class="messages-modal-actions d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-success" type="button" (click)="openWhatsapp(selectedContact)">Abrir no WhatsApp</button>
+        <button class="btn btn-outline-success" type="button" (click)="openWhatsapp(selectedContact)">
+          <i class="ti ti-brand-whatsapp me-1"></i>
+          Abrir WhatsApp
+        </button>
       </div>
     </div>
   </div>
 </ng-container>
 
 <ng-container *ngIf="clientModalOpen">
-  <div class="messages-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="client-title">
-    <div class="messages-modal">
-      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-        <div>
+  <div
+    class="messages-modal-backdrop client-modern-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="client-title"
+    (click)="closeClientModal()"
+  >
+    <div class="messages-modal client-modern-modal" (click)="$event.stopPropagation()">
+      <button class="messages-close-btn" type="button" aria-label="Fechar tornar cliente" (click)="closeClientModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="messages-modern-header client-modern-header mb-3">
+        <div class="messages-modern-avatar">{{ getInitials(convertingContact?.fullName || convertingContact?.phone || null) }}</div>
+        <div class="messages-modern-header-text">
           <h6 id="client-title" class="mb-1">Tornar cliente</h6>
-          <small class="text-muted">
-            Este cliente será criado com origem <strong>Resgate</strong> e vínculo com o contato selecionado.
-          </small>
+          <small class="text-muted">Contato: {{ convertingContact?.fullName || convertingContact?.phone }}</small>
         </div>
       </div>
 
-      <div class="d-flex flex-column gap-2">
+      <div class="client-modern-info mb-3">
+        Este cliente será criado com origem <strong>Resgate</strong> e vínculo com o contato selecionado.
+      </div>
+
+      <div class="d-flex flex-column gap-2 client-modern-form">
         <div>
           <label class="form-label" for="clientFromContactName">Nome completo</label>
           <input id="clientFromContactName" class="form-control" [(ngModel)]="clientForm.fullName" />
@@ -353,7 +381,7 @@
       </div>
 
       <div class="reset-modal-actions d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="clientSaving" (click)="closeClientModal()">Cancelar</button>
+        <button class="btn btn-outline-danger" type="button" [disabled]="clientSaving" (click)="closeClientModal()">Cancelar</button>
         <button class="btn btn-warning" type="button" [disabled]="clientSaving" (click)="createClientFromContact()">
           <span *ngIf="!clientSaving">Salvar cliente</span>
           <span *ngIf="clientSaving" class="d-inline-flex align-items-center gap-2">

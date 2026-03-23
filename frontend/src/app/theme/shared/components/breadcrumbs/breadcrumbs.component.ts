@@ -46,9 +46,9 @@ export class BreadcrumbComponent {
       if (router instanceof NavigationEnd) {
         const activeLink = router.url;
         const breadcrumbList = this.filterNavigation(this.navigations, activeLink);
-        const title = breadcrumbList[breadcrumbList.length - 1]?.title || 'Welcome';
+        const title = breadcrumbList[breadcrumbList.length - 1]?.title || 'Início';
         this.navigationList = breadcrumbList.splice(-2);
-        this.titleService.setTitle(title + ' | Berry Angular Admin Template');
+        this.titleService.setTitle(title + ' | C-Star');
       }
     });
   }

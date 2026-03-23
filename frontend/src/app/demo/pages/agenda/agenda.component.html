@@ -72,10 +72,10 @@
       <div class="d-flex flex-column gap-2">
         <div>
           <label class="form-label">Tipo de evento</label>
-          <select class="form-select" [(ngModel)]="createForm.typeId" (ngModelChange)="onTypeChange()">
-            <option value="" disabled>Selecione um tipo</option>
-            <option *ngFor="let type of eventTypes" [value]="type.id">{{ type.name }}</option>
-          </select>
+          <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="createForm.typeId" (ngModelChange)="onTypeChange()">
+            <ng-option [value]="''" [disabled]="true">Selecione um tipo</ng-option>
+            <ng-option *ngFor="let type of eventTypes" [value]="type.id">{{ type.name }}</ng-option>
+          </ng-select>
         </div>
 
         <div>
@@ -121,10 +121,10 @@
 
         <div *ngIf="requiresClient">
           <label class="form-label">Cliente vinculado</label>
-          <select class="form-select" [(ngModel)]="createForm.clientId">
-            <option value="">Selecione um cliente</option>
-            <option *ngFor="let client of clients" [value]="client.id">{{ client.fullName }}</option>
-          </select>
+          <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="createForm.clientId">
+            <ng-option [value]="''">Selecione um cliente</ng-option>
+            <ng-option *ngFor="let client of clients" [value]="client.id">{{ client.fullName }}</ng-option>
+          </ng-select>
         </div>
 
         <div>

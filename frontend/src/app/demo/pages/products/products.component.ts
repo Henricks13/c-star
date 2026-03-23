@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 import { ProductTypesService } from 'src/app/core/products/product-types.service';
 import { ProductTypeItem } from 'src/app/core/products/product-types.types';
@@ -24,7 +25,7 @@ interface StockAdjustmentFormModel {
 
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.scss']
 })

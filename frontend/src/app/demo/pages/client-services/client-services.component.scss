@@ -156,6 +156,14 @@
   overflow: auto;
 }
 
+.app-modal-body .ng-select.cstar-ng-select {
+  width: 100%;
+}
+
+.app-modal-body .ng-dropdown-panel {
+  z-index: 1088;
+}
+
 .wizard-steps {
   display: flex;
   gap: 0.4rem;

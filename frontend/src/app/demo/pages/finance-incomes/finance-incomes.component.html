@@ -181,16 +181,16 @@
       <div class="d-flex flex-column gap-2">
         <div>
           <label class="form-label" for="createIncomeTypeId">Tipo de receita</label>
-          <select id="createIncomeTypeId" class="form-select" [(ngModel)]="createForm.incomeTypeId">
-            <option *ngFor="let type of incomeTypes" [ngValue]="type.id">{{ type.name }}</option>
-          </select>
+          <ng-select id="createIncomeTypeId" class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="createForm.incomeTypeId">
+            <ng-option *ngFor="let type of incomeTypes" [value]="type.id">{{ type.name }}</ng-option>
+          </ng-select>
         </div>
         <div>
           <label class="form-label" for="createIncomePaymentStatus">Status</label>
-          <select id="createIncomePaymentStatus" class="form-select" [(ngModel)]="createForm.paymentStatus">
-            <option [ngValue]="'PAGO'">Pago</option>
-            <option [ngValue]="'AGUARDANDO_PAGAMENTO'">Aguardando pagamento</option>
-          </select>
+          <ng-select id="createIncomePaymentStatus" class="cstar-ng-select" [searchable]="false" [clearable]="false" [(ngModel)]="createForm.paymentStatus">
+            <ng-option value="PAGO">Pago</ng-option>
+            <ng-option value="AGUARDANDO_PAGAMENTO">Aguardando pagamento</ng-option>
+          </ng-select>
         </div>
         <div class="row g-2">
           <div class="col-md-6">
@@ -228,9 +228,9 @@
       <div class="d-flex flex-column gap-2">
         <div>
           <label class="form-label" for="editIncomeTypeId">Tipo de receita</label>
-          <select id="editIncomeTypeId" class="form-select" [(ngModel)]="editForm.incomeTypeId">
-            <option *ngFor="let type of incomeTypes" [ngValue]="type.id">{{ type.name }}</option>
-          </select>
+          <ng-select id="editIncomeTypeId" class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="editForm.incomeTypeId">
+            <ng-option *ngFor="let type of incomeTypes" [value]="type.id">{{ type.name }}</ng-option>
+          </ng-select>
         </div>
         <div class="row g-2">
           <div class="col-md-6">

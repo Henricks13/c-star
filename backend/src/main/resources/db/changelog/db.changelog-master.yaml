@@ -33,3 +33,7 @@ databaseChangeLog:
       file: db/changelog/016-client-service-followup.yaml
   - include:
       file: db/changelog/017-client-service-status-split-and-scheduling.yaml
+  - include:
+      file: db/changelog/018-client-service-observation-author.yaml
+  - include:
+      file: db/changelog/019-client-observations.yaml

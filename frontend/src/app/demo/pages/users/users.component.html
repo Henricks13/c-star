@@ -153,9 +153,9 @@
 
         <div>
           <label class="form-label" for="createRoleCode">Perfil</label>
-          <select id="createRoleCode" class="form-select" [(ngModel)]="form.roleCode">
-            <option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</option>
-          </select>
+          <ng-select id="createRoleCode" class="cstar-ng-select" [searchable]="false" [clearable]="false" [(ngModel)]="form.roleCode">
+            <ng-option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</ng-option>
+          </ng-select>
         </div>
       </div>
 
@@ -191,9 +191,9 @@
 
         <div>
           <label class="form-label" for="editRoleCode">Perfil</label>
-          <select id="editRoleCode" class="form-select" [(ngModel)]="editForm.roleCode">
-            <option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</option>
-          </select>
+          <ng-select id="editRoleCode" class="cstar-ng-select" [searchable]="false" [clearable]="false" [(ngModel)]="editForm.roleCode">
+            <ng-option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</ng-option>
+          </ng-select>
         </div>
       </div>
 

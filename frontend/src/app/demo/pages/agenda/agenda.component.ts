@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { forkJoin } from 'rxjs';
 
 import { AgendaService } from 'src/app/core/agenda/agenda.service';
@@ -28,7 +29,7 @@ interface AgendaCalendarDay {
 
 @Component({
   selector: 'app-agenda',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './agenda.component.html',
   styleUrls: ['./agenda.component.scss']
 })

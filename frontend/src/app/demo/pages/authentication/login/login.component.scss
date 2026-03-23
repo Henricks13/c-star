@@ -1,1 +1,61 @@
-// This file is intentionally left empty to allow customers to add custom CSS if needed.
+.auth-logo {
+	width: clamp(110px, 26vw, 180px);
+	max-height: 170px;
+	max-width: 100%;
+	height: auto;
+	display: block;
+}
+
+.auth-logo-link {
+	margin-top: 0.25rem;
+	margin-bottom: 0.5rem;
+}
+
+.auth-login-card {
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+}
+
+.auth-welcome-title {
+	margin-top: 0.75rem;
+	margin-bottom: 0;
+	white-space: nowrap;
+	font-size: clamp(1.25rem, 1.15rem + 0.8vw, 1.8rem);
+	line-height: 1.25;
+}
+
+.auth-welcome-subtitle {
+	margin-top: 0.55rem !important;
+	font-size: clamp(1rem, 0.95rem + 0.35vw, 1.25rem);
+}
+
+@media (max-width: 576px) {
+	.auth-logo {
+		width: clamp(95px, 34vw, 130px);
+		max-height: 120px;
+	}
+
+	.auth-login-card {
+		margin-top: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.auth-welcome-title {
+		font-size: 1.15rem;
+		letter-spacing: -0.01em;
+	}
+
+	.auth-welcome-subtitle {
+		font-size: 0.95rem;
+	}
+
+	.auth-wrapper.v3 .auth-form {
+		min-height: auto;
+		padding: 12px;
+		align-items: flex-start;
+	}
+
+	.auth-wrapper .auth-form .card .card-body {
+		padding: 0.9rem;
+	}
+}

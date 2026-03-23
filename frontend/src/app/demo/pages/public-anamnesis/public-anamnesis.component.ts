@@ -5,11 +5,10 @@ import { ActivatedRoute } from '@angular/router';
 
 import { AnamnesisService } from 'src/app/core/anamnesis/anamnesis.service';
 import { PublicAnamnesisForm, SubmitPublicAnamnesisRequest } from 'src/app/core/anamnesis/anamnesis.types';
-import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
 
 @Component({
   selector: 'app-public-anamnesis',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './public-anamnesis.component.html',
   styleUrl: './public-anamnesis.component.scss'
 })

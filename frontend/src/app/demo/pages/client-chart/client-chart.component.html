@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-12">
-    <app-card cardTitle="Ficha do Paciente">
+    <app-card cardTitle="Ficha do Cliente">
       <div class="chart-toolbar mb-3">
         <div class="toolbar-actions">
           <button class="btn btn-sm btn-outline-secondary" type="button" (click)="goBackToClients()">
@@ -20,6 +20,10 @@
 
       <ng-container *ngIf="errorMessage">
         <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
       </ng-container>
 
       <ng-container *ngIf="loading">
@@ -60,83 +64,327 @@
           </div>
         </div>
 
+        <div class="chart-tabs mb-3">
+          <button class="chart-tab" type="button" [class.active]="activeTab === 'geral'" (click)="setActiveTab('geral')">Resumo Geral</button>
+          <button class="chart-tab" type="button" [class.active]="activeTab === 'servicos'" (click)="setActiveTab('servicos')">Serviços</button>
+          <button class="chart-tab" type="button" [class.active]="activeTab === 'observacoes'" (click)="setActiveTab('observacoes')">Observações</button>
+        </div>
+
         <div *ngIf="!hasOrders" class="empty-state">
           <p class="mb-1">Nenhum serviço registrado para este paciente.</p>
           <small class="text-muted">Use o botão "Novo serviço" para iniciar um orçamento e seguir o fluxo.</small>
         </div>
 
-        <div class="orders-list" *ngIf="hasOrders">
-          <div class="order-card" *ngFor="let order of orders">
-            <div class="order-header">
-              <div>
-                <div class="fw-semibold">Serviço #{{ order.id }}</div>
-                <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
-              </div>
-              <div class="order-statuses">
-                <span class="status-pill service">{{ getServiceFlowStatusLabel(order) }}</span>
-                <span class="status-pill payment">{{ getPaymentStatusLabel(order) }}</span>
-              </div>
+        <ng-container *ngIf="hasOrders && activeTab === 'geral'">
+          <div class="kpi-grid mb-3">
+            <div class="kpi-card success">
+              <small>Já pago</small>
+              <div class="kpi-value">{{ totalPaidAmount | currency: 'BRL' }}</div>
             </div>
-
-            <div class="order-grid">
-              <div>
-                <small class="text-muted">Valor final</small>
-                <div class="fw-semibold">{{ order.finalTotal | currency: 'BRL' }}</div>
-              </div>
-              <div>
-                <small class="text-muted">Forma de pagamento</small>
-                <div>{{ order.paymentMethod || '—' }}</div>
-              </div>
-              <div>
-                <small class="text-muted">Parcelas pagas</small>
-                <div>{{ order.paidInstallmentCount || 0 }} / {{ order.installmentCount || 0 }}</div>
-              </div>
-              <div>
-                <small class="text-muted">Próximo retorno</small>
-                <div>{{ order.nextReturnAt ? (order.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</div>
-              </div>
+            <div class="kpi-card warning">
+              <small>Falta receber</small>
+              <div class="kpi-value">{{ totalOpenAmount | currency: 'BRL' }}</div>
             </div>
-
-            <div class="order-section">
-              <small class="text-muted d-block mb-1">Serviços executados</small>
-              <ul class="mb-0 ps-3">
-                <li *ngFor="let service of order.services">{{ service.serviceName }} - {{ service.servicePrice | currency: 'BRL' }}</li>
-              </ul>
+            <div class="kpi-card danger">
+              <small>Gasto com produtos</small>
+              <div class="kpi-value">{{ totalProductCost | currency: 'BRL' }}</div>
             </div>
-
-            <div class="order-section" *ngIf="order.products.length > 0">
-              <small class="text-muted d-block mb-1">Produtos utilizados</small>
-              <ul class="mb-0 ps-3">
-                <li *ngFor="let product of order.products">
-                  {{ product.productName }} | Quantidade: {{ product.quantityUsed }} | Origem: {{ product.source === 'EXTRA' ? 'Extra' : 'Composição' }}
-                </li>
-              </ul>
-            </div>
-
-            <div class="order-section" *ngIf="order.observations.length > 0">
-              <small class="text-muted d-block mb-1">Observações clínicas</small>
-              <ul class="mb-0 ps-3">
-                <li *ngFor="let observation of order.observations">
-                  {{ observation.createdAt | date: 'dd/MM/yyyy HH:mm' }} - {{ observation.note }}
-                </li>
-              </ul>
-            </div>
-
-            <div class="order-section" *ngIf="order.returns.length > 0">
-              <small class="text-muted d-block mb-1">Retornos</small>
-              <ul class="mb-0 ps-3">
-                <li *ngFor="let item of order.returns">
-                  Retorno para {{ item.returnAt | date: 'dd/MM/yyyy HH:mm' }} (registrado em {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }})
-                </li>
-              </ul>
-            </div>
-
-            <div class="order-section" *ngIf="order.notes">
-              <small class="text-muted d-block mb-1">Observações do orçamento</small>
-              <div>{{ order.notes }}</div>
+            <div class="kpi-card neutral">
+              <small>Total faturado</small>
+              <div class="kpi-value">{{ totalBilledAmount | currency: 'BRL' }}</div>
             </div>
           </div>
-        </div>
+
+          <div class="highlight-panel mb-3" *ngIf="latestClientObservation">
+            <small class="text-muted d-block">Última observação registrada</small>
+            <div class="fw-semibold mt-1">{{ latestClientObservation.note }}</div>
+            <small class="text-muted d-block mt-1">
+              {{ latestClientObservation.createdAt | date: 'dd/MM/yyyy HH:mm' }} • {{ getObservationAuthorLabel(latestClientObservation.createdByName) }}
+            </small>
+          </div>
+
+          <h6 class="section-heading">Serviços em andamento</h6>
+          <div class="orders-list" *ngIf="ordersInProgress.length > 0; else noCurrentServices">
+            <div class="order-card" *ngFor="let order of ordersInProgress">
+              <div class="order-header">
+                <div>
+                  <div class="fw-semibold">Serviço #{{ getOrderDisplayId(order.id) }}</div>
+                  <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                </div>
+                <div class="order-statuses">
+                  <span class="status-pill service">{{ getServiceFlowStatusLabel(order) }}</span>
+                  <span class="status-pill payment">{{ getPaymentStatusLabel(order) }}</span>
+                </div>
+              </div>
+
+              <div class="order-grid">
+                <div class="metric-cell success">
+                  <small class="text-muted">Já pago</small>
+                  <div class="fw-semibold text-success">{{ getOrderPaidAmount(order) | currency: 'BRL' }}</div>
+                </div>
+                <div class="metric-cell warning">
+                  <small class="text-muted">Em aberto</small>
+                  <div class="fw-semibold text-warning">{{ getOrderOpenAmount(order) | currency: 'BRL' }}</div>
+                </div>
+                <div class="metric-cell neutral">
+                  <small class="text-muted">Próximo pagamento</small>
+                  <div>{{ getOrderNextPaymentDate(order) ? (getOrderNextPaymentDate(order) | date: 'dd/MM/yyyy') : 'Sem data prevista' }}</div>
+                </div>
+                <div class="metric-cell neutral">
+                  <small class="text-muted">Última observação</small>
+                  <div>{{ getOrderLastObservation(order)?.note || 'Sem observação' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #noCurrentServices>
+            <div class="empty-state">
+              <p class="mb-1">Nenhum serviço em andamento para este cliente.</p>
+              <small class="text-muted">Os serviços aparecerão aqui após agendamento ou retorno.</small>
+            </div>
+          </ng-template>
+        </ng-container>
+
+        <ng-container *ngIf="hasOrders && activeTab === 'servicos'">
+          <div class="service-groups">
+            <section class="service-group">
+              <h6 class="section-heading">Em andamento ({{ ordersInProgress.length }})</h6>
+              <div class="orders-list" *ngIf="ordersInProgress.length > 0; else noInProgress">
+                <div class="order-card" *ngFor="let order of ordersInProgress">
+                  <div class="order-header">
+                    <div>
+                      <div class="fw-semibold">Serviço #{{ getOrderDisplayId(order.id) }}</div>
+                      <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                    </div>
+                    <div class="order-statuses">
+                      <span class="status-pill service">{{ getServiceFlowStatusLabel(order) }}</span>
+                      <span class="status-pill payment">{{ getPaymentStatusLabel(order) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="order-grid">
+                    <div class="metric-cell neutral">
+                      <small class="text-muted">Valor final</small>
+                      <div class="fw-semibold">{{ order.finalTotal | currency: 'BRL' }}</div>
+                    </div>
+                    <div class="metric-cell success">
+                      <small class="text-muted">Já pago</small>
+                      <div>{{ getOrderPaidAmount(order) | currency: 'BRL' }}</div>
+                    </div>
+                    <div class="metric-cell warning">
+                      <small class="text-muted">Próximo pagamento</small>
+                      <div>{{ getOrderNextPaymentDate(order) ? (getOrderNextPaymentDate(order) | date: 'dd/MM/yyyy') : 'Sem data prevista' }}</div>
+                    </div>
+                    <div class="metric-cell neutral">
+                      <small class="text-muted">Próximo retorno</small>
+                      <div>{{ order.nextReturnAt ? (order.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</div>
+                    </div>
+                    <div class="metric-cell danger">
+                      <small class="text-muted">Gasto com produtos</small>
+                      <div class="text-danger fw-semibold">{{ getOrderProductCost(order) | currency: 'BRL' }}</div>
+                    </div>
+                    <div class="metric-cell" [class.success]="getOrderPotentialProfit(order) >= 0" [class.danger]="getOrderPotentialProfit(order) < 0">
+                      <small class="text-muted">Potencial lucro</small>
+                      <div class="fw-semibold" [class.text-success]="getOrderPotentialProfit(order) >= 0" [class.text-danger]="getOrderPotentialProfit(order) < 0">
+                        {{ getOrderPotentialProfit(order) | currency: 'BRL' }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="order-section">
+                    <small class="text-muted d-block mb-1">Serviços</small>
+                    <ul class="mb-0 ps-3">
+                      <li *ngFor="let service of order.services">{{ service.serviceName }} - {{ service.servicePrice | currency: 'BRL' }}</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noInProgress>
+                <div class="empty-state compact">
+                  <small class="text-muted">Nenhum serviço em andamento.</small>
+                </div>
+              </ng-template>
+            </section>
+
+            <section class="service-group">
+              <h6 class="section-heading">Orçados ({{ ordersBudgeted.length }})</h6>
+              <div class="orders-list" *ngIf="ordersBudgeted.length > 0; else noBudgeted">
+                <div class="order-card" *ngFor="let order of ordersBudgeted">
+                  <div class="order-header">
+                    <div>
+                      <div class="fw-semibold">Serviço #{{ getOrderDisplayId(order.id) }}</div>
+                      <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                    </div>
+                    <div class="order-statuses">
+                      <span class="status-pill service">{{ getServiceFlowStatusLabel(order) }}</span>
+                      <span class="status-pill payment">{{ getPaymentStatusLabel(order) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="order-grid">
+                    <div class="metric-cell neutral">
+                      <small class="text-muted">Valor final</small>
+                      <div class="fw-semibold">{{ order.finalTotal | currency: 'BRL' }}</div>
+                    </div>
+                    <div class="metric-cell neutral">
+                      <small class="text-muted">Forma de pagamento</small>
+                      <div>{{ order.paymentMethod || '—' }}</div>
+                    </div>
+                    <div class="metric-cell danger">
+                      <small class="text-muted">Gasto com produtos</small>
+                      <div class="text-danger fw-semibold">{{ getOrderProductCost(order) | currency: 'BRL' }}</div>
+                    </div>
+                    <div class="metric-cell" [class.success]="getOrderPotentialProfit(order) >= 0" [class.danger]="getOrderPotentialProfit(order) < 0">
+                      <small class="text-muted">Potencial lucro</small>
+                      <div class="fw-semibold" [class.text-success]="getOrderPotentialProfit(order) >= 0" [class.text-danger]="getOrderPotentialProfit(order) < 0">
+                        {{ getOrderPotentialProfit(order) | currency: 'BRL' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noBudgeted>
+                <div class="empty-state compact">
+                  <small class="text-muted">Nenhum orçamento pendente.</small>
+                </div>
+              </ng-template>
+            </section>
+
+            <section class="service-group">
+              <h6 class="section-heading">Concluídos ({{ ordersCompleted.length }})</h6>
+              <div class="orders-list" *ngIf="ordersCompleted.length > 0; else noCompleted">
+                <div class="order-card" *ngFor="let order of ordersCompleted">
+                  <div class="order-header">
+                    <div>
+                      <div class="fw-semibold">Serviço #{{ getOrderDisplayId(order.id) }}</div>
+                      <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                    </div>
+                    <div class="order-statuses">
+                      <span class="status-pill service">{{ getServiceFlowStatusLabel(order) }}</span>
+                      <span class="status-pill payment">{{ getPaymentStatusLabel(order) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="order-grid">
+                    <div class="metric-cell neutral">
+                      <small class="text-muted">Valor final</small>
+                      <div class="fw-semibold">{{ order.finalTotal | currency: 'BRL' }}</div>
+                    </div>
+                    <div class="metric-cell success">
+                      <small class="text-muted">Já pago</small>
+                      <div class="fw-semibold text-success">{{ getOrderPaidAmount(order) | currency: 'BRL' }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noCompleted>
+                <div class="empty-state compact">
+                  <small class="text-muted">Nenhum serviço concluído ainda.</small>
+                </div>
+              </ng-template>
+            </section>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="hasOrders && activeTab === 'observacoes'">
+          <div class="observation-card mb-3">
+            <h6 class="section-heading">Nova observação</h6>
+
+            <ng-container *ngIf="observationErrorMessage">
+              <div class="alert alert-danger py-2" role="alert">{{ observationErrorMessage }}</div>
+            </ng-container>
+
+            <ng-container *ngIf="observationInfoMessage">
+              <div class="alert alert-info py-2" role="alert">{{ observationInfoMessage }}</div>
+            </ng-container>
+
+            <div class="mb-2 observation-mode-toggle">
+              <div class="form-check form-switch">
+                <input
+                  id="serviceObservationToggle"
+                  class="form-check-input"
+                  type="checkbox"
+                  [checked]="isServiceObservation"
+                  (change)="setObservationMode($any($event.target).checked)"
+                />
+                <label class="form-check-label" for="serviceObservationToggle">Observação de serviço</label>
+              </div>
+              <small class="text-muted">
+                {{ isServiceObservation ? 'Observação vinculada a um serviço específico.' : 'Observação geral da cliente.' }}
+              </small>
+            </div>
+
+            <div class="mb-2" *ngIf="isServiceObservation">
+              <label class="form-label">Vincular ao serviço</label>
+              <ng-select
+                class="cstar-ng-select observation-order-select"
+                [items]="observationEligibleOrders"
+                bindLabel="id"
+                bindValue="id"
+                [clearable]="false"
+                [searchable]="false"
+                [(ngModel)]="selectedObservationOrderId"
+                placeholder="Selecione o serviço"
+              >
+                <ng-template ng-label-tmp let-item="item">
+                  {{ getObservationOrderDetailLabel(item) }}
+                </ng-template>
+                <ng-template ng-option-tmp let-item="item">
+                  <div class="fw-semibold">{{ getObservationOrderDetailLabel(item) }}</div>
+                </ng-template>
+              </ng-select>
+              <small class="text-muted d-block mt-1">Você pode registrar observação para qualquer status do serviço, incluindo orçado.</small>
+            </div>
+
+            <label class="form-label">Observação</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="newObservation" placeholder="Digite a observação clínica"></textarea>
+
+            <div class="mt-2 d-flex justify-content-end">
+              <button
+                class="btn btn-primary"
+                type="button"
+                [disabled]="savingObservation || (isServiceObservation && !selectedObservationOrderId)"
+                (click)="addObservation()"
+              >
+                <span *ngIf="!savingObservation">Salvar observação</span>
+                <span *ngIf="savingObservation" class="d-inline-flex align-items-center gap-2">
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                  Salvando...
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div class="orders-list" *ngIf="observationTimelineItems.length > 0; else noObservationHistory">
+            <div class="order-card" *ngFor="let observation of observationTimelineItems">
+              <div class="observation-header">
+                <button
+                  *ngIf="observation.type === 'SERVICO'; else clientObservationTag"
+                  class="status-pill service observation-service-link"
+                  type="button"
+                  (click)="openServicesFromObservation(observation)"
+                  title="Abrir tela de serviços"
+                >
+                  {{ getObservationTargetLabel(observation) }}
+                </button>
+                <ng-template #clientObservationTag>
+                  <span class="status-pill service">{{ getObservationTargetLabel(observation) }}</span>
+                </ng-template>
+                <small class="text-muted">{{ observation.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+              </div>
+              <div class="fw-semibold mb-1">{{ observation.note }}</div>
+              <small class="text-muted">Autor: {{ getObservationAuthorLabel(observation.createdByName) }}</small>
+            </div>
+          </div>
+
+          <ng-template #noObservationHistory>
+            <div class="empty-state">
+              <p class="mb-1">Nenhuma observação registrada para este cliente.</p>
+              <small class="text-muted">Use o formulário acima para registrar a primeira observação.</small>
+            </div>
+          </ng-template>
+        </ng-container>
       </ng-container>
     </app-card>
   </div>

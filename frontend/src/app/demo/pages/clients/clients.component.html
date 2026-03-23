@@ -54,8 +54,8 @@
                   <td>{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</td>
                   <td>
                     <div class="client-actions">
-                      <button class="btn btn-sm btn-outline-success" type="button" (click)="openServiceWizard(client)" title="Serviços" aria-label="Serviços">
-                        <i class="ti ti-briefcase"></i>
+                      <button class="btn btn-sm btn-outline-success" type="button" (click)="openServiceWizard(client)" title="Ficha" aria-label="Ficha">
+                        <i class="ti ti-file-description"></i>
                       </button>
                       <button class="btn btn-sm btn-outline-warning" type="button" (click)="openAnamnesis(client)" title="Anamnese" aria-label="Anamnese">
                         <i class="ti ti-clipboard-text"></i>
@@ -120,8 +120,8 @@
 
             <div class="mobile-card-actions">
               <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openServiceWizard(client)">
-                <i class="ti ti-briefcase me-1"></i>
-                Serviços
+                <i class="ti ti-file-description me-1"></i>
+                Ficha
               </button>
               <button class="btn btn-sm btn-outline-warning w-100" type="button" (click)="openAnamnesis(client)">
                 <i class="ti ti-clipboard-text me-1"></i>
@@ -144,46 +144,68 @@
 </div>
 
 <ng-container *ngIf="modalOpen">
-  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-client-title">
-    <div class="clients-modal">
-      <h6 id="create-client-title" class="mb-3">Cadastrar cliente</h6>
+  <div class="clients-modal-backdrop clients-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-client-title" (click)="closeModal()">
+    <div class="clients-modal clients-details-modal create-client-modal" (click)="$event.stopPropagation()">
+      <button class="client-details-close-btn" type="button" aria-label="Fechar cadastro" [disabled]="saving" (click)="closeModal()">
+        <i class="ti ti-x"></i>
+      </button>
 
-      <div class="d-flex flex-column gap-2">
-        <div>
-          <label class="form-label" for="clientFullName">Nome completo</label>
-          <input id="clientFullName" class="form-control" [(ngModel)]="form.fullName" />
+      <div class="client-details-header create-client-header mb-3">
+        <div class="client-details-avatar">
+          <i class="ti ti-user-plus"></i>
         </div>
-
-        <div>
-          <label class="form-label" for="clientPhone">Número</label>
-          <input id="clientPhone" class="form-control" [(ngModel)]="form.phone" />
+        <div class="client-details-header-text">
+          <h5 id="create-client-title" class="mb-1">Cadastrar cliente</h5>
+          <div class="client-details-subtitle">Preencha os dados principais</div>
         </div>
+      </div>
 
-        <div>
-          <label class="form-label" for="clientCpf">CPF (opcional)</label>
-          <input id="clientCpf" class="form-control" [(ngModel)]="form.cpf" />
-        </div>
+      <div class="client-details-section mb-3">
+        <h6 class="client-details-section-title">Dados do cliente</h6>
+        <div class="create-client-grid">
+          <div class="create-client-field create-client-field-full">
+            <label class="form-label" for="clientFullName">Nome completo</label>
+            <input id="clientFullName" class="form-control" [(ngModel)]="form.fullName" />
+          </div>
 
-        <div>
-          <label class="form-label" for="clientEmail">E-mail (opcional)</label>
-          <input id="clientEmail" type="email" class="form-control" [(ngModel)]="form.email" />
-        </div>
+          <div class="create-client-field">
+            <label class="form-label" for="clientPhone">Número</label>
+            <input id="clientPhone" class="form-control" [(ngModel)]="form.phone" />
+          </div>
 
-        <div *ngIf="!originLocked">
-          <label class="form-label" for="clientOrigin">Origem</label>
-          <select id="clientOrigin" class="form-select" [(ngModel)]="form.origin">
-            <option *ngFor="let option of originOptions" [value]="option.value">{{ option.label }}</option>
-          </select>
-        </div>
+          <div class="create-client-field">
+            <label class="form-label" for="clientCpf">CPF (opcional)</label>
+            <input id="clientCpf" class="form-control" [(ngModel)]="form.cpf" />
+          </div>
 
-        <div>
-          <label class="form-label" for="clientNotes">Observações (opcional)</label>
-          <textarea id="clientNotes" class="form-control" rows="2" [(ngModel)]="form.notes"></textarea>
+          <div class="create-client-field">
+            <label class="form-label" for="clientEmail">E-mail (opcional)</label>
+            <input id="clientEmail" type="email" class="form-control" [(ngModel)]="form.email" />
+          </div>
+
+          <div class="create-client-field" *ngIf="!originLocked">
+            <label class="form-label" for="clientOrigin">Origem</label>
+            <ng-select
+              id="clientOrigin"
+              class="cstar-ng-select"
+              [items]="originOptions"
+              bindLabel="label"
+              bindValue="value"
+              [searchable]="false"
+              [clearable]="false"
+              [(ngModel)]="form.origin"
+            ></ng-select>
+          </div>
+
+          <div class="create-client-field create-client-field-full">
+            <label class="form-label" for="clientNotes">Observações (opcional)</label>
+            <textarea id="clientNotes" class="form-control" rows="2" [(ngModel)]="form.notes"></textarea>
+          </div>
         </div>
       </div>
 
       <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeModal()">Cancelar</button>
         <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createClient()">
           <span *ngIf="!saving">Cadastrar</span>
           <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
@@ -201,13 +223,13 @@
     <div class="clients-modal clients-modal-wide">
       <div class="wizard-header d-flex justify-content-between align-items-start gap-2 mb-3">
         <div>
-          <h6 id="service-wizard-title" class="mb-1">Contratação de serviço</h6>
+          <h6 id="service-wizard-title" class="mb-1">Ficha do cliente</h6>
           <small class="text-muted">Cliente: {{ selectedClientForService.fullName }}</small>
         </div>
         <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeServiceWizard()" [disabled]="saving">Fechar</button>
       </div>
 
-      <div class="wizard-steps mb-3" aria-label="Etapas da contratação de serviço">
+      <div class="wizard-steps mb-3" aria-label="Etapas da ficha do cliente">
         <button
           class="wizard-step"
           type="button"
@@ -292,16 +314,16 @@
 
           <div class="service-list d-flex flex-column gap-2" *ngIf="availableServices.length > 0; else noServicesAvailable">
             <div class="service-row" *ngFor="let serviceId of selectedServiceIds; let idx = index">
-              <select class="form-select" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(idx, $event)">
-                <option value="">Selecione um serviço</option>
-                <option
+              <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(idx, $event)">
+                <ng-option [value]="''">Selecione um serviço</ng-option>
+                <ng-option
                   *ngFor="let service of availableServices"
                   [value]="service.id"
                   [disabled]="isServiceOptionDisabled(service.id, idx)"
                 >
                   {{ service.name }}
-                </option>
-              </select>
+                </ng-option>
+              </ng-select>
 
               <div class="service-row-price" [class.is-empty]="!serviceId">
                 {{ serviceId ? (getServicePrice(serviceId) | currency: 'BRL') : '—' }}
@@ -494,10 +516,10 @@
           </div>
 
           <div class="extra-row" *ngFor="let row of extraProductRows; let idx = index">
-            <select class="form-select" [(ngModel)]="row.productId">
-              <option value="">Selecione um produto</option>
-              <option *ngFor="let product of availableProducts" [value]="product.id">{{ product.name }}</option>
-            </select>
+            <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="row.productId">
+              <ng-option [value]="''">Selecione um produto</ng-option>
+              <ng-option *ngFor="let product of availableProducts" [value]="product.id">{{ product.name }}</ng-option>
+            </ng-select>
             <input type="number" min="0.001" step="0.001" class="form-control" [(ngModel)]="row.quantityUsed" placeholder="Quantidade" />
             <button class="btn btn-sm btn-outline-danger" type="button" (click)="removeExtraProductRow(idx)">
               <i class="ti ti-trash"></i>
@@ -553,16 +575,16 @@
         <div class="wizard-section mb-3">
           <div class="mb-2">
             <label class="form-label">Forma de pagamento</label>
-            <select class="form-select" [ngModel]="paymentMethod" (ngModelChange)="onPaymentMethodChange($event)">
-              <option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</option>
-            </select>
+            <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [ngModel]="paymentMethod" (ngModelChange)="onPaymentMethodChange($event)">
+              <ng-option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</ng-option>
+            </ng-select>
           </div>
 
           <div class="mb-2" *ngIf="requiresInstallments">
             <label class="form-label">Quantidade de parcelas</label>
-            <select class="form-select" [(ngModel)]="paymentInstallmentCount" (ngModelChange)="onInstallmentCountChange()">
-              <option *ngFor="let option of installmentOptions" [ngValue]="option.value">{{ option.label }}</option>
-            </select>
+            <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [(ngModel)]="paymentInstallmentCount" (ngModelChange)="onInstallmentCountChange()">
+              <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
+            </ng-select>
           </div>
 
           <div class="form-check mb-2" *ngIf="!requiresInstallments || paymentInstallmentCount === 1">
@@ -719,14 +741,36 @@
 </ng-container>
 
 <ng-container *ngIf="deleteClientModalOpen && selectedClientForDeletion">
-  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-client-title">
-    <div class="clients-modal">
-      <h6 id="delete-client-title" class="mb-3">Excluir cliente</h6>
-      <p class="mb-3">
-        Confirma excluir o cliente <strong>{{ selectedClientForDeletion.fullName }}</strong>?
-      </p>
+  <div
+    class="clients-modal-backdrop clients-details-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-client-title"
+    (click)="!saving && closeDeleteClientModal()"
+  >
+    <div class="clients-modal clients-details-modal delete-client-modal" (click)="$event.stopPropagation()">
+      <button class="client-details-close-btn" type="button" aria-label="Fechar exclusão" [disabled]="saving" (click)="closeDeleteClientModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="client-details-header delete-client-header mb-3">
+        <div class="client-details-avatar delete-client-avatar">
+          <i class="ti ti-alert-triangle"></i>
+        </div>
+        <div class="client-details-header-text">
+          <h5 id="delete-client-title" class="mb-1">Excluir cliente</h5>
+          <div class="client-details-subtitle">Essa ação não pode ser desfeita</div>
+        </div>
+      </div>
+
+      <div class="client-details-section">
+        <p class="mb-0 delete-client-message">
+          Confirma excluir o cliente <strong>{{ selectedClientForDeletion.fullName }}</strong>?
+        </p>
+      </div>
+
       <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteClientModal()">Cancelar</button>
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeDeleteClientModal()">Cancelar</button>
         <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteClient()">
           <span *ngIf="!saving">Excluir cliente</span>
           <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
@@ -740,79 +784,103 @@
 </ng-container>
 
 <ng-container *ngIf="anamnesisModalOpen">
-  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="anamnesis-client-title">
-    <div class="clients-modal clients-modal-wide anamnesis-client-modal">
-      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-        <div>
-          <h6 id="anamnesis-client-title" class="mb-1">Anamnese do cliente</h6>
-          <small class="text-muted">{{ selectedClientForAnamnesis?.fullName }}</small>
+  <div class="clients-modal-backdrop clients-details-backdrop anamnesis-client-backdrop" role="dialog" aria-modal="true" aria-labelledby="anamnesis-client-title" (click)="closeAnamnesisModal()">
+    <div class="clients-modal clients-details-modal anamnesis-client-modal" (click)="$event.stopPropagation()">
+      <button class="client-details-close-btn" type="button" aria-label="Fechar anamnese" (click)="closeAnamnesisModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="client-details-header anamnesis-client-header mb-3">
+        <div class="client-details-avatar">{{ getInitials(selectedClientForAnamnesis?.fullName || '') }}</div>
+        <div class="client-details-header-text">
+          <h5 id="anamnesis-client-title" class="mb-1">Anamnese</h5>
+          <div class="client-details-subtitle">{{ selectedClientForAnamnesis?.fullName }}</div>
         </div>
-        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeAnamnesisModal()">Fechar</button>
+        <div class="client-details-tags" *ngIf="anamnesisFormData">
+          <span class="client-details-tag anamnesis-status-tag" [class.answered]="anamnesisFormData.answered">
+            {{ anamnesisFormData.answered ? 'Respondida' : 'Pendente' }}
+          </span>
+        </div>
       </div>
 
       <ng-container *ngIf="anamnesisModalError">
-        <div class="alert alert-danger py-2" role="alert">{{ anamnesisModalError }}</div>
+        <div class="alert alert-danger py-2 mb-3" role="alert">{{ anamnesisModalError }}</div>
       </ng-container>
 
       <ng-container *ngIf="anamnesisModalInfo">
-        <div class="alert alert-info py-2" role="alert">{{ anamnesisModalInfo }}</div>
+        <div class="alert alert-info py-2 mb-3" role="alert">{{ anamnesisModalInfo }}</div>
       </ng-container>
 
       <ng-container *ngIf="anamnesisModalLoading">
-        <p class="mb-0">Carregando anamnese...</p>
+        <div class="client-details-section">
+          <span class="client-details-value">Carregando anamnese...</span>
+        </div>
       </ng-container>
 
       <ng-container *ngIf="!anamnesisModalLoading && anamnesisFormData">
         <div class="anamnesis-client-status mb-3" [class.answered]="anamnesisFormData.answered">
-          <strong>{{ anamnesisFormData.answered ? 'Respondida' : 'Ainda não respondida' }}</strong>
+          <strong>{{ anamnesisFormData.answered ? 'Formulário respondido' : 'Formulário ainda não respondido' }}</strong>
           <small class="text-muted" *ngIf="anamnesisFormData.submittedAt">
             Enviada em {{ anamnesisFormData.submittedAt | date: 'dd/MM/yyyy HH:mm' }}
           </small>
         </div>
 
         <ng-container *ngIf="!anamnesisFormData.answered">
-          <div class="anamnesis-client-actions mb-3">
-            <button class="btn btn-primary" type="button" (click)="generateAnamnesisLink()">
-              <i class="ti ti-link me-1"></i>
-              Gerar link
-            </button>
+          <div class="client-details-section mb-3">
+            <h6 class="client-details-section-title">Ações</h6>
+            <div class="anamnesis-client-actions">
+              <button class="btn btn-primary" type="button" (click)="generateAnamnesisLink()">
+                <i class="ti ti-link me-1"></i>
+                Gerar link
+              </button>
 
-            <div class="input-group" *ngIf="anamnesisShareLink">
-              <input class="form-control" type="text" [value]="anamnesisShareLink" readonly />
-              <a class="btn btn-outline-secondary" [href]="anamnesisShareLink" target="_blank" rel="noopener noreferrer">
-                Abrir
-              </a>
+              <div class="input-group" *ngIf="anamnesisShareLink">
+                <input class="form-control" type="text" [value]="anamnesisShareLink" readonly />
+                <a class="btn btn-outline-secondary" [href]="anamnesisShareLink" target="_blank" rel="noopener noreferrer">
+                  Abrir
+                </a>
+              </div>
             </div>
           </div>
 
-          <div class="anamnesis-client-questions" *ngIf="anamnesisFormData.questions.length > 0; else noQuestions">
-            <div class="anamnesis-question-item" *ngFor="let question of anamnesisFormData.questions">
-              <span class="details-label">Pergunta</span>
-              <div>{{ question.questionText }}</div>
+          <div class="client-details-section" *ngIf="anamnesisFormData.questions.length > 0; else noQuestions">
+            <h6 class="client-details-section-title">Perguntas ativas</h6>
+            <div class="anamnesis-client-questions">
+              <div class="anamnesis-question-item" *ngFor="let question of anamnesisFormData.questions">
+                <span class="client-details-label">Pergunta</span>
+                <div class="anamnesis-item-text">{{ question.questionText }}</div>
+              </div>
             </div>
           </div>
         </ng-container>
 
         <ng-container *ngIf="anamnesisFormData.answered">
-          <div class="anamnesis-client-answers" *ngIf="anamnesisFormData.answers.length > 0; else noAnswers">
-            <div class="anamnesis-answer-item" *ngFor="let item of anamnesisFormData.answers">
-              <span class="details-label">Pergunta</span>
-              <div class="mb-2">{{ item.questionText }}</div>
-              <span class="details-label">Resposta</span>
-              <div>{{ item.answerText }}</div>
+          <div class="client-details-section" *ngIf="anamnesisFormData.answers.length > 0; else noAnswers">
+            <h6 class="client-details-section-title">Respostas do cliente</h6>
+            <div class="anamnesis-client-answers">
+              <div class="anamnesis-answer-item" *ngFor="let item of anamnesisFormData.answers">
+                <span class="client-details-label">Pergunta</span>
+                <div class="anamnesis-item-text mb-2">{{ item.questionText }}</div>
+                <span class="client-details-label">Resposta</span>
+                <div class="anamnesis-item-text">{{ item.answerText }}</div>
+              </div>
             </div>
           </div>
         </ng-container>
 
         <ng-template #noQuestions>
-          <div class="history-box">
-            <small class="text-muted">Nenhuma pergunta ativa cadastrada para anamnese.</small>
+          <div class="client-details-section">
+            <div class="history-box mb-0">
+              <small class="text-muted">Nenhuma pergunta ativa cadastrada para anamnese.</small>
+            </div>
           </div>
         </ng-template>
 
         <ng-template #noAnswers>
-          <div class="history-box">
-            <small class="text-muted">Nenhuma resposta registrada para este cliente.</small>
+          <div class="client-details-section">
+            <div class="history-box mb-0">
+              <small class="text-muted">Nenhuma resposta registrada para este cliente.</small>
+            </div>
           </div>
         </ng-template>
       </ng-container>
@@ -821,51 +889,59 @@
 </ng-container>
 
 <ng-container *ngIf="detailsModalOpen && detailClient">
-  <div class="clients-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="client-details-title">
-    <div class="clients-modal">
-      <h6 id="client-details-title" class="mb-3">Detalhes do cliente</h6>
+  <div class="clients-modal-backdrop clients-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="client-details-title" (click)="closeDetailsModal()">
+    <div class="clients-modal clients-details-modal" (click)="$event.stopPropagation()">
+      <button class="client-details-close-btn" type="button" aria-label="Fechar detalhes" (click)="closeDetailsModal()">
+        <i class="ti ti-x"></i>
+      </button>
 
-      <div class="details-grid">
-        <div class="details-item">
-          <span class="details-label">Nome</span>
-          <span>{{ detailClient.fullName }}</span>
+      <div class="client-details-header mb-3">
+        <div class="client-details-avatar">{{ getInitials(detailClient.fullName) }}</div>
+        <div class="client-details-header-text">
+          <h5 id="client-details-title" class="mb-1">{{ detailClient.fullName }}</h5>
+          <div class="client-details-subtitle">Detalhes do cliente</div>
         </div>
-        <div class="details-item">
-          <span class="details-label">Número</span>
-          <span>{{ detailClient.phone }}</span>
-        </div>
-        <div class="details-item">
-          <span class="details-label">CPF</span>
-          <span>{{ detailClient.cpf || '—' }}</span>
-        </div>
-        <div class="details-item">
-          <span class="details-label">E-mail</span>
-          <span>{{ detailClient.email || '—' }}</span>
-        </div>
-        <div class="details-item">
-          <span class="details-label">Origem</span>
-          <span>{{ getOriginLabel(detailClient.origin) }}</span>
-        </div>
-        <div class="details-item">
-          <span class="details-label">Vínculo com contato</span>
-          <span>{{ detailClient.sourceContactId || 'Sem vínculo' }}</span>
-        </div>
-        <div class="details-item details-item-full">
-          <span class="details-label">Observações</span>
-          <span>{{ detailClient.notes || 'Sem observações' }}</span>
-        </div>
-        <div class="details-item">
-          <span class="details-label">Criado em</span>
-          <span>{{ detailClient.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
-        </div>
-        <div class="details-item">
-          <span class="details-label">Atualizado em</span>
-          <span>{{ detailClient.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+        <div class="client-details-tags">
+          <span class="client-details-tag origin">{{ getOriginLabel(detailClient.origin) }}</span>
+          <span class="client-details-tag status">{{ getBusinessStatusLabel(detailClient.businessStatus) }}</span>
         </div>
       </div>
 
-      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" (click)="closeDetailsModal()">Fechar</button>
+      <div class="client-details-section mb-3">
+        <h6 class="client-details-section-title">Informações principais</h6>
+        <div class="client-details-grid">
+          <div class="client-details-field">
+            <span class="client-details-label">Número</span>
+            <span class="client-details-value">{{ detailClient.phone }}</span>
+          </div>
+          <div class="client-details-field">
+            <span class="client-details-label">CPF</span>
+            <span class="client-details-value">{{ detailClient.cpf || '—' }}</span>
+          </div>
+          <div class="client-details-field client-details-field-full">
+            <span class="client-details-label">E-mail</span>
+            <span class="client-details-value">{{ detailClient.email || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="client-details-section mb-3">
+        <h6 class="client-details-section-title">Observações</h6>
+        <div class="client-details-note">{{ detailClient.notes || 'Sem observações' }}</div>
+      </div>
+
+      <div class="client-details-section">
+        <h6 class="client-details-section-title">Auditoria</h6>
+        <div class="client-details-grid">
+          <div class="client-details-field">
+            <span class="client-details-label">Criado em</span>
+            <span class="client-details-value">{{ detailClient.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="client-details-field">
+            <span class="client-details-label">Atualizado em</span>
+            <span class="client-details-value">{{ detailClient.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

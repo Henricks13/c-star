@@ -36,3 +36,15 @@ export interface CreateClientRequest {
   sourceContactId?: string | null;
   notes?: string | null;
 }
+
+export interface ClientObservationItem {
+  id: string;
+  clientId: string;
+  note: string;
+  createdByName: string | null;
+  createdAt: string;
+}
+
+export interface AddClientObservationRequest {
+  note: string;
+}

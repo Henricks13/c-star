@@ -1,6 +1,36 @@
-.brand-title {
-	font-weight: 700;
-	font-size: 1rem;
-	color: var(--pc-sidebar-active-color);
-	white-space: nowrap;
+.brand-logo {
+	height: 74px;
+	max-width: none;
+	width: auto;
+	display: block;
+}
+
+.m-header {
+	padding-top: 2px;
+	padding-bottom: 2px;
+	padding-left: 16px;
+	padding-right: 12px;
+	gap: 10px;
+}
+
+.b-brand {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 10px;
+}
+
+.m-header.is-collapsed {
+	padding-left: 14px;
+	padding-right: 14px;
+}
+
+.b-brand.is-collapsed {
+	padding: 4px 10px;
+}
+
+@media (max-width: 1024px) {
+	.brand-logo {
+		height: 64px;
+	}
 }

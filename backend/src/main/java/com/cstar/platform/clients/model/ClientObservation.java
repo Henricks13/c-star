@@ -1,4 +1,4 @@
-package com.cstar.platform.clientorders.model;
+package com.cstar.platform.clients.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,16 +15,16 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "client_service_order_observations")
-public class ClientServiceOrderObservation {
+@Table(name = "client_observations")
+public class ClientObservation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private ClientServiceOrder order;
+    @JoinColumn(name = "client_id", nullable = false)
+    private Client client;
 
     @Column(name = "note", nullable = false, length = 500)
     private String note;
@@ -35,12 +35,12 @@ public class ClientServiceOrderObservation {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected ClientServiceOrderObservation() {
+    protected ClientObservation() {
     }
 
-    public static ClientServiceOrderObservation of(ClientServiceOrder order, String note, String createdByName) {
-        ClientServiceOrderObservation observation = new ClientServiceOrderObservation();
-        observation.order = order;
+    public static ClientObservation of(Client client, String note, String createdByName) {
+        ClientObservation observation = new ClientObservation();
+        observation.client = client;
         observation.note = note;
         observation.createdByName = createdByName;
         return observation;
@@ -53,6 +53,10 @@ public class ClientServiceOrderObservation {
 
     public UUID getId() {
         return id;
+    }
+
+    public Client getClient() {
+        return client;
     }
 
     public String getNote() {

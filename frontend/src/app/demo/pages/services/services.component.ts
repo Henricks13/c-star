@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 import { ProductItem } from 'src/app/core/products/products.types';
 import { ProductsService } from 'src/app/core/products/products.service';
@@ -27,7 +28,7 @@ interface ServiceFormModel {
 
 @Component({
   selector: 'app-services',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './services.component.html',
   styleUrls: ['./services.component.scss']
 })

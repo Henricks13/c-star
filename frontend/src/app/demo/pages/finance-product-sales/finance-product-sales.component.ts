@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 import { FinanceService } from 'src/app/core/finance/finance.service';
 import { ProductSale, ProductSaleRequest } from 'src/app/core/finance/finance.types';
@@ -15,7 +16,7 @@ interface ProductSaleLineForm {
 
 @Component({
   selector: 'app-finance-product-sales',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './finance-product-sales.component.html',
   styleUrls: ['./finance-product-sales.component.scss']
 })

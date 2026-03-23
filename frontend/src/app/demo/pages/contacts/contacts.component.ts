@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { ActivatedRoute, Router } from '@angular/router';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/min';
 
@@ -16,7 +17,7 @@ import { WhatsappService } from 'src/app/core/whatsapp/whatsapp.service';
 
 @Component({
   selector: 'app-contacts',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './contacts.component.html',
   styleUrls: ['./contacts.component.scss']
 })

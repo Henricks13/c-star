@@ -1,6 +1,22 @@
-.brand-title {
-	font-weight: 700;
-	font-size: 0.95rem;
-	color: var(--pc-sidebar-active-color);
-	white-space: nowrap;
+.brand-logo {
+	height: 72px;
+	max-width: none;
+	width: auto;
+	display: block;
+}
+
+.m-header {
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+.b-brand {
+	display: inline-flex;
+	align-items: center;
+}
+
+@media (max-width: 1024px) {
+	.brand-logo {
+		height: 64px;
+	}
 }

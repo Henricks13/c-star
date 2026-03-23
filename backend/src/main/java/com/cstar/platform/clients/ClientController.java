@@ -2,6 +2,8 @@ package com.cstar.platform.clients;
 
 import com.cstar.platform.clients.dto.ClientListItemResponse;
 import com.cstar.platform.clients.dto.CreateClientRequest;
+import com.cstar.platform.clients.dto.ClientObservationResponse;
+import com.cstar.platform.clients.dto.AddClientObservationRequest;
 import com.cstar.platform.auth.security.AuthUserPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,6 +38,18 @@ public class ClientController {
     @PostMapping
     public ClientListItemResponse create(@RequestBody @Valid CreateClientRequest request) {
         return clientService.create(request);
+    }
+
+    @GetMapping("/{id}/observations")
+    public java.util.List<ClientObservationResponse> listObservations(@PathVariable("id") UUID clientId) {
+        return clientService.listObservations(clientId);
+    }
+
+    @PostMapping("/{id}/observations")
+    public ClientObservationResponse addObservation(@PathVariable("id") UUID clientId,
+                                                    @AuthenticationPrincipal AuthUserPrincipal principal,
+                                                    @RequestBody @Valid AddClientObservationRequest request) {
+        return clientService.addObservation(clientId, request, principal);
     }
 
     @DeleteMapping("/{id}")

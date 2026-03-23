@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 import { FinanceService } from 'src/app/core/finance/finance.service';
 import { FinanceExpenseItem, FinanceExpenseRequest, FinanceTypeItem } from 'src/app/core/finance/finance.types';
@@ -8,7 +9,7 @@ import { CardComponent } from 'src/app/theme/shared/components/card/card.compone
 
 @Component({
   selector: 'app-finance-expenses',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './finance-expenses.component.html',
   styleUrls: ['./finance-expenses.component.scss']
 })

@@ -36,6 +36,7 @@ File: style.css
 
 @import 'scss/themes/customizer';
 @import 'scss/style-preset.scss';
+@import 'node_modules/@ng-select/ng-select/themes/default.theme.css';
 
 // fonts
 @import url('scss/fonts/berry/berry-icons.css'); /** custom font icons - berry **/
@@ -84,4 +85,173 @@ File: style.css
 .system-status-switch-control:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
+}
+
+.alert[role='alert'][data-toast-bridged='true'] {
+	display: none !important;
+}
+
+select.form-select,
+.form-select {
+	border-radius: 12px;
+	border: 1px solid #d8ccb1;
+	background-color: #fffdf8;
+	color: #2c3640;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	box-shadow: 0 1px 2px rgba(44, 54, 64, 0.04);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+select.form-select:hover,
+.form-select:hover {
+	border-color: #c8ab60;
+	background-color: #fffaf1;
+}
+
+select.form-select:focus,
+.form-select:focus {
+	border-color: #b88a1e;
+	box-shadow: 0 0 0 0.2rem rgba(184, 138, 30, 0.16);
+	background-color: #fffaf1;
+}
+
+select.form-select option,
+.form-select option {
+	background-color: #ffffff;
+	color: #2c3640;
+	padding: 10px 12px;
+}
+
+select.form-select option:checked,
+select.form-select option:hover,
+select.form-select option:focus,
+.form-select option:checked,
+.form-select option:hover,
+.form-select option:focus {
+	background: linear-gradient(0deg, rgba(184, 138, 30, 0.2), rgba(184, 138, 30, 0.2));
+	color: #1f2730;
+}
+
+select.form-select:-moz-focusring,
+.form-select:-moz-focusring {
+	color: transparent;
+	text-shadow: 0 0 0 #2c3640;
+}
+
+.ng-select.cstar-ng-select {
+	display: block;
+	width: 100%;
+
+	.ng-select-container {
+		min-height: 46px;
+		border-radius: 12px;
+		border: 1px solid #d8ccb1;
+		background-color: #fffdf8;
+		color: #2c3640;
+		box-shadow: 0 1px 2px rgba(44, 54, 64, 0.04);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+
+		.ng-value-container {
+			padding-left: 12px;
+		}
+
+		.ng-input {
+			padding-left: 12px;
+		}
+	}
+
+	&:hover .ng-select-container {
+		border-color: #c8ab60;
+		background-color: #fffaf1;
+	}
+
+	&.ng-select-opened > .ng-select-container,
+	&.ng-select-focused > .ng-select-container {
+		border-color: #b88a1e;
+		box-shadow: 0 0 0 0.2rem rgba(184, 138, 30, 0.16);
+		background-color: #fffaf1;
+		border-bottom-left-radius: 12px !important;
+		border-bottom-right-radius: 12px !important;
+	}
+
+	.ng-arrow-wrapper .ng-arrow {
+		border-top-color: #7f6f4c;
+	}
+
+	&.ng-select-opened .ng-arrow-wrapper .ng-arrow {
+		border-bottom-color: #7f6f4c;
+	}
+}
+
+.ng-select.cstar-ng-select.cstar-ng-select-sm {
+	.ng-select-container {
+		min-height: 34px;
+		font-size: 0.875rem;
+	}
+
+	.ng-select-container .ng-value-container {
+		padding-top: 0;
+		padding-bottom: 0;
+	}
+}
+
+.ng-dropdown-panel {
+	border: 1px solid #d8ccb1;
+	border-radius: 12px;
+	margin-top: 6px;
+	overflow: hidden;
+	z-index: 2000 !important;
+	box-shadow: 0 10px 24px rgba(44, 54, 64, 0.12);
+
+	&.ng-select-bottom {
+		border-bottom-left-radius: 12px !important;
+		border-bottom-right-radius: 12px !important;
+	}
+
+	.ng-dropdown-panel-items {
+		border-bottom-left-radius: 12px;
+		border-bottom-right-radius: 12px;
+		overflow: hidden;
+	}
+
+	.ng-dropdown-panel-items .ng-option {
+		padding: 10px 12px;
+		color: #2c3640;
+		background-color: #fff;
+		transition: background-color 0.16s ease, color 0.16s ease;
+
+		&.ng-option-marked {
+			background-color: #f8f1e3;
+			color: #1f2730;
+		}
+
+		&.ng-option-selected,
+		&.ng-option-selected.ng-option-marked {
+			background-color: #f1e2c1;
+			color: #1f2730;
+			font-weight: 600;
+		}
+
+		&:last-child {
+			border-bottom-left-radius: 12px;
+			border-bottom-right-radius: 12px;
+		}
+	}
+}
+
+select.form-select option:checked,
+.form-select option:checked {
+	background: #f7eedc;
+	color: #2c3640;
+}
+
+@media (max-width: 576px) {
+	select.form-select,
+	.form-select {
+		border-radius: 10px;
+		min-height: 42px;
+		font-size: 0.94rem;
+	}
 }

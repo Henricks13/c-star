@@ -7,10 +7,10 @@
 
 // BLUE Primary Color
 
-$blue-500: #ad9720;
-$blue-700: #ad9720;
-$purple-500: #FFD700;
-$purple-700: #542ca7;
+$blue-500: #8f6b10;
+$blue-700: #7a5a0c;
+$purple-500: #d4af37;
+$purple-700: #b88a1e;
 
 $yellow-100: #ffecb5;
 $yellow-200: #ffe083;
@@ -33,7 +33,7 @@ $colors: (
 );
 
 $primary: $blue; // change
-$secondary: $indigo; // change
+$secondary: $purple; // change
 
 // scss-docs-start theme-colors-map
 $theme-colors: (
@@ -74,7 +74,7 @@ $position-values: (
   100: 100%
 );
 
-$body-bg: #eceff1; // change
+$body-bg: #f5f2ea; // change
 $body-text-align: null;
 $link-color: $primary;
 $link-decoration: none;
@@ -371,13 +371,13 @@ $menu-light-background: #fff;
 $menu-light-text-color: #3f4d67;
 
 //theme
-$theme-background: #f4f7fa;
+$theme-background: #f5f2ea;
 $theme-font-color: #888;
 $theme-heading-color: #111;
 
-$form-bg: #f0f3f6;
-$theme-color: linear-gradient(-135deg, #FFD700 0%, #FFD700 100%);
-$theme-color2: linear-gradient(-135deg, #899fd4 0%, #a389d4 100%);
+$form-bg: #f1ece2;
+$theme-color: linear-gradient(-135deg, #d4af37 0%, #b88a1e 100%);
+$theme-color2: linear-gradient(-135deg, #b88a1e 0%, #8f6b10 100%);
 
 $theme-colors: map-merge(
   (

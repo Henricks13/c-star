@@ -6,16 +6,11 @@
         <h3 class="mt-2 f-w-600">{{ formatCurrency(totalPeriodo) }}</h3>
       </div>
       <div class="col-auto">
-        <select
-          class="form-select p-r-35"
-          title="Selecionar período"
-          [(ngModel)]="periodo"
-          (ngModelChange)="alterarPeriodo($event)"
-        >
-          <option value="hoje">Hoje</option>
-          <option value="mes">Mês</option>
-          <option value="ano">Ano</option>
-        </select>
+        <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" title="Selecionar período" [(ngModel)]="periodo" (ngModelChange)="alterarPeriodo($event)">
+          <ng-option value="hoje">Hoje</ng-option>
+          <ng-option value="mes">Mês</ng-option>
+          <ng-option value="ano">Ano</ng-option>
+        </ng-select>
       </div>
     </div>
     <apx-chart

@@ -21,7 +21,8 @@
   gap: 0.5rem;
 }
 
-.stage-filter-actions .form-select {
+.stage-filter-actions .form-select,
+.stage-filter-actions .ng-select {
   min-height: 34px;
   min-width: 260px;
 }
@@ -244,6 +245,153 @@
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
 }
 
+.messages-modern-backdrop {
+  align-items: center;
+}
+
+.messages-modern-modal {
+  max-width: 760px;
+  border-radius: 14px;
+  padding: 14px;
+  position: relative;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+}
+
+.messages-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.messages-close-btn i {
+  font-size: 1rem;
+}
+
+.messages-close-btn:hover {
+  color: var(--bs-emphasis-color);
+  border-color: #d0b070;
+  background: #fff9ec;
+}
+
+.messages-modern-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.55rem 0.65rem;
+  padding-right: 3rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 12px;
+  background: var(--bs-tertiary-bg);
+}
+
+.messages-modern-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--bs-primary);
+}
+
+.messages-modern-header-text h6 {
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.messages-modern-list {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  padding: 0.45rem;
+  background: var(--bs-tertiary-bg);
+  max-height: 420px;
+}
+
+.messages-modern-list .message-item {
+  border-radius: 10px;
+  background: var(--bs-body-bg);
+  border-left: 0;
+  border: 1px solid var(--bs-border-color);
+  padding: 0.55rem 0.65rem;
+}
+
+.messages-modern-list .message-item.msg-inbound {
+  background: #fffaf0;
+  border-color: #ead7ab;
+}
+
+.messages-modern-list .message-item.msg-outbound {
+  background: #f2fbf5;
+  border-color: #bcdcc6;
+}
+
+.message-author {
+  font-size: 0.82rem;
+}
+
+.messages-empty-state {
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 10px;
+  background: var(--bs-tertiary-bg);
+  padding: 0.8rem;
+  color: var(--bs-secondary-color);
+}
+
+.client-modern-backdrop {
+  align-items: center;
+}
+
+.client-modern-modal {
+  max-width: 700px;
+  border-radius: 14px;
+  padding: 14px;
+  position: relative;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+}
+
+.client-modern-header {
+  margin-right: 0;
+}
+
+.client-modern-info {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-secondary-color);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  padding: 0.6rem 0.7rem;
+}
+
+.client-modern-form {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  padding: 0.7rem;
+  background: var(--bs-body-bg);
+}
+
+.client-modern-form .form-label {
+  font-weight: 600;
+  margin-bottom: 0.45rem;
+}
+
 .messages-list {
   max-height: 360px;
   overflow-y: auto;
@@ -372,6 +520,36 @@
 
   .messages-modal {
     padding: 12px;
+  }
+
+  .messages-modern-backdrop {
+    align-items: flex-start;
+    padding: 8px 8px calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .client-modern-backdrop {
+    align-items: flex-start;
+    padding: 8px 8px calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .messages-modern-modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: calc(100dvh - 16px - env(safe-area-inset-bottom));
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .client-modern-modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: calc(100dvh - 16px - env(safe-area-inset-bottom));
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .messages-modern-header {
+    padding-right: 2.65rem;
   }
 
   .message-meta {

@@ -4,13 +4,13 @@
       <div class="services-toolbar mb-3">
         <div class="services-filters">
           <input class="form-control form-control-sm" placeholder="Buscar por cliente ou observação" [(ngModel)]="searchTerm" />
-          <select class="form-select form-select-sm" [(ngModel)]="selectedStatus">
-            <option value="">Todos os status</option>
-            <option value="ORCADO">Aguardando agendamento</option>
-            <option value="AGENDADO">Agendado</option>
-            <option value="AGUARDANDO_RETORNO">Aguardando retorno</option>
-            <option value="FINALIZADO">Finalizado</option>
-          </select>
+          <ng-select class="cstar-ng-select cstar-ng-select-sm" [searchable]="false" [clearable]="false" [(ngModel)]="selectedStatus">
+            <ng-option value="">Todos os status</ng-option>
+            <ng-option value="ORCADO">Aguardando agendamento</ng-option>
+            <ng-option value="AGENDADO">Agendado</ng-option>
+            <ng-option value="AGUARDANDO_RETORNO">Aguardando retorno</ng-option>
+            <ng-option value="FINALIZADO">Finalizado</ng-option>
+          </ng-select>
         </div>
         <div class="toolbar-actions">
           <button class="btn btn-sm btn-primary" type="button" (click)="openCreateWizard()">
@@ -181,20 +181,20 @@
       <div *ngIf="createWizardStep === 1">
         <div class="mb-3">
           <label class="form-label">Cliente</label>
-          <select class="form-select" [(ngModel)]="selectedClientId">
-            <option value="">Selecione um cliente</option>
-            <option *ngFor="let client of clients" [value]="client.id">{{ client.fullName }}</option>
-          </select>
+          <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="selectedClientId">
+            <ng-option [value]="''">Selecione um cliente</ng-option>
+            <ng-option *ngFor="let client of clients" [value]="client.id">{{ client.fullName }}</ng-option>
+          </ng-select>
         </div>
 
         <label class="form-label">Serviços</label>
         <div class="service-row mb-2" *ngFor="let serviceId of selectedServiceIds; let index = index">
-          <select class="form-select" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(index, $event)">
-            <option value="">Selecione o serviço</option>
-            <option *ngFor="let service of availableServices" [value]="service.id" [disabled]="isServiceOptionDisabled(service.id, index)">
+          <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(index, $event)">
+            <ng-option [value]="''">Selecione o serviço</ng-option>
+            <ng-option *ngFor="let service of availableServices" [value]="service.id">
               {{ service.name }} - {{ service.price | currency: 'BRL' }}
-            </option>
-          </select>
+            </ng-option>
+          </ng-select>
           <button type="button" class="btn btn-outline-danger" (click)="removeServiceRow(index)">Remover</button>
         </div>
         <button type="button" class="btn btn-sm btn-outline-primary" (click)="addServiceRow()">Adicionar serviço</button>
@@ -215,12 +215,12 @@
         </div>
 
         <div class="extra-product-row mb-2" *ngFor="let row of extraProductRows; let index = index">
-          <select class="form-select" [(ngModel)]="row.productId">
-            <option value="">Selecione o produto</option>
-            <option *ngFor="let product of availableProducts" [value]="product.id">
+          <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="row.productId">
+            <ng-option [value]="''">Selecione o produto</ng-option>
+            <ng-option *ngFor="let product of availableProducts" [value]="product.id">
               {{ product.name }} - Estoque {{ product.stockQuantity }} - {{ product.salePrice | currency: 'BRL' }}
-            </option>
-          </select>
+            </ng-option>
+          </ng-select>
           <input class="form-control" type="number" min="1" [(ngModel)]="row.quantityUsed" />
           <button type="button" class="btn btn-outline-danger" (click)="removeExtraProductRow(index)">Remover</button>
         </div>
@@ -273,16 +273,16 @@
 
         <div class="mb-3">
           <label class="form-label">Forma de pagamento</label>
-          <select class="form-select" [ngModel]="paymentMethod" (ngModelChange)="onPaymentMethodChange($event)">
-            <option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</option>
-          </select>
+          <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentMethod" (ngModelChange)="onPaymentMethodChange($event)">
+            <ng-option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</ng-option>
+          </ng-select>
         </div>
 
         <div class="mb-3" *ngIf="requiresInstallments">
           <label class="form-label">Parcelas</label>
-          <select class="form-select" [(ngModel)]="paymentInstallmentCount" (ngModelChange)="onInstallmentCountChange()">
-            <option *ngFor="let option of installmentOptions" [ngValue]="option.value">{{ option.label }}</option>
-          </select>
+          <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentInstallmentCount" (ngModelChange)="onInstallmentCountChange()">
+            <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
+          </ng-select>
         </div>
 
         <div class="mb-2 form-check">
@@ -353,28 +353,28 @@
 
         <div class="mb-3">
           <label class="form-label">Forma de pagamento</label>
-          <select class="form-select" [ngModel]="paymentPlanSelection" (ngModelChange)="onPaymentPlanMethodChange($event)">
-            <option value="CUSTOM_SPLIT">Pagamento personalizado (duas formas)</option>
-            <option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</option>
-          </select>
+          <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentPlanSelection" (ngModelChange)="onPaymentPlanMethodChange($event)">
+            <ng-option value="CUSTOM_SPLIT">Pagamento personalizado (duas formas)</ng-option>
+            <ng-option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</ng-option>
+          </ng-select>
         </div>
 
         <div class="custom-split-box mb-3" *ngIf="paymentPlanCustomSplitEnabled">
           <div class="custom-split-grid">
             <div>
               <label class="form-label">Forma da entrada</label>
-              <select class="form-select" [(ngModel)]="paymentPlanDownPaymentMethod">
-                <option value="PIX">Pix</option>
-                <option value="CASH">Dinheiro</option>
-                <option value="TRADE">Troca</option>
-              </select>
+              <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanDownPaymentMethod">
+                <ng-option value="PIX">Pix</ng-option>
+                <ng-option value="CASH">Dinheiro</ng-option>
+                <ng-option value="TRADE">Troca</ng-option>
+              </ng-select>
             </div>
             <div>
               <label class="form-label">Forma do restante</label>
-              <select class="form-select" [ngModel]="paymentPlanRemainingPaymentMethod" (ngModelChange)="onRemainingPaymentMethodChange($event)">
-                <option value="CREDIT_CARD">Cartão de crédito</option>
-                <option value="PIX_INSTALLMENT">Pix parcelado</option>
-              </select>
+              <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentPlanRemainingPaymentMethod" (ngModelChange)="onRemainingPaymentMethodChange($event)">
+                <ng-option value="CREDIT_CARD">Cartão de crédito</ng-option>
+                <ng-option value="PIX_INSTALLMENT">Pix parcelado</ng-option>
+              </ng-select>
             </div>
             <div>
               <label class="form-label">Valor da entrada</label>
@@ -382,9 +382,9 @@
             </div>
             <div *ngIf="paymentPlanEffectiveAllowsInstallments">
               <label class="form-label">Quantidade de parcelas</label>
-              <select class="form-select" [(ngModel)]="paymentPlanInstallments">
-                <option *ngFor="let option of installmentOptions" [ngValue]="option.value">{{ option.label }}</option>
-              </select>
+              <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanInstallments">
+                <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
+              </ng-select>
             </div>
           </div>
         </div>
@@ -397,9 +397,9 @@
         <div class="row g-2 mb-2" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
           <div class="col-md-6">
             <label class="form-label">Quantidade de parcelas</label>
-            <select class="form-select" [(ngModel)]="paymentPlanInstallments">
-              <option *ngFor="let option of installmentOptions" [ngValue]="option.value">{{ option.label }}</option>
-            </select>
+            <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanInstallments">
+              <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
+            </ng-select>
           </div>
         </div>
 

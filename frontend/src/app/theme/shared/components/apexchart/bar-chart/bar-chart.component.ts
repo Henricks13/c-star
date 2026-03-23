@@ -1,6 +1,7 @@
 // angular import
 import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 // third party
 import { NgApexchartsModule, ChartComponent, ApexOptions } from 'ng-apexcharts';
@@ -17,7 +18,7 @@ interface BarChartPeriodData {
 
 @Component({
   selector: 'app-bar-chart',
-  imports: [NgApexchartsModule, FormsModule],
+  imports: [NgApexchartsModule, FormsModule, NgSelectModule],
   templateUrl: './bar-chart.component.html',
   styleUrl: './bar-chart.component.scss'
 })
@@ -85,7 +86,7 @@ export class BarChartComponent implements OnChanges {
         },
         background: 'transparent'
       },
-      colors: ['#d3eafd', '#FFD700', '#ede7f6'],
+      colors: ['#cfd9e3', '#d4af37', '#b68d6a'],
       responsive: [
         {
           breakpoint: 480,

@@ -2,9 +2,12 @@ package com.cstar.platform.clients;
 
 import com.cstar.platform.auth.security.AuthUserPrincipal;
 import com.cstar.platform.clientorders.ClientServiceOrderRepository;
+import com.cstar.platform.clients.dto.AddClientObservationRequest;
+import com.cstar.platform.clients.dto.ClientObservationResponse;
 import com.cstar.platform.clients.dto.ClientListItemResponse;
 import com.cstar.platform.clients.dto.CreateClientRequest;
 import com.cstar.platform.clients.model.Client;
+import com.cstar.platform.clients.model.ClientObservation;
 import com.cstar.platform.clients.model.ClientOrigin;
 import com.cstar.platform.whatsapp.model.Contact;
 import com.cstar.platform.whatsapp.model.ContactStage;
@@ -25,13 +28,16 @@ public class ClientService {
     private final ClientRepository clientRepository;
     private final ContactRepository contactRepository;
     private final ClientServiceOrderRepository clientServiceOrderRepository;
+    private final ClientObservationRepository clientObservationRepository;
 
     public ClientService(ClientRepository clientRepository,
                          ContactRepository contactRepository,
-                         ClientServiceOrderRepository clientServiceOrderRepository) {
+                         ClientServiceOrderRepository clientServiceOrderRepository,
+                         ClientObservationRepository clientObservationRepository) {
         this.clientRepository = clientRepository;
         this.contactRepository = contactRepository;
         this.clientServiceOrderRepository = clientServiceOrderRepository;
+        this.clientObservationRepository = clientObservationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -112,6 +118,30 @@ public class ClientService {
         clientRepository.delete(client);
     }
 
+    @Transactional(readOnly = true)
+    public List<ClientObservationResponse> listObservations(UUID clientId) {
+        validateClientExists(clientId);
+
+        return clientObservationRepository.findByClientIdOrderByCreatedAtDesc(clientId)
+                .stream()
+                .map(this::toObservationResponse)
+                .toList();
+    }
+
+    @Transactional
+    public ClientObservationResponse addObservation(UUID clientId,
+                                                    AddClientObservationRequest request,
+                                                    AuthUserPrincipal principal) {
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));
+
+        String note = normalizeClientObservationNote(request.note());
+        String createdByName = resolveObservationAuthor(principal);
+
+        ClientObservation observation = ClientObservation.of(client, note, createdByName);
+        return toObservationResponse(clientObservationRepository.save(observation));
+    }
+
     private ClientListItemResponse toResponse(Client client) {
         return new ClientListItemResponse(
                 client.getId(),
@@ -125,6 +155,16 @@ public class ClientService {
                 client.getNotes(),
                 client.getCreatedAt(),
                 client.getUpdatedAt()
+        );
+    }
+
+    private ClientObservationResponse toObservationResponse(ClientObservation observation) {
+        return new ClientObservationResponse(
+                observation.getId(),
+                observation.getClient().getId(),
+                observation.getNote(),
+                observation.getCreatedByName(),
+                observation.getCreatedAt()
         );
     }
 
@@ -221,5 +261,42 @@ public class ClientService {
         if (!authorizedByRole) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão para excluir cliente.");
         }
+    }
+
+    private void validateClientExists(UUID clientId) {
+        if (!clientRepository.existsById(clientId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado");
+        }
+    }
+
+    private String normalizeClientObservationNote(String rawNote) {
+        if (rawNote == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Observação inválida");
+        }
+
+        String note = rawNote.trim();
+        if (note.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Observação inválida");
+        }
+
+        return note;
+    }
+
+    private String resolveObservationAuthor(AuthUserPrincipal principal) {
+        if (principal == null) {
+            return "Equipe C-Star";
+        }
+
+        String fullName = principal.getFullName();
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName.trim();
+        }
+
+        String email = principal.getUsername();
+        if (email != null && !email.isBlank()) {
+            return email.trim();
+        }
+
+        return "Equipe C-Star";
     }
 }

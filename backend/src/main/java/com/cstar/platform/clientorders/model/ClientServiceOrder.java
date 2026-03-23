@@ -197,8 +197,8 @@ public class ClientServiceOrder {
         }
     }
 
-    public void addObservation(String note) {
-        observations.add(ClientServiceOrderObservation.of(this, note));
+    public void addObservation(String note, String createdByName) {
+        observations.add(ClientServiceOrderObservation.of(this, note, createdByName));
     }
 
     public void scheduleReturn(Instant returnAt) {

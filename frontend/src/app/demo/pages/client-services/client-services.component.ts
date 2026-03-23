@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from 'src/app/core/auth/auth.service';
@@ -32,7 +33,7 @@ type PaymentPlanSelection = ServicePaymentMethod | 'CUSTOM_SPLIT';
 
 @Component({
   selector: 'app-client-services',
-  imports: [CommonModule, FormsModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
   templateUrl: './client-services.component.html',
   styleUrls: ['./client-services.component.scss']
 })
@@ -412,12 +413,15 @@ export class ClientServicesComponent implements OnInit {
     }
   }
 
-  onServiceSelectionChange(index: number, serviceId: string): void {
-    this.selectedServiceIds[index] = serviceId || '';
-  }
+  onServiceSelectionChange(index: number, serviceId: string | null | undefined): void {
+    const nextServiceId = (serviceId || '').toString();
 
-  isServiceOptionDisabled(serviceId: string, currentIndex: number): boolean {
-    return this.selectedServiceIds.some((selectedId, index) => index !== currentIndex && selectedId === serviceId);
+    if (nextServiceId && this.selectedServiceIds.some((selectedId, selectedIndex) => selectedIndex !== index && selectedId === nextServiceId)) {
+      this.infoMessage = 'Este serviço já foi adicionado na lista.';
+      return;
+    }
+
+    this.selectedServiceIds[index] = nextServiceId;
   }
 
   getServicePrice(serviceId: string): number {

@@ -67,6 +67,7 @@ export interface ClientServiceOrderProductItem {
 export interface ClientServiceOrderObservationItem {
   id: string;
   note: string;
+  createdByName: string | null;
   createdAt: string;
 }
 

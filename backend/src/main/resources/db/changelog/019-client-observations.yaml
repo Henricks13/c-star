@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 065-client-observations
+      author: cstar
+      changes:
+        - createTable:
+            tableName: client_observations
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: client_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: note
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by_name
+                  type: VARCHAR(120)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: client_observations
+            baseColumnNames: client_id
+            referencedTableName: clients
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_client_observations_client
+        - createIndex:
+            indexName: idx_client_observations_client_created_at
+            tableName: client_observations
+            columns:
+              - column:
+                  name: client_id
+              - column:
+                  name: created_at

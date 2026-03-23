@@ -1,5 +1,6 @@
 package com.cstar.platform.clientorders;
 
+import com.cstar.platform.auth.security.AuthUserPrincipal;
 import com.cstar.platform.clientorders.dto.ClientServiceOrderResponse;
 import com.cstar.platform.clientorders.dto.ConfirmClientServiceOrderPaymentRequest;
 import com.cstar.platform.clientorders.dto.CreateClientServiceOrderRequest;
@@ -8,6 +9,7 @@ import com.cstar.platform.clientorders.dto.AddClientServiceOrderObservationReque
 import com.cstar.platform.clientorders.dto.ScheduleClientServiceOrderRequest;
 import com.cstar.platform.clientorders.dto.ScheduleClientServiceOrderReturnRequest;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,9 +68,10 @@ public class ClientServiceOrderController {
     @PostMapping("/client-service-orders/{orderId}/observations")
     public ClientServiceOrderResponse addObservation(
             @PathVariable UUID orderId,
+            @AuthenticationPrincipal AuthUserPrincipal principal,
             @RequestBody @Valid AddClientServiceOrderObservationRequest request
     ) {
-        return clientServiceOrderService.addObservation(orderId, request);
+        return clientServiceOrderService.addObservation(orderId, request, principal);
     }
 
     @PostMapping("/client-service-orders/{orderId}/returns")

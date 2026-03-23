@@ -205,10 +205,10 @@
       <div class="d-flex flex-column gap-2">
         <div>
           <label class="form-label">Operação</label>
-          <select class="form-select" [(ngModel)]="stockForm.operation" (ngModelChange)="onStockOperationChange()">
-            <option value="ADD">Adicionar ao estoque</option>
-            <option value="REMOVE">Remover do estoque</option>
-          </select>
+          <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [(ngModel)]="stockForm.operation" (ngModelChange)="onStockOperationChange()">
+            <ng-option value="ADD">Adicionar ao estoque</ng-option>
+            <ng-option value="REMOVE">Remover do estoque</ng-option>
+          </ng-select>
         </div>
 
         <div>
@@ -281,9 +281,9 @@
 
     <div>
       <label class="form-label">Tipo de produto</label>
-      <select class="form-select" [(ngModel)]="formModel.productTypeId">
-        <option *ngFor="let type of productTypes" [value]="type.id">{{ type.name }}</option>
-      </select>
+      <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="formModel.productTypeId">
+        <ng-option *ngFor="let type of productTypes" [value]="type.id">{{ type.name }}</ng-option>
+      </ng-select>
     </div>
 
     <div class="row g-2">

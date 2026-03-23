@@ -105,11 +105,11 @@
 
           <div class="row g-2 mb-2" *ngFor="let line of lineItems; let i = index">
             <div class="col-md-7">
-              <select class="form-select" [(ngModel)]="line.productId" [ngModelOptions]="{ standalone: true }">
-                <option *ngFor="let product of products" [ngValue]="product.id">
+              <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="line.productId" [ngModelOptions]="{ standalone: true }">
+                <ng-option *ngFor="let product of products" [value]="product.id">
                   {{ product.name }} (Estoque: {{ product.stockQuantity }})
-                </option>
-              </select>
+                </ng-option>
+              </ng-select>
             </div>
             <div class="col-md-3">
               <input class="form-control" type="number" min="0.001" step="0.001" [(ngModel)]="line.quantity" [ngModelOptions]="{ standalone: true }" />

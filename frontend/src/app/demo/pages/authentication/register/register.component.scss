@@ -1,1 +1,12 @@
-// This file is intentionally left empty to allow customers to add custom CSS if needed.
+.auth-logo {
+	width: clamp(120px, 42vw, 220px);
+	max-width: 100%;
+	height: auto;
+	display: block;
+}
+
+@media (max-width: 576px) {
+	.auth-logo {
+		width: clamp(100px, 48vw, 160px);
+	}
+}
