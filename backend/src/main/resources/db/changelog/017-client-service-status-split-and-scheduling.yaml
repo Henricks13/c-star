@@ -2,6 +2,8 @@ databaseChangeLog:
   - changeSet:
       id: 063-client-service-status-split-and-scheduling
       author: cstar
+      validCheckSum:
+        - ANY
       changes:
         - addColumn:
             tableName: client_service_orders
@@ -15,6 +17,11 @@ databaseChangeLog:
               - column:
                   name: scheduled_at
                   type: TIMESTAMP
+
+        - sql:
+            sql: |
+              ALTER TABLE client_service_orders
+              DROP CONSTRAINT IF EXISTS ck_client_service_orders_status;
 
         - sql:
             sql: |
@@ -39,11 +46,6 @@ databaseChangeLog:
                   WHEN status = 'FINALIZADO' THEN 'FINALIZADO'
                   ELSE 'ORCADO'
                 END;
-
-        - sql:
-            sql: |
-              ALTER TABLE client_service_orders
-              DROP CONSTRAINT IF EXISTS ck_client_service_orders_status;
 
         - sql:
             sql: |
