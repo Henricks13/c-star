@@ -33,17 +33,17 @@
 
       <ng-container *ngIf="!loading">
         <div class="agenda-grid">
-          <div class="agenda-day-column" *ngFor="let day of weekDays">
+          <div class="agenda-day-column" *ngFor="let day of weekDays; trackBy: trackByDayIso">
             <div class="agenda-day-header">
               <div>{{ day.dayLabel }}</div>
               <strong>{{ day.dateLabel }}</strong>
             </div>
 
-            <div class="agenda-day-body" *ngIf="eventsForDay(day.date).length > 0; else emptyDay">
+            <div class="agenda-day-body" *ngIf="eventsForDay(day.isoDate).length > 0; else emptyDay">
               <button
                 class="agenda-event-card"
                 type="button"
-                *ngFor="let event of eventsForDay(day.date); trackBy: trackByEventId"
+                *ngFor="let event of eventsForDay(day.isoDate); trackBy: trackByEventId"
                 [style.border-left-color]="event.color"
                 (click)="openDetails(event)"
               >

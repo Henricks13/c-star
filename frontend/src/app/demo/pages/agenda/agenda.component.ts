@@ -23,6 +23,7 @@ interface AgendaCreateForm {
 
 interface AgendaCalendarDay {
   date: Date;
+  isoDate: string;
   dayLabel: string;
   dateLabel: string;
 }
@@ -43,6 +44,8 @@ export class AgendaComponent implements OnInit {
   eventTypes: AgendaEventTypeItem[] = [];
   clients: ClientListItem[] = [];
   events: AgendaEventItem[] = [];
+  weekDays: AgendaCalendarDay[] = [];
+  eventsByDay: Record<string, AgendaEventItem[]> = {};
 
   weekStart = this.getStartOfWeek(new Date());
 
@@ -60,24 +63,8 @@ export class AgendaComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.refreshWeekDays();
     this.loadInitialData();
-  }
-
-  get weekDays(): AgendaCalendarDay[] {
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = this.addDays(this.weekStart, index);
-      const dayLabel = date
-        .toLocaleDateString('pt-BR', { weekday: 'short' })
-        .replace('.', '')
-        .toUpperCase();
-      const dateLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-
-      return {
-        date,
-        dayLabel,
-        dateLabel
-      };
-    });
   }
 
   get selectedType(): AgendaEventTypeItem | null {
@@ -136,6 +123,7 @@ export class AgendaComponent implements OnInit {
     this.agendaService.listEvents(start.toISOString(), end.toISOString()).subscribe({
       next: (events) => {
         this.events = events;
+        this.eventsByDay = this.groupEventsByDay(events);
         this.loading = false;
       },
       error: () => {
@@ -147,26 +135,27 @@ export class AgendaComponent implements OnInit {
 
   previousWeek(): void {
     this.weekStart = this.addDays(this.weekStart, -7);
+    this.refreshWeekDays();
     this.loading = true;
     this.loadEventsForCurrentWeek();
   }
 
   nextWeek(): void {
     this.weekStart = this.addDays(this.weekStart, 7);
+    this.refreshWeekDays();
     this.loading = true;
     this.loadEventsForCurrentWeek();
   }
 
   goToCurrentWeek(): void {
     this.weekStart = this.getStartOfWeek(new Date());
+    this.refreshWeekDays();
     this.loading = true;
     this.loadEventsForCurrentWeek();
   }
 
-  eventsForDay(day: Date): AgendaEventItem[] {
-    return this.events
-      .filter((event) => this.isSameDate(new Date(event.startAt), day))
-      .sort((first, second) => new Date(first.startAt).getTime() - new Date(second.startAt).getTime());
+  eventsForDay(dayIsoDate: string): AgendaEventItem[] {
+    return this.eventsByDay[dayIsoDate] || [];
   }
 
   openCreateModal(): void {
@@ -305,6 +294,10 @@ export class AgendaComponent implements OnInit {
     return event.id;
   }
 
+  trackByDayIso(_: number, day: AgendaCalendarDay): string {
+    return day.isoDate;
+  }
+
   private defaultCreateForm(): AgendaCreateForm {
     const now = new Date();
     const date = this.toDateInputValue(now);
@@ -352,11 +345,40 @@ export class AgendaComponent implements OnInit {
     return result;
   }
 
-  private isSameDate(first: Date, second: Date): boolean {
-    return (
-      first.getFullYear() === second.getFullYear() &&
-      first.getMonth() === second.getMonth() &&
-      first.getDate() === second.getDate()
-    );
+  private refreshWeekDays(): void {
+    this.weekDays = Array.from({ length: 7 }, (_, index) => {
+      const date = this.addDays(this.weekStart, index);
+      const dayLabel = date
+        .toLocaleDateString('pt-BR', { weekday: 'short' })
+        .replace('.', '')
+        .toUpperCase();
+      const dateLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+      return {
+        date,
+        isoDate: this.toDateInputValue(date),
+        dayLabel,
+        dateLabel
+      };
+    });
   }
+
+  private groupEventsByDay(events: AgendaEventItem[]): Record<string, AgendaEventItem[]> {
+    const grouped: Record<string, AgendaEventItem[]> = {};
+
+    for (const event of events) {
+      const dayKey = this.toDateInputValue(new Date(event.startAt));
+      if (!grouped[dayKey]) {
+        grouped[dayKey] = [];
+      }
+      grouped[dayKey].push(event);
+    }
+
+    for (const dayKey of Object.keys(grouped)) {
+      grouped[dayKey].sort((first, second) => new Date(first.startAt).getTime() - new Date(second.startAt).getTime());
+    }
+
+    return grouped;
+  }
+
 }
