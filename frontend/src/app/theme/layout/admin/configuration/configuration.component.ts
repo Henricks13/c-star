@@ -4,6 +4,7 @@ import { Component, inject, OnInit, Renderer2 } from '@angular/core';
 
 // project import
 import { BerryConfig } from 'src/app/app-config';
+import { ThemeModeService, ThemeMode } from 'src/app/core/theme/theme-mode.service';
 
 @Component({
   selector: 'app-configuration',
@@ -12,25 +13,18 @@ import { BerryConfig } from 'src/app/app-config';
   styleUrls: ['./configuration.component.scss']
 })
 export class ConfigurationComponent implements OnInit {
-  private readonly themeStorageKey = 'cstar.theme.mode';
   renderer = inject(Renderer2);
+  private readonly themeModeService = inject(ThemeModeService);
 
   // public method
   styleSelectorToggle!: boolean; // open configuration menu
   setFontFamily!: string; // fontFamily
-  themeMode: 'light' | 'dark' = 'light';
+  themeMode: ThemeMode = 'light';
 
   // life cycle event
   ngOnInit(): void {
     this.fontFamily(BerryConfig.font_family);
-
-    const savedTheme = localStorage.getItem(this.themeStorageKey);
-    if (savedTheme === 'dark' || savedTheme === 'light') {
-      this.setTheme(savedTheme);
-      return;
-    }
-
-    this.setTheme('light');
+    this.themeMode = this.themeModeService.initializeTheme();
   }
 
   // public method
@@ -42,16 +36,8 @@ export class ConfigurationComponent implements OnInit {
     this.renderer.addClass(document.body, font);
   }
 
-  setTheme(mode: 'light' | 'dark'): void {
+  setTheme(mode: ThemeMode): void {
     this.themeMode = mode;
-    document.documentElement.setAttribute('data-bs-theme', mode);
-
-    if (mode === 'dark') {
-      this.renderer.addClass(document.body, 'berry-dark');
-    } else {
-      this.renderer.removeClass(document.body, 'berry-dark');
-    }
-
-    localStorage.setItem(this.themeStorageKey, mode);
+    this.themeModeService.setUserMode(mode);
   }
 }

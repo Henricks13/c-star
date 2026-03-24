@@ -15,7 +15,7 @@ import {
   ServicePaymentMethod
 } from 'src/app/core/client-orders/client-orders.types';
 import { ClientsService } from 'src/app/core/clients/clients.service';
-import { CLIENT_ORIGIN_OPTIONS, ClientListItem, CreateClientRequest } from 'src/app/core/clients/clients.types';
+import { CLIENT_ORIGIN_OPTIONS, ClientListItem, CreateClientRequest, UpdateClientRequest } from 'src/app/core/clients/clients.types';
 import { FinanceService } from 'src/app/core/finance/finance.service';
 import { ProductItem } from 'src/app/core/products/products.types';
 import { ProductsService } from 'src/app/core/products/products.service';
@@ -47,6 +47,7 @@ export class ClientsComponent implements OnInit {
   modalOpen = false;
   detailsModalOpen = false;
   originLocked = false;
+  editingClientId: string | null = null;
   anamnesisModalOpen = false;
   anamnesisModalLoading = false;
   selectedClientForAnamnesis: ClientListItem | null = null;
@@ -135,12 +136,35 @@ export class ClientsComponent implements OnInit {
     this.errorMessage = null;
     this.infoMessage = null;
     this.originLocked = false;
+    this.editingClientId = null;
     this.form = this.createDefaultForm();
+    this.modalOpen = true;
+  }
+
+  openEditModal(client: ClientListItem): void {
+    this.errorMessage = null;
+    this.infoMessage = null;
+    this.originLocked = !!client.sourceContactId;
+    this.editingClientId = client.id;
+    this.form = {
+      fullName: client.fullName || '',
+      phone: client.phone || '',
+      cpf: client.cpf || '',
+      email: client.email || '',
+      origin: client.origin,
+      sourceContactId: client.sourceContactId || null,
+      notes: client.notes || ''
+    };
     this.modalOpen = true;
   }
 
   closeModal(): void {
     this.modalOpen = false;
+    this.editingClientId = null;
+  }
+
+  get isEditingClient(): boolean {
+    return !!this.editingClientId;
   }
 
   openDetailsModal(client: ClientListItem): void {
@@ -245,22 +269,21 @@ export class ClientsComponent implements OnInit {
     this.detailClient = null;
   }
 
-  createClient(): void {
+  saveClient(): void {
     if (this.saving) {
       return;
     }
 
-    const payload: CreateClientRequest = {
+    const basePayload = {
       fullName: (this.form.fullName || '').trim(),
       phone: (this.form.phone || '').trim(),
       cpf: (this.form.cpf || '').trim() || null,
       email: (this.form.email || '').trim().toLowerCase() || null,
       origin: this.form.origin,
-      sourceContactId: this.form.sourceContactId || null,
       notes: (this.form.notes || '').trim() || null
     };
 
-    if (!payload.fullName || !payload.phone) {
+    if (!basePayload.fullName || !basePayload.phone) {
       this.errorMessage = 'Preencha nome e número do cliente.';
       return;
     }
@@ -268,6 +291,29 @@ export class ClientsComponent implements OnInit {
     this.saving = true;
     this.errorMessage = null;
     this.infoMessage = null;
+
+    if (this.editingClientId) {
+      const payload: UpdateClientRequest = { ...basePayload };
+
+      this.clientsService.update(this.editingClientId, payload).subscribe({
+        next: () => {
+          this.infoMessage = 'Cliente atualizado com sucesso.';
+          this.saving = false;
+          this.closeModal();
+          this.loadClients();
+        },
+        error: (error) => {
+          this.errorMessage = error?.error?.message || 'Não foi possível atualizar o cliente.';
+          this.saving = false;
+        }
+      });
+      return;
+    }
+
+    const payload: CreateClientRequest = {
+      ...basePayload,
+      sourceContactId: this.form.sourceContactId || null
+    };
 
     this.clientsService.create(payload).subscribe({
       next: () => {

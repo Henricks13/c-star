@@ -3,6 +3,7 @@ import { Component, Input, output, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 // project import
+import { ThemeModeService } from 'src/app/core/theme/theme-mode.service';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
 
 @Component({
@@ -13,6 +14,7 @@ import { SharedModule } from 'src/app/theme/shared/shared.module';
 })
 export class NavLogoComponent {
   router = inject(Router);
+  private readonly themeModeService = inject(ThemeModeService);
 
   // public props
   @Input() navCollapsed!: boolean;
@@ -35,5 +37,9 @@ export class NavLogoComponent {
 
   returnToHome() {
     this.router.navigate(['/contacts']);
+  }
+
+  get logoPath(): string {
+    return this.themeModeService.getCurrentMode() === 'dark' ? 'assets/images/logo-dark.svg' : 'assets/images/logo.svg';
   }
 }

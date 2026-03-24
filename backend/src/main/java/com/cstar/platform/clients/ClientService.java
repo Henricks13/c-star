@@ -6,6 +6,7 @@ import com.cstar.platform.clients.dto.AddClientObservationRequest;
 import com.cstar.platform.clients.dto.ClientObservationResponse;
 import com.cstar.platform.clients.dto.ClientListItemResponse;
 import com.cstar.platform.clients.dto.CreateClientRequest;
+import com.cstar.platform.clients.dto.UpdateClientRequest;
 import com.cstar.platform.clients.model.Client;
 import com.cstar.platform.clients.model.ClientObservation;
 import com.cstar.platform.clients.model.ClientOrigin;
@@ -99,6 +100,36 @@ public class ClientService {
             sourceContact.setFullName(fullName);
             contactRepository.save(sourceContact);
         }
+
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public ClientListItemResponse update(UUID clientId, UpdateClientRequest request) {
+        Client current = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));
+
+        String fullName = normalizeName(request.fullName(), null);
+        String phoneE164 = normalizePhone(request.phone(), null);
+        String cpf = normalizeCpf(request.cpf());
+        String email = normalizeEmail(request.email());
+        String notes = normalizeNotes(request.notes());
+        ClientOrigin origin = parseOrigin(request.origin(), current.getSourceContactId() != null);
+
+        if (clientRepository.existsByPhoneE164AndIdNot(phoneE164, clientId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe cliente com este número");
+        }
+
+        if (cpf != null && clientRepository.existsByCpfAndIdNot(cpf, clientId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe cliente com este CPF");
+        }
+
+        if (email != null && clientRepository.existsByEmailIgnoreCaseAndIdNot(email, clientId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe cliente com este e-mail");
+        }
+
+        current.update(fullName, phoneE164, cpf, email, origin, notes);
+        Client saved = clientRepository.save(current);
 
         return toResponse(saved);
     }

@@ -88,6 +88,22 @@ public class Client {
         }
     }
 
+    public void update(
+            String fullName,
+            String phoneE164,
+            String cpf,
+            String email,
+            ClientOrigin origin,
+            String notes
+    ) {
+        this.fullName = fullName;
+        this.phoneE164 = phoneE164;
+        this.cpf = cpf;
+        this.email = email;
+        this.origin = origin;
+        this.notes = notes;
+    }
+
     @PrePersist
     void onPrePersist() {
         Instant now = Instant.now();

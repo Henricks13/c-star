@@ -24,6 +24,26 @@ body.berry-dark .tab-content {
   border: 1px solid rgba(184, 135, 23, 0.16);
 }
 
+body.berry-dark {
+  .total-income-card.warning {
+    background: linear-gradient(346deg, #fffaf0 0%, #000000 100%);
+    border: 1px solid rgba(184, 135, 23, 0.35);
+  }
+
+  .dashboard-highlight-card {
+    background: linear-gradient(346deg, #fffaf0 0%, #000000 100%) !important;
+    border: 1px solid rgba(184, 135, 23, 0.35);
+
+    h5,
+    h4,
+    small,
+    .text-dark,
+    .text-muted {
+      color: #f2cd73 !important;
+    }
+  }
+}
+
 .earning-card {
   .round {
     &.secondary-round {

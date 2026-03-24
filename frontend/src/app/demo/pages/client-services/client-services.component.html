@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-12">
-    <app-card cardTitle="Serviços de Clientes">
+    <app-card cardTitle="Serviços">
       <div class="services-toolbar mb-3">
         <div class="services-filters">
           <input class="form-control form-control-sm" placeholder="Buscar por cliente ou observação" [(ngModel)]="searchTerm" />
@@ -32,7 +32,7 @@
       </ng-container>
 
       <ng-container *ngIf="loading">
-        <p class="mb-0">Carregando serviços dos clientes...</p>
+        <p class="mb-0">Carregando serviços...</p>
       </ng-container>
 
       <ng-container *ngIf="!loading && filteredOrders.length === 0">
@@ -178,14 +178,24 @@
   </div>
 </div>
 
-<div class="app-modal-backdrop" *ngIf="createWizardOpen">
-  <div class="app-modal">
-    <div class="app-modal-header">
-      <h5 class="mb-0">Novo serviço de cliente</h5>
-      <button type="button" class="btn-close" (click)="closeCreateWizard()"></button>
+<div class="app-modal-backdrop details-modal-backdrop create-wizard-backdrop" *ngIf="createWizardOpen" (click)="closeCreateWizard()">
+  <div class="app-modal app-modal-details create-wizard-modal" (click)="$event.stopPropagation()">
+    <button class="details-close-btn" type="button" aria-label="Fechar novo serviço" (click)="closeCreateWizard()">
+      <i class="ti ti-x"></i>
+    </button>
+
+    <div class="details-header mb-3 create-wizard-header">
+      <div class="details-avatar">
+        <i class="ti ti-plus"></i>
+      </div>
+      <div class="details-header-text">
+        <h5 class="mb-1">Novo serviço</h5>
+        <div class="details-subtitle">Cadastre o serviço do cliente em etapas</div>
+      </div>
     </div>
 
-    <div class="app-modal-body">
+    <div class="app-modal-body details-modal-body">
+      <div class="details-section mb-3 create-wizard-content">
       <div class="wizard-steps mb-3">
         <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 1" [class.btn-outline-secondary]="createWizardStep !== 1" (click)="goToWizardStep(1)">1. Cliente e serviços</button>
         <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 2" [class.btn-outline-secondary]="createWizardStep !== 2" (click)="goToWizardStep(2)">2. Produtos extras</button>
@@ -249,11 +259,6 @@
           <div>{{ subtotalExtraProducts | currency: 'BRL' }}</div>
         </div>
 
-        <div class="mb-3">
-          <label class="form-label">Observações</label>
-          <textarea class="form-control" rows="3" [(ngModel)]="wizardNotes"></textarea>
-        </div>
-
         <div class="mb-2 form-check">
           <input class="form-check-input" type="checkbox" id="customTotalEnabledGlobal" [(ngModel)]="wizardCustomTotalEnabled" />
           <label class="form-check-label" for="customTotalEnabledGlobal">Usar valor final personalizado</label>
@@ -279,41 +284,181 @@
           <span>Total estimado</span>
           <strong>{{ calculatedTotal | currency: 'BRL' }}</strong>
         </div>
+
+        <div class="mt-3">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" rows="3" [(ngModel)]="wizardNotes"></textarea>
+        </div>
       </div>
 
       <div *ngIf="createWizardStep === 4">
-        <div class="alert alert-warning" role="alert" *ngIf="isWizardWaitingScheduling">
-            Serviço ainda aguardando agendamento. Agende o serviço na listagem para liberar o pagamento.
+        <div class="details-section mb-3" *ngIf="selectedOrderForPayment">
+          <h6 class="details-section-title">Resumo do pagamento</h6>
+          <div class="details-grid">
+            <div class="details-field">
+              <span class="details-field-label">Cliente</span>
+              <span class="details-field-value">{{ selectedOrderForPayment.clientName }}</span>
+            </div>
+            <div class="details-field">
+              <span class="details-field-label">Valor total do serviço</span>
+              <span class="details-field-value">{{ selectedOrderForPayment.finalTotal | currency: 'BRL' }}</span>
+            </div>
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label class="form-label">Forma de pagamento</label>
-          <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentMethod" (ngModelChange)="onPaymentMethodChange($event)">
-            <ng-option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</ng-option>
-          </ng-select>
+        <div class="details-section mb-3" *ngIf="hasPaymentInvoices">
+          <h6 class="details-section-title">Totais das faturas</h6>
+          <div class="payment-summary">
+            <div>
+              <small class="text-muted">Total faturado</small>
+              <div class="fw-semibold">{{ paymentTotalInvoiced | currency: 'BRL' }}</div>
+            </div>
+            <div>
+              <small class="text-muted">Total pago</small>
+              <div class="fw-semibold text-success">{{ paymentTotalPaid | currency: 'BRL' }}</div>
+            </div>
+            <div>
+              <small class="text-muted">Falta pagar</small>
+              <div class="fw-semibold text-danger">{{ paymentTotalPending | currency: 'BRL' }}</div>
+            </div>
+          </div>
         </div>
 
-        <div class="mb-3" *ngIf="requiresInstallments">
-          <label class="form-label">Parcelas</label>
-          <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentInstallmentCount" (ngModelChange)="onInstallmentCountChange()">
-            <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
-          </ng-select>
+        <div class="details-section mb-3" *ngIf="!hasPaymentInvoices">
+          <h6 class="details-section-title">Configurar faturas</h6>
+          <div class="payment-plan-box">
+            <div class="mb-3">
+              <label class="form-label">Forma de pagamento</label>
+              <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentPlanSelection" (ngModelChange)="onPaymentPlanMethodChange($event)">
+                <ng-option value="CUSTOM_SPLIT">Pagamento personalizado (duas formas)</ng-option>
+                <ng-option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</ng-option>
+              </ng-select>
+            </div>
+
+            <div class="custom-split-box mb-3" *ngIf="paymentPlanCustomSplitEnabled">
+              <div class="custom-split-grid">
+                <div>
+                  <label class="form-label">Forma da entrada</label>
+                  <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanDownPaymentMethod">
+                    <ng-option value="PIX">Pix</ng-option>
+                    <ng-option value="CASH">Dinheiro</ng-option>
+                    <ng-option value="TRADE">Troca</ng-option>
+                  </ng-select>
+                </div>
+                <div>
+                  <label class="form-label">Forma do restante</label>
+                  <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentPlanRemainingPaymentMethod" (ngModelChange)="onRemainingPaymentMethodChange($event)">
+                    <ng-option value="CREDIT_CARD">Cartão de crédito</ng-option>
+                    <ng-option value="PIX_INSTALLMENT">Pix parcelado</ng-option>
+                  </ng-select>
+                </div>
+                <div>
+                  <label class="form-label">Valor da entrada</label>
+                  <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="paymentPlanDownPaymentAmount" />
+                </div>
+                <div *ngIf="paymentPlanEffectiveAllowsInstallments">
+                  <label class="form-label">Quantidade de parcelas</label>
+                  <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanInstallments">
+                    <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
+                  </ng-select>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-2 form-check" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
+              <input class="form-check-input" type="checkbox" id="wizardDownPaymentEnabled" [(ngModel)]="paymentPlanDownPaymentEnabled" />
+              <label class="form-check-label" for="wizardDownPaymentEnabled">Entrada + parcelas?</label>
+            </div>
+
+            <div class="row g-2 mb-2" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
+              <div class="col-md-6">
+                <label class="form-label">Quantidade de parcelas</label>
+                <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanInstallments">
+                  <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
+                </ng-select>
+              </div>
+            </div>
+
+            <div class="row g-2" *ngIf="paymentPlanEffectiveAllowsInstallments && paymentPlanDownPaymentEnabled && !paymentPlanCustomSplitEnabled">
+              <div class="col-md-6">
+                <label class="form-label">Valor da entrada</label>
+                <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="paymentPlanDownPaymentAmount" />
+              </div>
+            </div>
+
+            <div class="alert alert-info" role="alert" *ngIf="!paymentPlanEffectiveAllowsInstallments">
+              Este método é à vista. Para parcelar, selecione <strong>Pix parcelado</strong> ou <strong>Cartão de crédito</strong>.
+            </div>
+          </div>
         </div>
 
-        <div class="mb-2 form-check">
-          <input class="form-check-input" type="checkbox" id="orderPaidGlobal" [(ngModel)]="paymentPaid" [disabled]="requiresInstallments && paymentInstallmentCount > 1" />
-          <label class="form-check-label" for="orderPaidGlobal">Pago?</label>
-        </div>
+        <div class="details-section" *ngIf="hasPaymentInvoices">
+          <div class="invoice-header-row mb-2">
+            <h6 class="details-section-title mb-0">Faturas</h6>
+            <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="saving" (click)="goToFinanceFromPayment()">
+              Ir para financeiro
+            </button>
+          </div>
 
-        <div class="mb-2 form-check" *ngIf="requiresInstallments && paymentInstallmentCount > 1 && !paymentPaid">
-          <input class="form-check-input" type="checkbox" id="orderFirstInstallmentPaidGlobal" [(ngModel)]="paymentFirstInstallmentPaid" />
-          <label class="form-check-label" for="orderFirstInstallmentPaidGlobal">1ª parcela paga?</label>
+          <small class="text-muted d-block mb-2">Para observações e gestão completa das receitas, use a tela de Financeiro.</small>
+
+          <div class="table-responsive payment-table-wrapper d-none d-md-block">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Vencimento</th>
+                  <th>Descrição</th>
+                  <th>Status</th>
+                  <th>Valor</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let invoice of paymentInvoices">
+                  <td>{{ invoice.occurredOn | date: 'dd/MM/yyyy' }}</td>
+                  <td>{{ getCompactInvoiceDescription(invoice.description) }}</td>
+                  <td>{{ getInvoiceStatusLabel(invoice.paymentStatus) }}</td>
+                  <td>{{ invoice.amount | currency: 'BRL' }}</td>
+                  <td class="text-end">
+                    <div class="invoice-actions justify-content-end">
+                      <button class="btn btn-sm btn-outline-success" type="button" [disabled]="saving || invoice.paymentStatus === 'PAGO'" (click)="openInvoicePaymentConfirm(invoice)">Pagar</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="invoice-mobile-list d-block d-md-none">
+            <div class="invoice-mobile-card" *ngFor="let invoice of paymentInvoices">
+              <div class="invoice-mobile-row">
+                <span class="invoice-mobile-label">Vencimento</span>
+                <span>{{ invoice.occurredOn | date: 'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="invoice-mobile-row">
+                <span class="invoice-mobile-label">Descrição</span>
+                <span>{{ getCompactInvoiceDescription(invoice.description) }}</span>
+              </div>
+              <div class="invoice-mobile-row">
+                <span class="invoice-mobile-label">Status</span>
+                <span>{{ getInvoiceStatusLabel(invoice.paymentStatus) }}</span>
+              </div>
+              <div class="invoice-mobile-row">
+                <span class="invoice-mobile-label">Valor</span>
+                <span>{{ invoice.amount | currency: 'BRL' }}</span>
+              </div>
+              <button class="btn btn-sm btn-outline-success w-100" type="button" [disabled]="saving || invoice.paymentStatus === 'PAGO'" (click)="openInvoicePaymentConfirm(invoice)">
+                Pagar
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
       </div>
     </div>
 
     <div class="app-modal-footer">
-      <button class="btn btn-outline-secondary" type="button" (click)="closeCreateWizard()">Fechar</button>
+      <button class="btn btn-outline-danger" type="button" (click)="closeCreateWizard()">Fechar</button>
 
       <button class="btn btn-outline-secondary" type="button" (click)="goToWizardStep(createWizardStep - 1)" *ngIf="createWizardStep > 1">
         Voltar
@@ -323,21 +468,39 @@
         Próximo
       </button>
 
-      <button class="btn btn-primary" type="button" (click)="confirmServicePayment()" *ngIf="createWizardStep === 4" [disabled]="saving || !serviceOrderId || !canConfirmPaymentInWizard">
-        Confirmar pagamento
+      <button class="btn btn-outline-primary" type="button" [disabled]="saving" (click)="goToFinanceFromPayment()" *ngIf="createWizardStep === 4 && hasPaymentInvoices">
+        Abrir no Financeiro
+      </button>
+
+      <button class="btn btn-primary" type="button" [disabled]="saving || !serviceOrderId" (click)="createPaymentPlanForOrder()" *ngIf="createWizardStep === 4 && !hasPaymentInvoices">
+        Gerar Fatura(s)
       </button>
     </div>
   </div>
 </div>
 
-<div class="app-modal-backdrop" *ngIf="paymentModalOpen && selectedOrderForPayment">
-  <div class="app-modal app-modal-lg">
-    <div class="app-modal-header">
-      <h5 class="mb-0">Pagamento do serviço</h5>
-      <button type="button" class="btn-close" (click)="closePaymentModal()"></button>
+<div class="app-modal-backdrop details-modal-backdrop payment-modal-backdrop" *ngIf="paymentModalOpen && selectedOrderForPayment" (click)="closePaymentModal()">
+  <div class="app-modal app-modal-details payment-modal" (click)="$event.stopPropagation()">
+    <button class="details-close-btn" type="button" aria-label="Fechar pagamento" (click)="closePaymentModal()">
+      <i class="ti ti-x"></i>
+    </button>
+
+    <div class="details-header mb-3">
+      <div class="details-avatar">
+        <i class="ti ti-cash"></i>
+      </div>
+      <div class="details-header-text">
+        <h5 class="mb-1">Pagamento do serviço</h5>
+        <div class="details-subtitle">{{ selectedOrderForPayment.clientName }}</div>
+      </div>
+      <div class="details-tags">
+        <span class="history-status" [class.paid]="selectedOrderForPayment.paymentStatus === 'PAGAMENTO_CONCLUIDO'">
+          {{ getPaymentStatusLabel(selectedOrderForPayment.paymentStatus) }}
+        </span>
+      </div>
     </div>
 
-    <div class="app-modal-body">
+    <div class="app-modal-body details-modal-body payment-modal-body">
       <div class="alert alert-danger" role="alert" *ngIf="paymentModalErrorMessage">
         {{ paymentModalErrorMessage }}
       </div>
@@ -345,95 +508,118 @@
         {{ paymentModalInfoMessage }}
       </div>
 
-      <p class="mb-1"><strong>Cliente:</strong> {{ selectedOrderForPayment.clientName }}</p>
-      <p class="mb-3"><strong>Valor total do serviço:</strong> {{ selectedOrderForPayment.finalTotal | currency: 'BRL' }}</p>
-
-      <div class="payment-summary mb-3" *ngIf="hasPaymentInvoices">
-        <div>
-          <small class="text-muted">Total faturado</small>
-          <div class="fw-semibold">{{ paymentTotalInvoiced | currency: 'BRL' }}</div>
-        </div>
-        <div>
-          <small class="text-muted">Total pago</small>
-          <div class="fw-semibold text-success">{{ paymentTotalPaid | currency: 'BRL' }}</div>
-        </div>
-        <div>
-          <small class="text-muted">Falta pagar</small>
-          <div class="fw-semibold text-danger">{{ paymentTotalPending | currency: 'BRL' }}</div>
+      <div class="details-section mb-3">
+        <h6 class="details-section-title">Resumo do pagamento</h6>
+        <div class="details-grid">
+          <div class="details-field">
+            <span class="details-field-label">Cliente</span>
+            <span class="details-field-value">{{ selectedOrderForPayment.clientName }}</span>
+          </div>
+          <div class="details-field">
+            <span class="details-field-label">Valor total do serviço</span>
+            <span class="details-field-value">{{ selectedOrderForPayment.finalTotal | currency: 'BRL' }}</span>
+          </div>
         </div>
       </div>
 
-      <div class="payment-plan-box mb-3" *ngIf="!hasPaymentInvoices">
-        <h6 class="mb-3">Configurar faturas</h6>
-
-        <div class="mb-3">
-          <label class="form-label">Forma de pagamento</label>
-          <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentPlanSelection" (ngModelChange)="onPaymentPlanMethodChange($event)">
-            <ng-option value="CUSTOM_SPLIT">Pagamento personalizado (duas formas)</ng-option>
-            <ng-option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</ng-option>
-          </ng-select>
+      <div class="details-section mb-3" *ngIf="hasPaymentInvoices">
+        <h6 class="details-section-title">Totais das faturas</h6>
+        <div class="payment-summary">
+          <div>
+            <small class="text-muted">Total faturado</small>
+            <div class="fw-semibold">{{ paymentTotalInvoiced | currency: 'BRL' }}</div>
+          </div>
+          <div>
+            <small class="text-muted">Total pago</small>
+            <div class="fw-semibold text-success">{{ paymentTotalPaid | currency: 'BRL' }}</div>
+          </div>
+          <div>
+            <small class="text-muted">Falta pagar</small>
+            <div class="fw-semibold text-danger">{{ paymentTotalPending | currency: 'BRL' }}</div>
+          </div>
         </div>
+      </div>
 
-        <div class="custom-split-box mb-3" *ngIf="paymentPlanCustomSplitEnabled">
-          <div class="custom-split-grid">
-            <div>
-              <label class="form-label">Forma da entrada</label>
-              <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanDownPaymentMethod">
-                <ng-option value="PIX">Pix</ng-option>
-                <ng-option value="CASH">Dinheiro</ng-option>
-                <ng-option value="TRADE">Troca</ng-option>
-              </ng-select>
+      <div class="details-section mb-3" *ngIf="!hasPaymentInvoices">
+        <h6 class="details-section-title">Configurar faturas</h6>
+        <div class="payment-plan-box">
+          <div class="mb-3">
+            <label class="form-label">Forma de pagamento</label>
+            <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentPlanSelection" (ngModelChange)="onPaymentPlanMethodChange($event)">
+              <ng-option value="CUSTOM_SPLIT">Pagamento personalizado (duas formas)</ng-option>
+              <ng-option *ngFor="let option of paymentMethodOptions" [value]="option.value">{{ option.label }}</ng-option>
+            </ng-select>
+          </div>
+
+          <div class="custom-split-box mb-3" *ngIf="paymentPlanCustomSplitEnabled">
+            <div class="custom-split-grid">
+              <div>
+                <label class="form-label">Forma da entrada</label>
+                <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanDownPaymentMethod">
+                  <ng-option value="PIX">Pix</ng-option>
+                  <ng-option value="CASH">Dinheiro</ng-option>
+                  <ng-option value="TRADE">Troca</ng-option>
+                </ng-select>
+              </div>
+              <div>
+                <label class="form-label">Forma do restante</label>
+                <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentPlanRemainingPaymentMethod" (ngModelChange)="onRemainingPaymentMethodChange($event)">
+                  <ng-option value="CREDIT_CARD">Cartão de crédito</ng-option>
+                  <ng-option value="PIX_INSTALLMENT">Pix parcelado</ng-option>
+                </ng-select>
+              </div>
+              <div>
+                <label class="form-label">Valor da entrada</label>
+                <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="paymentPlanDownPaymentAmount" />
+              </div>
+              <div *ngIf="paymentPlanEffectiveAllowsInstallments">
+                <label class="form-label">Quantidade de parcelas</label>
+                <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanInstallments">
+                  <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
+                </ng-select>
+              </div>
             </div>
-            <div>
-              <label class="form-label">Forma do restante</label>
-              <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="paymentPlanRemainingPaymentMethod" (ngModelChange)="onRemainingPaymentMethodChange($event)">
-                <ng-option value="CREDIT_CARD">Cartão de crédito</ng-option>
-                <ng-option value="PIX_INSTALLMENT">Pix parcelado</ng-option>
-              </ng-select>
-            </div>
-            <div>
-              <label class="form-label">Valor da entrada</label>
-              <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="paymentPlanDownPaymentAmount" />
-            </div>
-            <div *ngIf="paymentPlanEffectiveAllowsInstallments">
+          </div>
+
+          <div class="mb-2 form-check" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
+            <input class="form-check-input" type="checkbox" id="downPaymentEnabled" [(ngModel)]="paymentPlanDownPaymentEnabled" />
+            <label class="form-check-label" for="downPaymentEnabled">Entrada + parcelas?</label>
+          </div>
+
+          <div class="row g-2 mb-2" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
+            <div class="col-md-6">
               <label class="form-label">Quantidade de parcelas</label>
               <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanInstallments">
                 <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
               </ng-select>
             </div>
           </div>
-        </div>
 
-        <div class="mb-2 form-check" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
-          <input class="form-check-input" type="checkbox" id="downPaymentEnabled" [(ngModel)]="paymentPlanDownPaymentEnabled" />
-          <label class="form-check-label" for="downPaymentEnabled">Entrada + parcelas?</label>
-        </div>
-
-        <div class="row g-2 mb-2" *ngIf="paymentPlanEffectiveAllowsInstallments && !paymentPlanCustomSplitEnabled">
-          <div class="col-md-6">
-            <label class="form-label">Quantidade de parcelas</label>
-            <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="paymentPlanInstallments">
-              <ng-option *ngFor="let option of installmentOptions" [value]="option.value">{{ option.label }}</ng-option>
-            </ng-select>
+          <div class="row g-2" *ngIf="paymentPlanEffectiveAllowsInstallments && paymentPlanDownPaymentEnabled && !paymentPlanCustomSplitEnabled">
+            <div class="col-md-6">
+              <label class="form-label">Valor da entrada</label>
+              <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="paymentPlanDownPaymentAmount" />
+            </div>
           </div>
-        </div>
 
-        <div class="row g-2" *ngIf="paymentPlanEffectiveAllowsInstallments && paymentPlanDownPaymentEnabled && !paymentPlanCustomSplitEnabled">
-          <div class="col-md-6">
-            <label class="form-label">Valor da entrada</label>
-            <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="paymentPlanDownPaymentAmount" />
+          <div class="alert alert-info" role="alert" *ngIf="!paymentPlanEffectiveAllowsInstallments">
+            Este método é à vista. Para parcelar, selecione <strong>Pix parcelado</strong> ou <strong>Cartão de crédito</strong>.
           </div>
-        </div>
 
-        <div class="alert alert-info" role="alert" *ngIf="!paymentPlanEffectiveAllowsInstallments">
-          Este método é à vista. Para parcelar, selecione <strong>Pix parcelado</strong> ou <strong>Cartão de crédito</strong>.
         </div>
-
       </div>
 
-      <div *ngIf="hasPaymentInvoices">
-        <h6 class="mb-2">Faturas</h6>
-        <div class="table-responsive">
+      <div class="details-section" *ngIf="hasPaymentInvoices">
+        <div class="invoice-header-row mb-2">
+          <h6 class="details-section-title mb-0">Faturas</h6>
+          <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="saving" (click)="goToFinanceFromPayment()">
+            Ir para financeiro
+          </button>
+        </div>
+
+        <small class="text-muted d-block mb-2">Para observações e gestão completa das receitas, use a tela de Financeiro.</small>
+
+        <div class="table-responsive payment-table-wrapper d-none d-md-block">
           <table class="table table-sm align-middle">
             <thead>
               <tr>
@@ -441,33 +627,56 @@
                 <th>Descrição</th>
                 <th>Status</th>
                 <th>Valor</th>
-                <th>Observação</th>
                 <th class="text-end">Ações</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let invoice of paymentInvoices">
                 <td>{{ invoice.occurredOn | date: 'dd/MM/yyyy' }}</td>
-                <td>{{ invoice.description || '-' }}</td>
+                <td>{{ getCompactInvoiceDescription(invoice.description) }}</td>
                 <td>{{ getInvoiceStatusLabel(invoice.paymentStatus) }}</td>
                 <td>{{ invoice.amount | currency: 'BRL' }}</td>
-                <td>
-                  <input class="form-control form-control-sm" [(ngModel)]="invoiceNotesDraft[invoice.id]" placeholder="Observação" />
-                </td>
                 <td class="text-end">
-                  <div class="invoice-actions">
-                    <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="saving" (click)="saveInvoiceNotes(invoice)">Salvar obs</button>
-                    <button class="btn btn-sm btn-outline-success" type="button" [disabled]="saving || invoice.paymentStatus === 'PAGO'" (click)="confirmInvoicePayment(invoice)">Pagar</button>
+                  <div class="invoice-actions justify-content-end">
+                    <button class="btn btn-sm btn-outline-success" type="button" [disabled]="saving || invoice.paymentStatus === 'PAGO'" (click)="openInvoicePaymentConfirm(invoice)">Pagar</button>
                   </div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <div class="invoice-mobile-list d-block d-md-none">
+          <div class="invoice-mobile-card" *ngFor="let invoice of paymentInvoices">
+            <div class="invoice-mobile-row">
+              <span class="invoice-mobile-label">Vencimento</span>
+              <span>{{ invoice.occurredOn | date: 'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="invoice-mobile-row">
+              <span class="invoice-mobile-label">Descrição</span>
+              <span>{{ getCompactInvoiceDescription(invoice.description) }}</span>
+            </div>
+            <div class="invoice-mobile-row">
+              <span class="invoice-mobile-label">Status</span>
+              <span>{{ getInvoiceStatusLabel(invoice.paymentStatus) }}</span>
+            </div>
+            <div class="invoice-mobile-row">
+              <span class="invoice-mobile-label">Valor</span>
+              <span>{{ invoice.amount | currency: 'BRL' }}</span>
+            </div>
+            <button class="btn btn-sm btn-outline-success w-100" type="button" [disabled]="saving || invoice.paymentStatus === 'PAGO'" (click)="openInvoicePaymentConfirm(invoice)">
+              Pagar
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="app-modal-footer">
+      <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closePaymentModal()">Fechar</button>
+      <button class="btn btn-outline-primary" type="button" [disabled]="saving" (click)="goToFinanceFromPayment()" *ngIf="hasPaymentInvoices">
+        Abrir no Financeiro
+      </button>
       <button
         class="btn btn-primary"
         type="button"
@@ -480,6 +689,21 @@
     </div>
   </div>
 </div>
+
+<app-confirm-action-modal
+  [open]="paymentInvoiceConfirmModalOpen && !!selectedInvoiceForPaymentConfirm"
+  title="Confirmar pagamento"
+  subtitle="Essa ação dá baixa na parcela selecionada."
+  bodyText="Deseja confirmar o pagamento da fatura de "
+  [highlightText]="selectedInvoiceForPaymentConfirm?.amount | currency: 'BRL'"
+  bodySuffix="?"
+  cancelLabel="Cancelar"
+  confirmLabel="Confirmar pagamento"
+  [loading]="saving"
+  loadingLabel="Confirmando..."
+  (cancel)="closeInvoicePaymentConfirm()"
+  (confirm)="confirmSelectedInvoicePayment()"
+></app-confirm-action-modal>
 
 <div class="app-modal-backdrop details-modal-backdrop" *ngIf="detailsModalOpen && selectedOrderForDetails" (click)="closeOrderDetails()">
   <div class="app-modal app-modal-details" (click)="$event.stopPropagation()">
@@ -687,7 +911,7 @@
     </div>
 
     <div class="app-modal-footer">
-      <button class="btn btn-outline-secondary" type="button" (click)="closeServiceManagementModal()">Fechar</button>
+      <button class="btn btn-outline-danger" type="button" (click)="closeServiceManagementModal()">Fechar</button>
     </div>
   </div>
 </div>

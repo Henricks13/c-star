@@ -10,11 +10,17 @@ public interface ClientRepository extends JpaRepository<Client, UUID> {
 
     boolean existsByPhoneE164(String phoneE164);
 
+    boolean existsByPhoneE164AndIdNot(String phoneE164, UUID id);
+
     boolean existsByCpf(String cpf);
+
+    boolean existsByCpfAndIdNot(String cpf, UUID id);
 
     Optional<Client> findByCpf(String cpf);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, UUID id);
 
     boolean existsBySourceContactId(UUID sourceContactId);
 }

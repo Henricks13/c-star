@@ -15,6 +15,6 @@ export class HomeRedirectComponent implements OnInit {
 
   ngOnInit(): void {
     const isCollaborator = this.authService.hasRole('COLABORADOR');
-    this.router.navigateByUrl(isCollaborator ? '/meu-painel' : '/default', { replaceUrl: true });
+    this.router.navigateByUrl(isCollaborator ? '/contacts/geral' : '/default', { replaceUrl: true });
   }
 }

@@ -60,8 +60,8 @@
                       <button class="btn btn-sm btn-outline-warning" type="button" (click)="openAnamnesis(client)" title="Anamnese" aria-label="Anamnese">
                         <i class="ti ti-clipboard-text"></i>
                       </button>
-                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openDetailsModal(client)" title="Ver detalhes" aria-label="Ver detalhes">
-                        <i class="ti ti-eye"></i>
+                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(client)" title="Editar" aria-label="Editar">
+                        <i class="ti ti-pencil"></i>
                       </button>
                       <button
                         class="btn btn-sm btn-outline-danger"
@@ -127,9 +127,9 @@
                 <i class="ti ti-clipboard-text me-1"></i>
                 Anamnese
               </button>
-              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openDetailsModal(client)">
-                <i class="ti ti-eye me-1"></i>
-                Ver detalhes
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openEditModal(client)">
+                <i class="ti ti-pencil me-1"></i>
+                Editar
               </button>
               <button class="btn btn-sm btn-outline-danger w-100" type="button" (click)="deleteClient(client)" *ngIf="canDeleteClient()">
                 <i class="ti ti-trash me-1"></i>
@@ -146,7 +146,7 @@
 <ng-container *ngIf="modalOpen">
   <div class="clients-modal-backdrop clients-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-client-title" (click)="closeModal()">
     <div class="clients-modal clients-details-modal create-client-modal" (click)="$event.stopPropagation()">
-      <button class="client-details-close-btn" type="button" aria-label="Fechar cadastro" [disabled]="saving" (click)="closeModal()">
+      <button class="client-details-close-btn" type="button" [attr.aria-label]="isEditingClient ? 'Fechar edição' : 'Fechar cadastro'" [disabled]="saving" (click)="closeModal()">
         <i class="ti ti-x"></i>
       </button>
 
@@ -155,8 +155,8 @@
           <i class="ti ti-user-plus"></i>
         </div>
         <div class="client-details-header-text">
-          <h5 id="create-client-title" class="mb-1">Cadastrar cliente</h5>
-          <div class="client-details-subtitle">Preencha os dados principais</div>
+          <h5 id="create-client-title" class="mb-1">{{ isEditingClient ? 'Editar cliente' : 'Cadastrar cliente' }}</h5>
+          <div class="client-details-subtitle">{{ isEditingClient ? 'Atualize os dados principais' : 'Preencha os dados principais' }}</div>
         </div>
       </div>
 
@@ -206,8 +206,8 @@
 
       <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
         <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeModal()">Cancelar</button>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createClient()">
-          <span *ngIf="!saving">Cadastrar</span>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="saveClient()">
+          <span *ngIf="!saving">{{ isEditingClient ? 'Salvar edição' : 'Cadastrar' }}</span>
           <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
             <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
             Salvando...

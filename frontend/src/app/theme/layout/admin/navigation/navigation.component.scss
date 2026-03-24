@@ -1,22 +1,32 @@
 .brand-logo {
-	height: 72px;
+	height: 88px;
 	max-width: none;
 	width: auto;
 	display: block;
 }
 
 .m-header {
-	padding-top: 4px;
-	padding-bottom: 4px;
+	padding-top: 14px;
+	padding-bottom: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .b-brand {
-	display: inline-flex;
+	display: flex;
 	align-items: center;
+	justify-content: center;
+	width: 100%;
 }
 
 @media (max-width: 1024px) {
 	.brand-logo {
-		height: 64px;
+		height: 76px;
+	}
+
+	.m-header {
+		padding-top: 12px;
+		padding-bottom: 8px;
 	}
 }

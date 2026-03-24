@@ -35,7 +35,8 @@ export const NavigationItems: NavigationItem[] = [
         title: 'Meu Painel',
         type: 'item',
         url: '/meu-painel',
-        icon: 'ti ti-checkup-list'
+        icon: 'ti ti-checkup-list',
+        role: ['MASTER_ADMIN', 'DEV_SUPORTE']
       },
       {
         id: 'contacts',
@@ -83,7 +84,7 @@ export const NavigationItems: NavigationItem[] = [
           },
           {
             id: 'client-management-services',
-            title: 'Serviços de Clientes',
+            title: 'Serviços',
             type: 'item',
             url: '/clients/services',
             breadcrumbs: false
@@ -92,7 +93,7 @@ export const NavigationItems: NavigationItem[] = [
       },
       {
         id: 'services',
-        title: 'Serviços',
+        title: 'Procedimentos',
         type: 'item',
         url: '/services',
         icon: 'ti ti-briefcase'

@@ -3,7 +3,6 @@ import { Component, output } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 // project import
-
 import { NavContentComponent } from './nav-content/nav-content.component';
 
 @Component({

@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-12">
-    <app-card cardTitle="Serviços">
+    <app-card cardTitle="Procedimentos">
       <div class="services-toolbar mb-3">
         <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
           <i class="ti ti-plus me-1"></i>
@@ -17,13 +17,13 @@
       </ng-container>
 
       <ng-container *ngIf="loading">
-        <p class="mb-0">Carregando serviços...</p>
+        <p class="mb-0">Carregando procedimentos...</p>
       </ng-container>
 
       <ng-container *ngIf="!loading && services.length === 0">
         <div class="empty-state">
-          <p class="mb-2">Nenhum serviço cadastrado.</p>
-          <small class="text-muted">Cadastre serviços e associe os produtos usados em cada procedimento.</small>
+          <p class="mb-2">Nenhum procedimento cadastrado.</p>
+          <small class="text-muted">Cadastre procedimentos e associe os produtos usados em cada procedimento.</small>
         </div>
       </ng-container>
 
@@ -33,7 +33,7 @@
             <table class="table table-hover align-middle services-table mb-0">
               <thead class="services-thead">
                 <tr>
-                  <th>Serviço</th>
+                  <th>Procedimento</th>
                   <th>Etapa</th>
                   <th>Preço</th>
                   <th>Produtos usados</th>
@@ -66,7 +66,7 @@
                           type="checkbox"
                           [id]="'service-switch-' + service.id"
                           [checked]="service.active"
-                          [attr.aria-label]="service.active ? 'Desativar serviço' : 'Ativar serviço'"
+                          [attr.aria-label]="service.active ? 'Desativar procedimento' : 'Ativar procedimento'"
                           [title]="service.active ? 'Ativo' : 'Desativado'"
                           [disabled]="togglingServiceId === service.id"
                           (change)="toggleServiceActive(service, $any($event.target).checked)"
@@ -89,7 +89,7 @@
         <div class="mobile-list d-block d-md-none">
           <div class="mobile-service-card" *ngFor="let service of services">
             <div class="mobile-service-row">
-              <span class="mobile-label">Serviço</span>
+              <span class="mobile-label">Procedimento</span>
               <span>{{ service.name }}</span>
             </div>
             <div class="mobile-service-row">
@@ -116,7 +116,7 @@
                   type="checkbox"
                   [id]="'mobile-service-switch-' + service.id"
                   [checked]="service.active"
-                  [attr.aria-label]="service.active ? 'Desativar serviço' : 'Ativar serviço'"
+                  [attr.aria-label]="service.active ? 'Desativar procedimento' : 'Ativar procedimento'"
                   [title]="service.active ? 'Ativo' : 'Desativado'"
                   [disabled]="togglingServiceId === service.id"
                   (change)="toggleServiceActive(service, $any($event.target).checked)"
@@ -143,43 +143,40 @@
 </div>
 
 <ng-container *ngIf="createModalOpen">
-  <div class="services-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-service-title">
-    <div class="services-modal">
-      <h6 id="create-service-title" class="mb-3">Cadastrar serviço</h6>
-      <ng-container *ngTemplateOutlet="serviceFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createService()">Salvar</button>
-      </div>
-    </div>
-  </div>
-</ng-container>
+  <div
+    class="services-modal-backdrop services-details-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="create-service-title"
+    (click)="closeCreateModal()"
+  >
+    <div class="services-modal services-details-modal procedure-form-modal" (click)="$event.stopPropagation()">
+      <button class="service-details-close-btn" type="button" aria-label="Fechar cadastro" [disabled]="saving" (click)="closeCreateModal()">
+        <i class="ti ti-x"></i>
+      </button>
 
-<ng-container *ngIf="editModalOpen">
-  <div class="services-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-service-title">
-    <div class="services-modal">
-      <h6 id="edit-service-title" class="mb-3">Editar serviço</h6>
-      <ng-container *ngTemplateOutlet="serviceFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateService()">Salvar</button>
+      <div class="service-details-header mb-3">
+        <div class="service-details-avatar">
+          <i class="ti ti-briefcase"></i>
+        </div>
+        <div class="service-details-header-text">
+          <h5 id="create-service-title" class="mb-1">Cadastrar procedimento</h5>
+          <div class="service-details-subtitle">Preencha os dados principais do procedimento</div>
+        </div>
       </div>
-    </div>
-  </div>
-</ng-container>
 
-<ng-container *ngIf="deleteModalOpen && selectedServiceForDeletion">
-  <div class="services-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-service-title">
-    <div class="services-modal">
-      <h6 id="delete-service-title" class="mb-3">Confirmar exclusão</h6>
-      <p class="mb-3">Deseja excluir o serviço <strong>{{ selectedServiceForDeletion.name }}</strong>?</p>
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
-        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteService()">
-          <span *ngIf="!saving">Excluir serviço</span>
+      <div class="service-details-section mb-3">
+        <h6 class="service-details-section-title">Dados do procedimento</h6>
+        <ng-container *ngTemplateOutlet="serviceFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
+      </div>
+
+      <div class="procedure-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createService()">
+          <span *ngIf="!saving">Cadastrar</span>
           <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
             <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-            Excluindo...
+            Salvando...
           </span>
         </button>
       </div>
@@ -187,46 +184,101 @@
   </div>
 </ng-container>
 
-<ng-template #serviceFormTemplate let-formModel="formModel" let-editing="editing">
-  <div class="d-flex flex-column gap-2">
-    <div>
-      <label class="form-label">Nome</label>
-      <input class="form-control" [(ngModel)]="formModel.name" />
-    </div>
+<ng-container *ngIf="editModalOpen">
+  <div
+    class="services-modal-backdrop services-details-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="edit-service-title"
+    (click)="closeEditModal()"
+  >
+    <div class="services-modal services-details-modal procedure-form-modal" (click)="$event.stopPropagation()">
+      <button class="service-details-close-btn" type="button" aria-label="Fechar edição" [disabled]="saving" (click)="closeEditModal()">
+        <i class="ti ti-x"></i>
+      </button>
 
-    <div class="row g-2">
-      <div class="col-sm-6">
-        <label class="form-label">Etapa</label>
-        <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [(ngModel)]="formModel.stage">
-          <ng-option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</ng-option>
-        </ng-select>
-      </div>
-      <div class="col-sm-6">
-        <label class="form-label">Preço</label>
-        <input type="number" step="0.01" class="form-control" [(ngModel)]="formModel.price" />
-      </div>
-    </div>
-
-    <div class="row g-2">
-      <div class="col-sm-6">
-        <label class="form-label">Duração (minutos, opcional)</label>
-        <input type="number" step="1" class="form-control" [(ngModel)]="formModel.durationMinutes" />
-      </div>
-      <div class="col-sm-6 d-flex align-items-end">
-        <div class="form-check form-switch system-status-switch">
-          <input
-            class="form-check-input system-status-switch-control"
-            type="checkbox"
-            [id]="editing ? 'edit-service-active' : 'create-service-active'"
-            [(ngModel)]="formModel.active"
-          />
-          <label class="form-check-label" [for]="editing ? 'edit-service-active' : 'create-service-active'">Serviço ativo</label>
+      <div class="service-details-header mb-3">
+        <div class="service-details-avatar">
+          <i class="ti ti-pencil"></i>
+        </div>
+        <div class="service-details-header-text">
+          <h5 id="edit-service-title" class="mb-1">Editar procedimento</h5>
+          <div class="service-details-subtitle">Atualize os dados do procedimento selecionado</div>
         </div>
       </div>
+
+      <div class="service-details-section mb-3">
+        <h6 class="service-details-section-title">Dados do procedimento</h6>
+        <ng-container *ngTemplateOutlet="serviceFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
+      </div>
+
+      <div class="procedure-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateService()">
+          <span *ngIf="!saving">Salvar alterações</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<app-confirm-action-modal
+  [open]="deleteModalOpen && !!selectedServiceForDeletion"
+  title="Confirmar exclusão"
+  subtitle="Essa ação remove o procedimento selecionado."
+  bodyText="Deseja realmente excluir o procedimento "
+  [highlightText]="selectedServiceForDeletion?.name || ''"
+  bodySuffix="?"
+  cancelLabel="Cancelar"
+  confirmLabel="Confirmar exclusão"
+  [loading]="saving"
+  loadingLabel="Excluindo..."
+  (cancel)="closeDeleteModal()"
+  (confirm)="confirmDeleteService()"
+></app-confirm-action-modal>
+
+<ng-template #serviceFormTemplate let-formModel="formModel" let-editing="editing">
+  <div class="procedure-form-grid">
+    <div class="procedure-form-field procedure-form-field-full">
+      <label class="form-label" [attr.for]="editing ? 'edit-procedure-name' : 'create-procedure-name'">Nome</label>
+      <input [id]="editing ? 'edit-procedure-name' : 'create-procedure-name'" class="form-control" [(ngModel)]="formModel.name" />
     </div>
 
-    <div>
-      <label class="form-label">Produtos usados no serviço (opcional)</label>
+    <div class="procedure-form-field">
+      <label class="form-label" [attr.for]="editing ? 'edit-procedure-stage' : 'create-procedure-stage'">Etapa</label>
+      <ng-select
+        [id]="editing ? 'edit-procedure-stage' : 'create-procedure-stage'"
+        class="cstar-ng-select"
+        [searchable]="false"
+        [clearable]="false"
+        [(ngModel)]="formModel.stage"
+      >
+          <ng-option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</ng-option>
+        </ng-select>
+    </div>
+
+    <div class="procedure-form-field">
+      <label class="form-label" [attr.for]="editing ? 'edit-procedure-price' : 'create-procedure-price'">Preço</label>
+      <input [id]="editing ? 'edit-procedure-price' : 'create-procedure-price'" type="number" step="0.01" class="form-control" [(ngModel)]="formModel.price" />
+    </div>
+
+    <div class="procedure-form-field">
+      <label class="form-label" [attr.for]="editing ? 'edit-procedure-duration' : 'create-procedure-duration'">Duração (minutos, opcional)</label>
+      <input
+        [id]="editing ? 'edit-procedure-duration' : 'create-procedure-duration'"
+        type="number"
+        step="1"
+        class="form-control"
+        [(ngModel)]="formModel.durationMinutes"
+      />
+    </div>
+
+    <div class="procedure-form-field procedure-form-field-full">
+      <label class="form-label">Produtos usados no procedimento (opcional)</label>
       <div class="d-flex flex-column gap-2">
         <div class="consumed-row" *ngFor="let row of formModel.consumedProducts; let idx = index">
           <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="row.productId">
@@ -245,9 +297,9 @@
       </button>
     </div>
 
-    <div>
-      <label class="form-label">Observações (opcional)</label>
-      <textarea class="form-control" rows="2" [(ngModel)]="formModel.notes"></textarea>
+    <div class="procedure-form-field procedure-form-field-full">
+      <label class="form-label" [attr.for]="editing ? 'edit-procedure-notes' : 'create-procedure-notes'">Observações (opcional)</label>
+      <textarea [id]="editing ? 'edit-procedure-notes' : 'create-procedure-notes'" class="form-control" rows="2" [(ngModel)]="formModel.notes"></textarea>
     </div>
   </div>
 </ng-template>

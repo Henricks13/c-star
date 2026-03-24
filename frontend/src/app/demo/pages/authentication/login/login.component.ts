@@ -50,7 +50,7 @@ export class LoginComponent {
         next: (user) => {
           const roles = (user?.roles || []).map((role) => (role || '').trim().toUpperCase());
           const isCollaborator = roles.includes('COLABORADOR');
-          this.router.navigateByUrl(isCollaborator ? '/meu-painel' : '/default');
+          this.router.navigateByUrl(isCollaborator ? '/contacts/geral' : '/default');
         },
         error: (err) => {
           if (err?.status === 0) {

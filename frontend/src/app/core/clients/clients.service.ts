@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { AddClientObservationRequest, ClientListItem, ClientObservationItem, CreateClientRequest } from './clients.types';
+import { AddClientObservationRequest, ClientListItem, ClientObservationItem, CreateClientRequest, UpdateClientRequest } from './clients.types';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +18,10 @@ export class ClientsService {
 
   create(payload: CreateClientRequest): Observable<ClientListItem> {
     return this.http.post<ClientListItem>(this.apiBase, payload);
+  }
+
+  update(clientId: string, payload: UpdateClientRequest): Observable<ClientListItem> {
+    return this.http.put<ClientListItem>(`${this.apiBase}/${clientId}`, payload);
   }
 
   delete(clientId: string): Observable<void> {

@@ -15,6 +15,7 @@ import {
   UpdateServiceRequest
 } from 'src/app/core/services/services.types';
 import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
+import { ConfirmActionModalComponent } from 'src/app/theme/shared/components/confirm-action-modal/confirm-action-modal.component';
 
 interface ServiceFormModel {
   name: string;
@@ -28,7 +29,7 @@ interface ServiceFormModel {
 
 @Component({
   selector: 'app-services',
-  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent, ConfirmActionModalComponent],
   templateUrl: './services.component.html',
   styleUrls: ['./services.component.scss']
 })
@@ -76,13 +77,13 @@ export class ServicesComponent implements OnInit {
             this.loading = false;
           },
           error: () => {
-            this.errorMessage = 'Não foi possível carregar os serviços.';
+            this.errorMessage = 'Não foi possível carregar os procedimentos.';
             this.loading = false;
           }
         });
       },
       error: () => {
-        this.errorMessage = 'Não foi possível carregar os produtos para composição de serviço.';
+        this.errorMessage = 'Não foi possível carregar os produtos para composição do procedimento.';
         this.loading = false;
       }
     });
@@ -116,11 +117,11 @@ export class ServicesComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.closeCreateModal();
-        this.infoMessage = 'Serviço cadastrado com sucesso.';
+        this.infoMessage = 'Procedimento cadastrado com sucesso.';
         this.loadAll();
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Não foi possível cadastrar o serviço.';
+        this.errorMessage = error?.error?.message || 'Não foi possível cadastrar o procedimento.';
         this.saving = false;
       }
     });
@@ -168,11 +169,11 @@ export class ServicesComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.closeEditModal();
-        this.infoMessage = 'Serviço atualizado com sucesso.';
+        this.infoMessage = 'Procedimento atualizado com sucesso.';
         this.loadAll();
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Não foi possível atualizar o serviço.';
+        this.errorMessage = error?.error?.message || 'Não foi possível atualizar o procedimento.';
         this.saving = false;
       }
     });
@@ -208,12 +209,12 @@ export class ServicesComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.closeDeleteModal();
-        this.infoMessage = 'Serviço removido com sucesso.';
+        this.infoMessage = 'Procedimento removido com sucesso.';
         this.loadAll();
       },
       error: (error) => {
         this.saving = false;
-        this.errorMessage = error?.error?.message || 'Não foi possível excluir o serviço.';
+        this.errorMessage = error?.error?.message || 'Não foi possível excluir o procedimento.';
       }
     });
   }
@@ -243,11 +244,11 @@ export class ServicesComponent implements OnInit {
     this.servicesService.update(service.id, payload).subscribe({
       next: (updated) => {
         service.active = updated.active;
-        this.infoMessage = updated.active ? 'Serviço ativado com sucesso.' : 'Serviço desativado com sucesso.';
+        this.infoMessage = updated.active ? 'Procedimento ativado com sucesso.' : 'Procedimento desativado com sucesso.';
         this.togglingServiceId = null;
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Não foi possível alterar o status do serviço.';
+        this.errorMessage = error?.error?.message || 'Não foi possível alterar o status do procedimento.';
         this.togglingServiceId = null;
       }
     });
@@ -293,12 +294,12 @@ export class ServicesComponent implements OnInit {
 
   private validatePayload<T extends CreateServiceRequest | UpdateServiceRequest>(payload: T): T | null {
     if (!payload.name || !payload.stage) {
-      this.errorMessage = 'Preencha nome e etapa do serviço.';
+      this.errorMessage = 'Preencha nome e etapa do procedimento.';
       return null;
     }
 
     if (Number.isNaN(payload.price) || payload.price < 0) {
-      this.errorMessage = 'Preço do serviço não pode ser negativo.';
+      this.errorMessage = 'Preço do procedimento não pode ser negativo.';
       return null;
     }
 
@@ -309,7 +310,7 @@ export class ServicesComponent implements OnInit {
 
     const ids = payload.consumedProducts?.map((item) => item.productId) || [];
     if (new Set(ids).size !== ids.length) {
-      this.errorMessage = 'Não repita o mesmo produto na composição do serviço.';
+      this.errorMessage = 'Não repita o mesmo produto na composição do procedimento.';
       return null;
     }
 

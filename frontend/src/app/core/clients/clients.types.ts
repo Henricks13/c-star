@@ -37,6 +37,15 @@ export interface CreateClientRequest {
   notes?: string | null;
 }
 
+export interface UpdateClientRequest {
+  fullName: string;
+  phone: string;
+  cpf?: string | null;
+  email?: string | null;
+  origin: ClientOrigin;
+  notes?: string | null;
+}
+
 export interface ClientObservationItem {
   id: string;
   clientId: string;

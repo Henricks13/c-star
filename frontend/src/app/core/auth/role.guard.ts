@@ -20,6 +20,6 @@ export class RoleGuard implements CanActivate {
       return true;
     }
 
-    return this.router.createUrlTree(['/meu-painel']);
+    return this.router.createUrlTree(['/contacts/geral']);
   }
 }
