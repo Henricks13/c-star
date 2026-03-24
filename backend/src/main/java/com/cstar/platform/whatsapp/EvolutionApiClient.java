@@ -138,7 +138,12 @@ public class EvolutionApiClient {
     }
 
     public Map<String, Object> findMessages(String instanceName, String remoteJid, int limit) {
+        return findMessages(instanceName, remoteJid, 1, limit);
+    }
+
+    public Map<String, Object> findMessages(String instanceName, String remoteJid, int page, int limit) {
         String url = properties.getEvolution().getBaseUrl() + "/chat/findMessages/" + instanceName;
+        int safePage = Math.max(1, page);
         int safeLimit = Math.max(1, Math.min(limit, 100));
 
         Map<String, Object> keyFilter = new HashMap<>();
@@ -149,7 +154,7 @@ public class EvolutionApiClient {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("where", where);
-        payload.put("page", 1);
+        payload.put("page", safePage);
         payload.put("limit", safeLimit);
 
         return post(url, payload);

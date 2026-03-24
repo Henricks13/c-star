@@ -8,6 +8,8 @@ import com.cstar.platform.whatsapp.model.ContactStage;
 import com.cstar.platform.whatsapp.model.WhatsappMessage;
 import com.cstar.platform.whatsapp.repository.ContactRepository;
 import com.cstar.platform.whatsapp.repository.WhatsappMessageRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,12 @@ import java.util.stream.Collectors;
 
 @Service
 public class WhatsappContactSyncService {
+
+    private static final Logger log = LoggerFactory.getLogger(WhatsappContactSyncService.class);
+    private static final int CHAT_PAGE_SIZE = 500;
+    private static final int CHAT_MAX_PAGES = 200;
+    private static final int MESSAGE_PAGE_SIZE = 100;
+    private static final int MESSAGE_MAX_PAGES = 10_000;
 
     private final EvolutionApiClient evolutionApiClient;
     private final WhatsappIngestionService ingestionService;
@@ -54,41 +62,46 @@ public class WhatsappContactSyncService {
         contactLifecycleService.refreshStagesByOutboundRecency();
 
         String instanceName = resolveInstanceName(principal);
-        List<Map<String, Object>> chats = fetchAllChats(instanceName, 500, 200);
+        List<Map<String, Object>> chats = fetchAllChats(instanceName, CHAT_PAGE_SIZE, CHAT_MAX_PAGES);
 
         int conversationsSynced = 0;
         int messagesProcessed = 0;
+        int skippedNoRemoteJid = 0;
+        int skippedNoPhone = 0;
+        int skippedStage = 0;
+        int skippedNoInbound = 0;
 
         for (Map<String, Object> chat : chats) {
             String remoteJid = extractRemoteJid(chat);
             if (remoteJid == null || remoteJid.isBlank() || remoteJid.endsWith("@g.us")) {
+                skippedNoRemoteJid++;
                 continue;
             }
 
             String phone = normalizeFromJid(remoteJid);
             if (phone == null || phone.isBlank()) {
+                skippedNoPhone++;
                 continue;
             }
 
             Contact existingContact = contactRepository.findByWhatsappPhoneE164(phone).orElse(null);
             if (existingContact != null && existingContact.getStage() != ContactStage.LEAD) {
+                skippedStage++;
                 continue;
             }
 
-            List<Map<String, Object>> probeMessages = extractRecords(evolutionApiClient.findMessages(instanceName, remoteJid, 5));
-            Map<String, Object> latest = findLatestByTimestamp(probeMessages);
+            List<Map<String, Object>> messages = fetchAllMessages(instanceName, remoteJid, MESSAGE_PAGE_SIZE, MESSAGE_MAX_PAGES);
             int unreadCount = extractUnreadCount(chat);
             boolean hasUnreadMessages = unreadCount > 0;
-            boolean hasLatestInbound = latest != null && !isFromMe(latest);
-            boolean hasInboundInProbe = probeMessages.stream().anyMatch(message -> !isFromMe(message));
-            if (!hasUnreadMessages && !hasLatestInbound && !hasInboundInProbe) {
+            boolean hasInboundInConversation = messages.stream().anyMatch(message -> !isFromMe(message));
+
+            if (!hasUnreadMessages && !hasInboundInConversation) {
+                skippedNoInbound++;
                 continue;
             }
 
             conversationsSynced++;
             String displayName = resolveDisplayName(chat, phone);
-
-            List<Map<String, Object>> messages = extractRecords(evolutionApiClient.findMessages(instanceName, remoteJid, 25));
             messages.sort(Comparator.comparing(this::extractSentAt));
 
             for (Map<String, Object> message : messages) {
@@ -104,6 +117,18 @@ public class WhatsappContactSyncService {
                 messagesProcessed++;
             }
         }
+
+        log.info(
+                "Whatsapp sync completed for instance {}: chatsFetched={}, conversationsSynced={}, messagesProcessed={}, skippedNoRemoteJid={}, skippedNoPhone={}, skippedByStage={}, skippedNoInboundOrUnread={}",
+                instanceName,
+                chats.size(),
+                conversationsSynced,
+                messagesProcessed,
+                skippedNoRemoteJid,
+                skippedNoPhone,
+                skippedStage,
+                skippedNoInbound
+            );
 
         return new ContactSyncResponse(conversationsSynced, messagesProcessed);
     }
@@ -141,6 +166,39 @@ public class WhatsappContactSyncService {
         }
 
         return new ArrayList<>(uniqueChatsByJid.values());
+    }
+
+    private List<Map<String, Object>> fetchAllMessages(String instanceName, String remoteJid, int pageSize, int maxPages) {
+        int safePageSize = Math.max(1, Math.min(pageSize, 100));
+        int safeMaxPages = Math.max(1, maxPages);
+
+        List<Map<String, Object>> allMessages = new ArrayList<>();
+        int pagesWithoutGrowth = 0;
+
+        for (int page = 1; page <= safeMaxPages; page++) {
+            List<Map<String, Object>> pageRecords = extractRecords(
+                    evolutionApiClient.findMessages(instanceName, remoteJid, page, safePageSize)
+            );
+
+            if (pageRecords.isEmpty()) {
+                break;
+            }
+
+            int beforeCount = allMessages.size();
+            allMessages.addAll(pageRecords);
+
+            if (allMessages.size() == beforeCount) {
+                pagesWithoutGrowth++;
+            } else {
+                pagesWithoutGrowth = 0;
+            }
+
+            if (pagesWithoutGrowth >= 2 || pageRecords.size() < safePageSize) {
+                break;
+            }
+        }
+
+        return allMessages;
     }
 
     public List<ContactMessageItemResponse> getLatestMessages(UUID contactId, int limit) {
@@ -343,12 +401,6 @@ public class WhatsappContactSyncService {
         }
 
         return null;
-    }
-
-    private Map<String, Object> findLatestByTimestamp(List<Map<String, Object>> messages) {
-        return messages.stream()
-                .max(Comparator.comparing(this::extractSentAt))
-                .orElse(null);
     }
 
     private String resolveDisplayName(Map<String, Object> chat, String phone) {
