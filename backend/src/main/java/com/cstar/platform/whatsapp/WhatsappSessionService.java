@@ -4,7 +4,9 @@ import com.cstar.platform.auth.security.AuthUserPrincipal;
 import com.cstar.platform.whatsapp.dto.WhatsappQrCodeResponse;
 import com.cstar.platform.whatsapp.dto.WhatsappSessionInfoResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -107,7 +109,11 @@ public class WhatsappSessionService {
     public void disconnect(AuthUserPrincipal principal) {
         if (isEvolutionProvider()) {
             String instanceName = resolveInstanceName(principal);
-            evolutionApiClient.logout(instanceName);
+            boolean disconnected = evolutionApiClient.disconnectInstance(instanceName);
+            if (!disconnected) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível desconectar na Evolution API. Tente novamente.");
+            }
+            evolutionQrCache.remove(instanceName);
             return;
         }
 

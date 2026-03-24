@@ -366,6 +366,23 @@
   overflow: auto;
 }
 
+.reset-modern-backdrop {
+  align-items: center;
+}
+
+.reset-modern-modal {
+  max-width: 620px;
+  border-radius: 14px;
+  padding: 14px;
+  position: relative;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+}
+
+.reset-modern-warning {
+  margin-bottom: 0;
+}
+
 .client-modern-header {
   margin-right: 0;
 }
@@ -532,6 +549,11 @@
     padding: 8px 8px calc(14px + env(safe-area-inset-bottom));
   }
 
+  .reset-modern-backdrop {
+    align-items: flex-start;
+    padding: 8px 8px calc(14px + env(safe-area-inset-bottom));
+  }
+
   .messages-modern-modal {
     max-width: 100%;
     width: 100%;
@@ -541,6 +563,14 @@
   }
 
   .client-modern-modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: calc(100dvh - 16px - env(safe-area-inset-bottom));
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .reset-modern-modal {
     max-width: 100%;
     width: 100%;
     max-height: calc(100dvh - 16px - env(safe-area-inset-bottom));

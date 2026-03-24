@@ -4,6 +4,7 @@ export interface ContactView {
   phone: string;
   stage: string;
   lastInteractionAt: string | null;
+  rescueOwnerName?: string | null;
 }
 
 export interface ContactPageResponse {

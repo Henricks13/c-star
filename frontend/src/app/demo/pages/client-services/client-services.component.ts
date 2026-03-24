@@ -23,6 +23,7 @@ import { ProductsService } from 'src/app/core/products/products.service';
 import { ServiceItem } from 'src/app/core/services/services.types';
 import { ServicesService } from 'src/app/core/services/services.service';
 import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
+import { ConfirmActionModalComponent } from 'src/app/theme/shared/components/confirm-action-modal/confirm-action-modal.component';
 
 interface ExtraProductRow {
   productId: string;
@@ -33,7 +34,7 @@ type PaymentPlanSelection = ServicePaymentMethod | 'CUSTOM_SPLIT';
 
 @Component({
   selector: 'app-client-services',
-  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent],
+  imports: [CommonModule, FormsModule, NgSelectModule, CardComponent, ConfirmActionModalComponent],
   templateUrl: './client-services.component.html',
   styleUrls: ['./client-services.component.scss']
 })

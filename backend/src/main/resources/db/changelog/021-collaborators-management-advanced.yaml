@@ -1,0 +1,151 @@
+databaseChangeLog:
+  - changeSet:
+      id: 069-collaborator-tasks-type
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: collaborator_daily_tasks
+            columns:
+              - column:
+                  name: task_type
+                  type: VARCHAR(20)
+                  defaultValue: DAILY
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_collab_daily_tasks_user_type
+            tableName: collaborator_daily_tasks
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: task_type
+
+  - changeSet:
+      id: 070-collaborator-monthly-goals
+      author: cstar
+      changes:
+        - createTable:
+            tableName: collaborator_monthly_goals
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reference_month
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_answered_contacts
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_sales_amount
+                  type: DECIMAL(14,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by_user_id
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: collaborator_monthly_goals
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_collab_monthly_goals_user
+        - addForeignKeyConstraint:
+            baseTableName: collaborator_monthly_goals
+            baseColumnNames: created_by_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: SET NULL
+            constraintName: fk_collab_monthly_goals_created_by
+        - addUniqueConstraint:
+            tableName: collaborator_monthly_goals
+            columnNames: user_id, reference_month
+            constraintName: uk_collab_monthly_goals_user_month
+        - createIndex:
+            indexName: idx_collab_monthly_goals_month
+            tableName: collaborator_monthly_goals
+            columns:
+              - column:
+                  name: reference_month
+
+  - changeSet:
+      id: 071-collaborator-monthly-progress
+      author: cstar
+      changes:
+        - createTable:
+            tableName: collaborator_monthly_progress
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reference_month
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: answered_contacts_count
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sales_amount
+                  type: DECIMAL(14,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: collaborator_monthly_progress
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_collab_monthly_progress_user
+        - addUniqueConstraint:
+            tableName: collaborator_monthly_progress
+            columnNames: user_id, reference_month
+            constraintName: uk_collab_monthly_progress_user_month
+        - createIndex:
+            indexName: idx_collab_monthly_progress_month
+            tableName: collaborator_monthly_progress
+            columns:
+              - column:
+                  name: reference_month

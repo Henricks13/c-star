@@ -1,8 +1,10 @@
 package com.cstar.platform.whatsapp;
 
+import com.cstar.platform.collaborators.CollaboratorPanelService;
 import com.cstar.platform.whatsapp.model.Contact;
 import com.cstar.platform.whatsapp.model.ContactStage;
 import com.cstar.platform.whatsapp.repository.ContactRepository;
+import com.cstar.platform.whatsapp.repository.ConversationSummaryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +28,17 @@ public class ContactLifecycleService {
     );
 
     private final ContactRepository contactRepository;
+    private final ConversationSummaryRepository conversationSummaryRepository;
+    private final CollaboratorPanelService collaboratorPanelService;
 
-    public ContactLifecycleService(ContactRepository contactRepository) {
+    public ContactLifecycleService(
+            ContactRepository contactRepository,
+            ConversationSummaryRepository conversationSummaryRepository,
+            CollaboratorPanelService collaboratorPanelService
+    ) {
         this.contactRepository = contactRepository;
+        this.conversationSummaryRepository = conversationSummaryRepository;
+        this.collaboratorPanelService = collaboratorPanelService;
     }
 
     @Transactional
@@ -50,16 +60,29 @@ public class ContactLifecycleService {
     }
 
     @Transactional
-    public void markAsRescuing(UUID contactId) {
+    public void markAsRescuing(UUID contactId, UUID ownerUserId) {
         Optional<Contact> maybeContact = contactRepository.findById(contactId);
         if (maybeContact.isEmpty()) {
             return;
         }
 
         Contact contact = maybeContact.get();
+        boolean wasUnreadLead = contact.getStage() == ContactStage.LEAD && isUnread(contact);
         contact.touchOutbound(Instant.now());
         contact.setStage(ContactStage.RESCUING);
         contactRepository.save(contact);
+
+        if (wasUnreadLead && ownerUserId != null) {
+            collaboratorPanelService.incrementAnsweredContact(ownerUserId, LocalDate.now(BUSINESS_ZONE));
+        }
+
+        if (ownerUserId != null) {
+            conversationSummaryRepository.findByContactIdAndChannel(contactId, "whatsapp")
+                    .ifPresent(summary -> {
+                        summary.setAssignedToUserId(ownerUserId);
+                        conversationSummaryRepository.save(summary);
+                    });
+        }
     }
 
     public boolean isUnread(Contact contact) {

@@ -495,6 +495,24 @@ export class ContactsComponent implements OnInit {
     return 'stage-default';
   }
 
+  shouldShowRescueOwner(contact: ContactView | null | undefined): boolean {
+    if (!contact) {
+      return false;
+    }
+
+    const stage = (contact.stage || '').trim().toUpperCase();
+    return stage === 'RESCUING' || stage === 'RECENTLY_RESCUED';
+  }
+
+  getRescueOwnerLabel(contact: ContactView | null | undefined): string {
+    if (!contact || !this.shouldShowRescueOwner(contact)) {
+      return '';
+    }
+
+    const firstName = (contact.rescueOwnerName || '').trim();
+    return firstName ? `Resgatando: ${firstName}` : 'Resgatando: Não definido';
+  }
+
   formatPhone(phone: string | null | undefined): string {
     if (!phone) {
       return 'Não informado';

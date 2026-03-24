@@ -37,3 +37,9 @@ databaseChangeLog:
       file: db/changelog/018-client-service-observation-author.yaml
   - include:
       file: db/changelog/019-client-observations.yaml
+  - include:
+      file: db/changelog/020-collaborators-panel.yaml
+  - include:
+      file: db/changelog/021-collaborators-management-advanced.yaml
+  - include:
+      file: db/changelog/022-collaborator-task-completed-at.yaml

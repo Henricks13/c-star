@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class EvolutionApiClient {
@@ -92,6 +93,31 @@ public class EvolutionApiClient {
         post(url, Map.of());
     }
 
+    public boolean disconnectInstance(String instanceName) {
+        String baseUrl = properties.getEvolution().getBaseUrl();
+        String logoutUrl = baseUrl + "/instance/logout/" + instanceName;
+
+        post(logoutUrl, Map.of());
+        request(logoutUrl, HttpMethod.DELETE, null);
+        request(logoutUrl, HttpMethod.GET, null);
+
+        for (int attempt = 0; attempt < 6; attempt++) {
+            String state = resolveState(connectionState(instanceName));
+            if ("close".equalsIgnoreCase(state) || "closed".equalsIgnoreCase(state) || "disconnected".equalsIgnoreCase(state)) {
+                return true;
+            }
+
+            try {
+                TimeUnit.MILLISECONDS.sleep(350);
+            } catch (InterruptedException interruptedException) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        return false;
+    }
+
     public Map<String, Object> sendText(String instanceName, String number, String text) {
         String url = properties.getEvolution().getBaseUrl() + "/message/sendText/" + instanceName;
         return post(url, Map.of("number", number, "text", text));
@@ -141,14 +167,40 @@ public class EvolutionApiClient {
     }
 
     private Map<String, Object> post(String url, Object body) {
-        HttpEntity<Object> request = new HttpEntity<>(body, headers());
+        return request(url, HttpMethod.POST, body);
+    }
+
+    private Map<String, Object> request(String url, HttpMethod method, Object body) {
+        HttpEntity<Object> request = body == null
+                ? new HttpEntity<>(headers())
+                : new HttpEntity<>(body, headers());
         try {
-            ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
+            ResponseEntity<Object> response = restTemplate.exchange(url, method, request, Object.class);
             return normalizeBody(response.getBody());
         } catch (RestClientException ex) {
-            log.warn("Evolution API POST failed: {}", url, ex);
+            log.warn("Evolution API {} failed: {}", method, url, ex);
             return Map.of();
         }
+    }
+
+    private String resolveState(Map<String, Object> response) {
+        Object instance = response.get("instance");
+        if (instance instanceof Map<?, ?> instanceMap) {
+            Object status = instanceMap.get("state");
+            if (status instanceof String value) {
+                return value;
+            }
+            Object statusAlt = instanceMap.get("status");
+            if (statusAlt instanceof String value) {
+                return value;
+            }
+        }
+
+        Object state = response.get("state");
+        if (state instanceof String value) {
+            return value;
+        }
+        return "close";
     }
 
     @SuppressWarnings("unchecked")

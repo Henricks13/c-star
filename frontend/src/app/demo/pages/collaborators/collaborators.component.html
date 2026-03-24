@@ -1,0 +1,63 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Colaboradores">
+      <div class="toolbar mb-3">
+        <div class="date-filter">
+          <label class="form-label mb-1" for="collaboratorsDate">Data</label>
+          <input id="collaboratorsDate" type="date" class="form-control" [(ngModel)]="selectedDate" />
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-outline-secondary" type="button" (click)="clearDate()" [disabled]="loading">Hoje</button>
+          <button class="btn btn-primary" type="button" (click)="searchDate()" [disabled]="loading">Buscar</button>
+        </div>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando colaboradores...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && panel && panel.collaborators.length === 0">
+        <p class="mb-0 text-muted">Nenhum colaborador encontrado.</p>
+      </ng-container>
+
+      <div class="collaborators-list" *ngIf="!loading && panel && panel.collaborators.length > 0">
+        <div class="collaborator-card" *ngFor="let item of panel.collaborators">
+          <div class="card-head mb-2">
+            <h6 class="mb-0">{{ item.fullName }}</h6>
+          </div>
+
+          <div class="kpi-grid mb-3">
+            <div class="kpi-box">
+              <span class="kpi-label">Meta diária (respondidas)</span>
+              <strong class="kpi-value">{{ item.dailyAnsweredContacts }}/{{ item.dailyGoalContacts }}</strong>
+            </div>
+            <div class="kpi-box">
+              <span class="kpi-label">Meta mensal (vendas)</span>
+              <strong class="kpi-value">{{ item.monthlySalesProgress }}/{{ item.monthlySalesGoal }}</strong>
+            </div>
+            <div class="kpi-box">
+              <span class="kpi-label">Tarefas diárias concluídas</span>
+              <strong class="kpi-value">{{ item.dailyTasksCompletionPercent }}%</strong>
+            </div>
+            <div class="kpi-box">
+              <span class="kpi-label">Tarefas concluídas (geral)</span>
+              <strong class="kpi-value">{{ item.allTasksCompletionPercent }}%</strong>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn btn-primary" type="button" (click)="openManagement(item)">Gerenciar</button>
+          </div>
+        </div>
+      </div>
+    </app-card>
+  </div>
+</div>

@@ -1,0 +1,36 @@
+<ng-container *ngIf="open">
+  <div class="confirm-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-action-title" (click)="onBackdropClick()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <button class="confirm-close-btn" type="button" aria-label="Fechar confirmação" [disabled]="loading" (click)="onCancel()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="confirm-header mb-3">
+        <div class="confirm-avatar">
+          <i class="ti ti-alert-triangle"></i>
+        </div>
+        <div>
+          <h6 id="confirm-action-title" class="mb-1">{{ title }}</h6>
+          <small class="text-muted">{{ subtitle }}</small>
+        </div>
+      </div>
+
+      <div class="alert alert-warning mb-3" role="alert" *ngIf="bodyText || highlightText || bodySuffix">
+        {{ bodyText }}
+        <strong *ngIf="highlightText">{{ highlightText }}</strong>
+        {{ bodySuffix }}
+      </div>
+
+      <div class="confirm-actions">
+        <button class="btn btn-outline-danger" type="button" [disabled]="loading" (click)="onCancel()">{{ cancelLabel }}</button>
+        <button class="btn btn-danger" type="button" [disabled]="loading" (click)="onConfirm()">
+          <span *ngIf="!loading">{{ confirmLabel }}</span>
+          <span *ngIf="loading" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            {{ loadingLabel }}
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>

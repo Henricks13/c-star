@@ -47,8 +47,10 @@ export class LoginComponent {
       .login(credentials, this.rememberMe())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: () => {
-          this.router.navigateByUrl('/default');
+        next: (user) => {
+          const roles = (user?.roles || []).map((role) => (role || '').trim().toUpperCase());
+          const isCollaborator = roles.includes('COLABORADOR');
+          this.router.navigateByUrl(isCollaborator ? '/meu-painel' : '/default');
         },
         error: (err) => {
           if (err?.status === 0) {

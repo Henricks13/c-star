@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 072-collaborator-task-completed-at
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: collaborator_daily_tasks
+            columns:
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP

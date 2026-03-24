@@ -1,0 +1,118 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Meu Painel">
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando painel...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && panel">
+        <div class="kpi-grid mb-3">
+          <div class="kpi-box">
+            <span class="kpi-label">Meta de contatos</span>
+            <strong class="kpi-value">{{ panel.goalContacts }}</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Contatos respondidos</span>
+            <strong class="kpi-value">{{ panel.answeredContacts }}</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Faltam hoje</span>
+            <strong class="kpi-value">{{ panel.remainingContacts }}</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Tarefas concluídas</span>
+            <strong class="kpi-value">{{ panel.completedTasks }}/{{ panel.totalTasks }}</strong>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="small text-muted">Progresso da meta diária</span>
+            <span class="small fw-semibold">{{ progressPercent }}%</span>
+          </div>
+          <div class="progress" role="progressbar" aria-label="Progresso da meta diária">
+            <div class="progress-bar" [style.width.%]="progressPercent"></div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="tasks-board-grid">
+            <div class="task-board">
+              <h6 class="mb-2">Tarefas diárias</h6>
+
+              <ng-container *ngIf="panel.dailyTasks.length === 0">
+                <p class="text-muted mb-0">Sem tarefas diárias para hoje.</p>
+              </ng-container>
+
+              <div class="task-list" *ngIf="panel.dailyTasks.length > 0">
+                <div class="task-item" *ngFor="let task of panel.dailyTasks" [class.is-completed]="task.completed">
+                  <div class="form-check task-check mb-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'daily-task-' + task.id"
+                      [checked]="task.completed"
+                      [disabled]="updatingTaskId === task.id"
+                      (change)="toggleTask(task.id, $any($event.target).checked)"
+                    />
+                    <label class="form-check-label task-label" [for]="'daily-task-' + task.id" [class.task-completed]="task.completed">
+                      {{ task.title }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="task-board">
+              <h6 class="mb-2">Tarefas gerais</h6>
+
+              <ng-container *ngIf="panel.generalTasks.length === 0">
+                <p class="text-muted mb-0">Sem tarefas gerais.</p>
+              </ng-container>
+
+              <div class="task-list" *ngIf="panel.generalTasks.length > 0">
+                <div class="task-item" *ngFor="let task of panel.generalTasks" [class.is-completed]="task.completed">
+                  <div class="form-check task-check mb-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'general-task-' + task.id"
+                      [checked]="task.completed"
+                      [disabled]="updatingTaskId === task.id"
+                      (change)="toggleTask(task.id, $any($event.target).checked)"
+                    />
+                    <label class="form-check-label task-label" [for]="'general-task-' + task.id" [class.task-completed]="task.completed">
+                      {{ task.title }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h6 class="mb-2">Dias com meta batida (últimos 30 dias)</h6>
+
+          <ng-container *ngIf="panel.achievedDates.length === 0">
+            <p class="text-muted mb-0">Nenhum dia com meta batida no período.</p>
+          </ng-container>
+
+          <div class="achieved-days" *ngIf="panel.achievedDates.length > 0">
+            <span class="badge text-bg-success" *ngFor="let achievedDate of panel.achievedDates">
+              {{ achievedDate | date: 'dd/MM' }}
+            </span>
+          </div>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>

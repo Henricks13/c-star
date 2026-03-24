@@ -8,6 +8,7 @@ public record ContactListItemResponse(
         String fullName,
         String phone,
         String stage,
-        Instant lastInteractionAt
+        Instant lastInteractionAt,
+        String rescueOwnerName
 ) {
 }

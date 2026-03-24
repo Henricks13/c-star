@@ -140,20 +140,35 @@
             </div>
             <div class="mobile-service-row"><span class="mobile-label">Criado em</span><span>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span></div>
             <div class="mobile-actions">
-              <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)">
-                <i class="ti ti-eye"></i>
+              <button class="btn btn-sm btn-outline-secondary w-100" type="button" (click)="openOrderDetails(order)">
+                <i class="ti ti-eye me-1"></i>
+                Detalhes
               </button>
-              <button class="btn btn-sm btn-outline-primary" type="button" (click)="openOrderPayments(order)">
-                <i class="ti ti-cash"></i>
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openOrderPayments(order)">
+                <i class="ti ti-cash me-1"></i>
+                Pagamentos
               </button>
-              <button class="btn btn-sm btn-outline-success" type="button" (click)="openScheduleAction(order)" *ngIf="canScheduleService(order.serviceStatus)">
-                <i class="ti ti-calendar-plus"></i>
+              <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openScheduleAction(order)" *ngIf="canScheduleService(order.serviceStatus)">
+                <i class="ti ti-calendar-plus me-1"></i>
+                Agendar
               </button>
-              <button class="btn btn-sm btn-outline-warning" type="button" (click)="openReturnAction(order)" *ngIf="canScheduleServiceReturn(order.serviceStatus)">
-                <i class="ti ti-calendar-event"></i>
+              <button class="btn btn-sm btn-outline-warning w-100" type="button" (click)="openReturnAction(order)" *ngIf="canScheduleServiceReturn(order.serviceStatus)">
+                <i class="ti ti-calendar-event me-1"></i>
+                Marcar retorno
               </button>
-              <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteServiceOrder(order)" *ngIf="canDeleteServiceOrders()">
-                <i class="ti ti-trash"></i>
+              <button
+                class="btn btn-sm btn-outline-success w-100"
+                type="button"
+                (click)="finalizeOrder(order)"
+                *ngIf="canFinalizeServiceLifecycle(order.serviceStatus)"
+                [disabled]="saving"
+              >
+                <i class="ti ti-check me-1"></i>
+                Finalizar serviço
+              </button>
+              <button class="btn btn-sm btn-outline-danger w-100" type="button" (click)="deleteServiceOrder(order)" *ngIf="canDeleteServiceOrders()">
+                <i class="ti ti-trash me-1"></i>
+                Excluir serviço
               </button>
             </div>
           </div>
@@ -466,46 +481,91 @@
   </div>
 </div>
 
-<div class="app-modal-backdrop" *ngIf="detailsModalOpen && selectedOrderForDetails">
-  <div class="app-modal app-modal-lg">
-    <div class="app-modal-header">
-      <h5 class="mb-0">Detalhes do serviço</h5>
-      <button type="button" class="btn-close" (click)="closeOrderDetails()"></button>
+<div class="app-modal-backdrop details-modal-backdrop" *ngIf="detailsModalOpen && selectedOrderForDetails" (click)="closeOrderDetails()">
+  <div class="app-modal app-modal-details" (click)="$event.stopPropagation()">
+    <button class="details-close-btn" type="button" aria-label="Fechar detalhes" (click)="closeOrderDetails()">
+      <i class="ti ti-x"></i>
+    </button>
+
+    <div class="details-header mb-3">
+      <div class="details-avatar">
+        <i class="ti ti-file-description"></i>
+      </div>
+      <div class="details-header-text">
+        <h5 class="mb-1">Detalhes do serviço</h5>
+        <div class="details-subtitle">{{ selectedOrderForDetails.clientName }}</div>
+      </div>
+      <div class="details-tags">
+        <span
+          class="history-status"
+          [class.quoted]="isStatusQuoted(selectedOrderForDetails.serviceStatus)"
+          [class.awaiting]="isStatusAwaiting(selectedOrderForDetails.serviceStatus)"
+          [class.paid]="isStatusPaid(selectedOrderForDetails.serviceStatus)"
+        >
+          {{ getOrderStatusLabel(selectedOrderForDetails.serviceStatus) }}
+        </span>
+      </div>
     </div>
-    <div class="app-modal-body">
-      <p class="mb-1"><strong>Cliente:</strong> {{ selectedOrderForDetails.clientName }}</p>
-      <p class="mb-1"><strong>Status do serviço:</strong> {{ getOrderStatusLabel(selectedOrderForDetails.serviceStatus) }}</p>
-      <p class="mb-1"><strong>Status do pagamento:</strong> {{ getPaymentStatusLabel(selectedOrderForDetails.paymentStatus) }}</p>
-      <p class="mb-1"><strong>Total:</strong> {{ selectedOrderForDetails.finalTotal | currency: 'BRL' }}</p>
-      <p class="mb-3"><strong>Observações:</strong> {{ selectedOrderForDetails.notes || '-' }}</p>
 
-      <h6 class="mb-2">Histórico de observações</h6>
-      <div class="history-list mb-3" *ngIf="selectedOrderForDetails.observations?.length; else noObs">
-        <div class="mb-3 form-check">
-          <input class="form-check-input" type="checkbox" id="customSplitPayment" [ngModel]="paymentPlanCustomSplitEnabled" (ngModelChange)="onPaymentPlanCustomSplitChange($event)" />
-          <label class="form-check-label" for="customSplitPayment">Pagamento personalizado (duas formas)</label>
+    <div class="app-modal-body details-modal-body">
+      <div class="details-section mb-3">
+        <h6 class="details-section-title">Resumo do serviço</h6>
+        <div class="details-grid">
+          <div class="details-field">
+            <span class="details-field-label">Cliente</span>
+            <span class="details-field-value">{{ selectedOrderForDetails.clientName }}</span>
+          </div>
+          <div class="details-field">
+            <span class="details-field-label">Status pagamento</span>
+            <span class="details-field-value">{{ getPaymentStatusLabel(selectedOrderForDetails.paymentStatus) }}</span>
+          </div>
+          <div class="details-field">
+            <span class="details-field-label">Valor total</span>
+            <span class="details-field-value">{{ selectedOrderForDetails.finalTotal | currency: 'BRL' }}</span>
+          </div>
+          <div class="details-field">
+            <span class="details-field-label">Próximo retorno</span>
+            <span class="details-field-value">{{ selectedOrderForDetails.nextReturnAt ? (selectedOrderForDetails.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</span>
+          </div>
+          <div class="details-field details-field-full">
+            <span class="details-field-label">Criado em</span>
+            <span class="details-field-value">{{ selectedOrderForDetails.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
         </div>
+      </div>
 
-        <div class="history-item" *ngFor="let obs of selectedOrderForDetails.observations">
-          <div>{{ obs.note }}</div>
-          <small class="text-muted">{{ obs.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+      <div class="details-section mb-3">
+        <h6 class="details-section-title">Observações da ordem</h6>
+        <div class="details-note">{{ selectedOrderForDetails.notes || '-' }}</div>
+      </div>
+
+      <div class="details-section mb-3">
+        <h6 class="details-section-title">Histórico de observações</h6>
+        <div class="history-list" *ngIf="selectedOrderForDetails.observations?.length; else noObs">
+          <div class="history-item" *ngFor="let obs of selectedOrderForDetails.observations">
+            <div>{{ obs.note }}</div>
+            <small class="text-muted">{{ obs.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+          </div>
         </div>
       </div>
       <ng-template #noObs>
-        <p class="text-muted">Sem observações registradas.</p>
+        <div class="details-note mb-3">Sem observações registradas.</div>
       </ng-template>
 
-      <h6 class="mb-2">Histórico de retornos</h6>
-      <div class="history-list" *ngIf="selectedOrderForDetails.returns?.length; else noReturns">
-        <div class="history-item" *ngFor="let item of selectedOrderForDetails.returns">
-          <div>Retorno em {{ item.returnAt | date: 'dd/MM/yyyy HH:mm' }}</div>
-          <small class="text-muted">Registrado em {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+      <div class="details-section">
+        <h6 class="details-section-title">Histórico de retornos</h6>
+        <div class="history-list" *ngIf="selectedOrderForDetails.returns?.length; else noReturns">
+          <div class="history-item" *ngFor="let item of selectedOrderForDetails.returns">
+            <div>Retorno em {{ item.returnAt | date: 'dd/MM/yyyy HH:mm' }}</div>
+            <small class="text-muted">Registrado em {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+          </div>
         </div>
       </div>
       <ng-template #noReturns>
-        <p class="text-muted">Sem retornos registrados.</p>
+        <div class="details-note">Sem retornos registrados.</div>
       </ng-template>
     </div>
+
     <div class="app-modal-footer">
       <button
         class="btn btn-outline-primary"
@@ -523,71 +583,126 @@
       >
         Marcar retorno
       </button>
-      <button class="btn btn-outline-secondary" type="button" (click)="closeOrderDetails()">Fechar</button>
     </div>
   </div>
 </div>
 
-<div class="app-modal-backdrop" *ngIf="serviceManagementModalOpen && selectedOrderForManagement">
-  <div class="app-modal app-modal-lg">
-    <div class="app-modal-header">
-      <h5 class="mb-0">Ações do serviço</h5>
-      <button type="button" class="btn-close" (click)="closeServiceManagementModal()"></button>
-    </div>
-    <div class="app-modal-body">
-      <p class="mb-1"><strong>Cliente:</strong> {{ selectedOrderForManagement.clientName }}</p>
-      <p class="mb-3"><strong>Status atual:</strong> {{ getOrderStatusLabel(selectedOrderForManagement.serviceStatus) }}</p>
+<div class="app-modal-backdrop details-modal-backdrop" *ngIf="serviceManagementModalOpen && selectedOrderForManagement" (click)="closeServiceManagementModal()">
+  <div class="app-modal app-modal-details" (click)="$event.stopPropagation()">
+    <button class="details-close-btn" type="button" aria-label="Fechar ações do serviço" (click)="closeServiceManagementModal()">
+      <i class="ti ti-x"></i>
+    </button>
 
-      <div class="mb-3" *ngIf="canScheduleService(selectedOrderForManagement.serviceStatus)">
-        <label class="form-label">Agendar serviço</label>
-        <div class="d-flex gap-2">
+    <div class="details-header mb-3">
+      <div class="details-avatar">
+        <i class="ti ti-calendar-event"></i>
+      </div>
+      <div class="details-header-text">
+        <h5 class="mb-1">Ações do serviço</h5>
+        <div class="details-subtitle">{{ selectedOrderForManagement.clientName }}</div>
+      </div>
+      <div class="details-tags">
+        <span
+          class="history-status"
+          [class.quoted]="isStatusQuoted(selectedOrderForManagement.serviceStatus)"
+          [class.awaiting]="isStatusAwaiting(selectedOrderForManagement.serviceStatus)"
+          [class.paid]="isStatusPaid(selectedOrderForManagement.serviceStatus)"
+        >
+          {{ getOrderStatusLabel(selectedOrderForManagement.serviceStatus) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="app-modal-body details-modal-body">
+      <div class="details-section mb-3">
+        <h6 class="details-section-title">Resumo</h6>
+        <div class="details-grid">
+          <div class="details-field">
+            <span class="details-field-label">Valor final</span>
+            <span class="details-field-value">{{ selectedOrderForManagement.finalTotal | currency: 'BRL' }}</span>
+          </div>
+          <div class="details-field">
+            <span class="details-field-label">Próximo retorno</span>
+            <span class="details-field-value">{{ selectedOrderForManagement.nextReturnAt ? (selectedOrderForManagement.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="details-section mb-3" *ngIf="canScheduleService(selectedOrderForManagement.serviceStatus)">
+        <h6 class="details-section-title">Agendar serviço</h6>
+        <div class="management-inline-action">
           <input class="form-control" type="datetime-local" [(ngModel)]="serviceManagementScheduleAt" />
           <button class="btn btn-outline-primary" type="button" (click)="scheduleService()" [disabled]="saving">Agendar</button>
         </div>
       </div>
 
-      <div class="mb-3" *ngIf="!canScheduleService(selectedOrderForManagement.serviceStatus)">
-        <label class="form-label">Adicionar observação</label>
+      <div class="details-section mb-3" *ngIf="!canScheduleService(selectedOrderForManagement.serviceStatus)">
+        <h6 class="details-section-title">Adicionar observação</h6>
         <textarea class="form-control" rows="3" [(ngModel)]="serviceManagementObservation"></textarea>
-        <button class="btn btn-sm btn-outline-primary mt-2" type="button" (click)="addServiceObservation()" [disabled]="saving">Salvar observação</button>
-      </div>
-
-      <div class="mb-3" *ngIf="canScheduleServiceReturn(selectedOrderForManagement.serviceStatus)">
-        <label class="form-label">Agendar retorno</label>
-        <div class="d-flex gap-2">
-          <input class="form-control" type="datetime-local" [(ngModel)]="serviceManagementReturnAt" />
-          <button class="btn btn-outline-primary" type="button" (click)="scheduleServiceReturn()" [disabled]="saving">Agendar</button>
+        <div class="d-flex justify-content-end mt-2">
+          <button class="btn btn-sm btn-outline-primary" type="button" (click)="addServiceObservation()" [disabled]="saving">Salvar observação</button>
         </div>
       </div>
 
-      <div *ngIf="canFinalizeServiceLifecycle(selectedOrderForManagement.serviceStatus)">
-        <button class="btn btn-outline-success" type="button" (click)="finalizeServiceLifecycle()" [disabled]="saving">Finalizar serviço</button>
+      <div class="details-section mb-3" *ngIf="canScheduleServiceReturn(selectedOrderForManagement.serviceStatus)">
+        <h6 class="details-section-title">Agendar retorno</h6>
+        <div class="management-inline-action">
+          <input class="form-control" type="datetime-local" [(ngModel)]="serviceManagementReturnAt" />
+          <button class="btn btn-outline-primary" type="button" (click)="scheduleServiceReturn()" [disabled]="saving">Agendar retorno</button>
+        </div>
       </div>
+
+      <div class="details-section mb-3" *ngIf="canFinalizeServiceLifecycle(selectedOrderForManagement.serviceStatus)">
+        <div class="management-finalize-row">
+          <span class="text-muted">Finalize quando o ciclo de retornos estiver concluído.</span>
+          <button class="btn btn-outline-success" type="button" (click)="finalizeServiceLifecycle()" [disabled]="saving">Finalizar serviço</button>
+        </div>
+      </div>
+
+      <div class="details-section mb-3">
+        <h6 class="details-section-title">Histórico de observações</h6>
+        <div class="history-list" *ngIf="selectedOrderForManagement.observations.length > 0; else noServiceObservations">
+          <div class="history-item" *ngFor="let item of selectedOrderForManagement.observations">
+            <div class="fw-semibold">{{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</div>
+            <small class="text-muted">{{ item.note }}</small>
+          </div>
+        </div>
+      </div>
+      <ng-template #noServiceObservations>
+        <div class="details-note mb-3">Nenhuma observação registrada ainda.</div>
+      </ng-template>
+
+      <div class="details-section">
+        <h6 class="details-section-title">Histórico de retornos</h6>
+        <div class="history-list" *ngIf="selectedOrderForManagement.returns.length > 0; else noServiceReturns">
+          <div class="history-item" *ngFor="let item of selectedOrderForManagement.returns">
+            <div class="fw-semibold">Retorno: {{ item.returnAt | date: 'dd/MM/yyyy HH:mm' }}</div>
+            <small class="text-muted">Registrado em {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+        </div>
+      </div>
+      <ng-template #noServiceReturns>
+        <div class="details-note">Nenhum retorno agendado até o momento.</div>
+      </ng-template>
     </div>
+
     <div class="app-modal-footer">
       <button class="btn btn-outline-secondary" type="button" (click)="closeServiceManagementModal()">Fechar</button>
     </div>
   </div>
 </div>
 
-<div class="app-modal-backdrop" *ngIf="deleteServiceOrderModalOpen && selectedOrderForDeletion">
-  <div class="app-modal">
-    <div class="app-modal-header">
-      <h5 class="mb-0">Excluir serviço</h5>
-      <button type="button" class="btn-close" (click)="closeDeleteServiceOrderModal()" [disabled]="saving"></button>
-    </div>
-    <div class="app-modal-body">
-      <p class="mb-0">Confirma excluir o serviço de <strong>{{ selectedOrderForDeletion.clientName }}</strong> e as faturas vinculadas?</p>
-    </div>
-    <div class="app-modal-footer">
-      <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteServiceOrderModal()">Cancelar</button>
-      <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteServiceOrder()">
-        <span *ngIf="!saving">Excluir serviço</span>
-        <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
-          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-          Excluindo...
-        </span>
-      </button>
-    </div>
-  </div>
-</div>
+<app-confirm-action-modal
+  [open]="deleteServiceOrderModalOpen && !!selectedOrderForDeletion"
+  title="Confirmar exclusão"
+  subtitle="Essa ação remove o serviço selecionado."
+  bodyText="Deseja realmente excluir o serviço de "
+  [highlightText]="selectedOrderForDeletion?.clientName || ''"
+  bodySuffix=" e as faturas vinculadas?"
+  cancelLabel="Cancelar"
+  confirmLabel="Confirmar exclusão"
+  [loading]="saving"
+  loadingLabel="Excluindo..."
+  (cancel)="closeDeleteServiceOrderModal()"
+  (confirm)="confirmDeleteServiceOrder()"
+></app-confirm-action-modal>

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/auth/auth.guard';
+import { RoleGuard } from './core/auth/role.guard';
 import { AdminComponent } from './theme/layout/admin/admin.component';
 import { GuestComponent } from './theme/layout/guest/guest.component';
 
@@ -12,12 +13,17 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: '/default',
-        pathMatch: 'full'
+        loadComponent: () => import('./demo/pages/home-redirect/home-redirect.component').then((c) => c.HomeRedirectComponent)
       },
       {
         path: 'default',
+        canActivate: [RoleGuard],
+        data: { roles: ['MASTER_ADMIN', 'DEV_SUPORTE'] },
         loadComponent: () => import('./demo/dashboard/default/default.component').then((c) => c.DefaultComponent)
+      },
+      {
+        path: 'meu-painel',
+        loadComponent: () => import('./demo/pages/my-panel/my-panel.component').then((c) => c.MyPanelComponent)
       },
       {
         path: 'typography',
@@ -54,7 +60,24 @@ const routes: Routes = [
       },
       {
         path: 'users',
+        canActivate: [RoleGuard],
+        data: { roles: ['MASTER_ADMIN', 'DEV_SUPORTE'] },
         loadComponent: () => import('./demo/pages/users/users.component').then((c) => c.UsersComponent)
+      },
+      {
+        path: 'collaborators',
+        canActivate: [RoleGuard],
+        data: { roles: ['MASTER_ADMIN', 'DEV_SUPORTE'] },
+        loadComponent: () => import('./demo/pages/collaborators/collaborators.component').then((c) => c.CollaboratorsComponent)
+      },
+      {
+        path: 'collaborators/:userId',
+        canActivate: [RoleGuard],
+        data: { roles: ['MASTER_ADMIN', 'DEV_SUPORTE'] },
+        loadComponent: () =>
+          import('./demo/pages/collaborator-management/collaborator-management.component').then(
+            (c) => c.CollaboratorManagementComponent
+          )
       },
       {
         path: 'clients/services',

@@ -83,6 +83,10 @@ export class NavContentComponent implements OnInit {
         children: item.children ? this.filterNavigationByAccess(item.children) : undefined
       }))
       .filter((item) => {
+        if (item.role && item.role.length > 0 && !this.authService.hasAnyRole(item.role)) {
+          return false;
+        }
+
         if (item.id === 'users') {
           return canManageUsers;
         }

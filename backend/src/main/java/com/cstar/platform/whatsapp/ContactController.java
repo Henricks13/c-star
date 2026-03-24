@@ -1,5 +1,7 @@
 package com.cstar.platform.whatsapp;
 
+import com.cstar.platform.auth.model.User;
+import com.cstar.platform.auth.repository.UserRepository;
 import com.cstar.platform.auth.security.AuthUserPrincipal;
 import com.cstar.platform.whatsapp.dto.ContactListItemResponse;
 import com.cstar.platform.whatsapp.dto.ContactMessageItemResponse;
@@ -8,7 +10,9 @@ import com.cstar.platform.whatsapp.dto.ContactResetResponse;
 import com.cstar.platform.whatsapp.dto.ContactSyncResponse;
 import com.cstar.platform.whatsapp.model.Contact;
 import com.cstar.platform.whatsapp.model.ContactStage;
+import com.cstar.platform.whatsapp.model.ConversationSummary;
 import com.cstar.platform.whatsapp.repository.ContactRepository;
+import com.cstar.platform.whatsapp.repository.ConversationSummaryRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,17 +41,23 @@ public class ContactController {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Sao_Paulo");
 
     private final ContactRepository contactRepository;
+    private final ConversationSummaryRepository conversationSummaryRepository;
+    private final UserRepository userRepository;
     private final WhatsappContactSyncService whatsappContactSyncService;
     private final ContactLifecycleService contactLifecycleService;
     private final ContactResetService contactResetService;
 
     public ContactController(
             ContactRepository contactRepository,
+            ConversationSummaryRepository conversationSummaryRepository,
+            UserRepository userRepository,
             WhatsappContactSyncService whatsappContactSyncService,
             ContactLifecycleService contactLifecycleService,
             ContactResetService contactResetService
     ) {
         this.contactRepository = contactRepository;
+        this.conversationSummaryRepository = conversationSummaryRepository;
+        this.userRepository = userRepository;
         this.whatsappContactSyncService = whatsappContactSyncService;
         this.contactLifecycleService = contactLifecycleService;
         this.contactResetService = contactResetService;
@@ -130,8 +140,9 @@ public class ContactController {
     }
 
     @PostMapping("/{contactId}/rescue-start")
-    public void markAsRescuing(@PathVariable UUID contactId) {
-        contactLifecycleService.markAsRescuing(contactId);
+    public void markAsRescuing(@PathVariable UUID contactId, @AuthenticationPrincipal AuthUserPrincipal principal) {
+        UUID ownerUserId = principal != null ? principal.getUserId() : null;
+        contactLifecycleService.markAsRescuing(contactId, ownerUserId);
     }
 
     @GetMapping("/{contactId}/messages")
@@ -151,13 +162,44 @@ public class ContactController {
     }
 
     private ContactListItemResponse mapContact(Contact contact) {
+        String rescueOwnerName = resolveRescueOwnerFirstName(contact);
         return new ContactListItemResponse(
                 contact.getId(),
                 contact.getFullName(),
                 contact.getWhatsappPhoneE164(),
                 contact.getStage().name(),
-                resolveLastInteraction(contact)
+                resolveLastInteraction(contact),
+                rescueOwnerName
         );
+    }
+
+    private String resolveRescueOwnerFirstName(Contact contact) {
+        if (contact == null || (contact.getStage() != ContactStage.RESCUING && contact.getStage() != ContactStage.RECENTLY_RESCUED)) {
+            return null;
+        }
+
+        ConversationSummary summary = conversationSummaryRepository
+                .findByContactIdAndChannel(contact.getId(), "whatsapp")
+                .orElse(null);
+        if (summary == null || summary.getAssignedToUserId() == null) {
+            return null;
+        }
+
+        User owner = userRepository.findById(summary.getAssignedToUserId()).orElse(null);
+        if (owner == null) {
+            return null;
+        }
+
+        return extractFirstName(owner.getFullName());
+    }
+
+    private String extractFirstName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return null;
+        }
+
+        String[] parts = fullName.trim().split("\\s+");
+        return parts.length > 0 ? parts[0] : null;
     }
 
     private boolean matchesView(Contact contact, String view) {

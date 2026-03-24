@@ -61,6 +61,20 @@ export class AuthService {
     return this.currentUser()?.permissions.includes(permission) ?? false;
   }
 
+  hasRole(role: string): boolean {
+    const roles = (this.currentUser()?.roles || []).map((item) => (item || '').trim().toUpperCase());
+    return roles.includes((role || '').trim().toUpperCase());
+  }
+
+  hasAnyRole(roles: string[]): boolean {
+    if (!roles || roles.length === 0) {
+      return true;
+    }
+
+    const normalizedCurrentRoles = new Set((this.currentUser()?.roles || []).map((item) => (item || '').trim().toUpperCase()));
+    return roles.some((role) => normalizedCurrentRoles.has((role || '').trim().toUpperCase()));
+  }
+
   private persistSession(response: AuthResponse, remember: boolean): void {
     const session: SessionData = {
       token: response.accessToken,

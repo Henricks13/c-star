@@ -98,6 +98,15 @@ public class ConversationSummary {
         return status;
     }
 
+    public UUID getAssignedToUserId() {
+        return assignedToUserId;
+    }
+
+    public void setAssignedToUserId(UUID assignedToUserId) {
+        this.assignedToUserId = assignedToUserId;
+        this.updatedAt = Instant.now();
+    }
+
     public void applyInbound(Instant timestamp, String preview) {
         this.lastMessageAt = timestamp;
         this.lastMessageDirection = MessageDirection.INBOUND;

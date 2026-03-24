@@ -60,7 +60,7 @@
       </ng-container>
 
       <ng-container *ngIf="errorMessage">
-        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+        <div class="alert alert-warning" role="alert">{{ errorMessage }}</div>
       </ng-container>
 
       <ng-container *ngIf="infoMessage">
@@ -153,6 +153,9 @@
                   </td>
                   <td>
                     <span class="stage-badge" [ngClass]="getStageClass(contact.stage)">{{ getStageLabel(contact.stage) }}</span>
+                    <div *ngIf="shouldShowRescueOwner(contact)" class="mt-1">
+                      <small class="text-muted">{{ getRescueOwnerLabel(contact) }}</small>
+                    </div>
                   </td>
                   <td>{{ contact.lastInteractionAt ? (contact.lastInteractionAt | date: 'dd/MM/yyyy HH:mm') : 'Não informado' }}</td>
                   <td>
@@ -219,6 +222,10 @@
               <div class="mobile-row">
                 <span class="mobile-label">Telefone</span>
                 <span class="contact-phone">{{ formatPhone(contact.phone) }}</span>
+              </div>
+              <div class="mobile-row" *ngIf="shouldShowRescueOwner(contact)">
+                <span class="mobile-label">Dono do resgate</span>
+                <span>{{ getRescueOwnerLabel(contact) }}</span>
               </div>
               <div class="mobile-row">
                 <span class="mobile-label">Última interação</span>
@@ -298,7 +305,7 @@
       </ng-container>
 
       <ng-container *ngIf="modalError">
-        <div class="alert alert-danger" role="alert">{{ modalError }}</div>
+        <div class="alert alert-warning" role="alert">{{ modalError }}</div>
       </ng-container>
 
       <ng-container *ngIf="!modalLoading && !modalError">
@@ -395,21 +402,34 @@
 </ng-container>
 
 <ng-container *ngIf="confirmResetOpen">
-  <div class="messages-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reset-title">
-    <div class="messages-modal">
-      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-        <div>
+  <div
+    class="messages-modal-backdrop reset-modern-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reset-title"
+    (click)="closeResetConfirm()"
+  >
+    <div class="messages-modal reset-modern-modal" (click)="$event.stopPropagation()">
+      <button class="messages-close-btn" type="button" aria-label="Fechar confirmação" [disabled]="resetting" (click)="closeResetConfirm()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="messages-modern-header mb-3">
+        <div class="messages-modern-avatar">
+          <i class="ti ti-alert-triangle"></i>
+        </div>
+        <div class="messages-modern-header-text">
           <h6 id="reset-title" class="mb-1">Confirmar limpeza total</h6>
           <small class="text-muted">Esta ação remove contatos, conversas e mensagens.</small>
         </div>
       </div>
 
-      <div class="alert alert-danger mb-3" role="alert">
+      <div class="alert alert-warning mb-3 reset-modern-warning" role="alert">
         Essa ação é irreversível. Deseja realmente apagar todos os contatos e dados satélites para iniciar novamente?
       </div>
 
       <div class="reset-modal-actions d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="resetting" (click)="closeResetConfirm()">Cancelar</button>
+        <button class="btn btn-outline-danger" type="button" [disabled]="resetting" (click)="closeResetConfirm()">Cancelar</button>
         <button class="btn btn-danger" type="button" [disabled]="resetting" (click)="confirmResetAll()">Confirmar limpeza</button>
       </div>
     </div>

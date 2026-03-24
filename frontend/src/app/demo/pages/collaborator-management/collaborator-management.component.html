@@ -1,0 +1,265 @@
+<div class="row">
+  <div class="col-12">
+    <app-card [cardTitle]="management ? 'Gerenciar: ' + management.fullName : 'Gerenciar colaborador'">
+      <div class="toolbar mb-3">
+        <div class="date-filter">
+          <label class="form-label mb-1" for="managementDate">Data de referência</label>
+          <input id="managementDate" type="date" class="form-control" [(ngModel)]="selectedDate" />
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-outline-secondary" type="button" (click)="clearDate()" [disabled]="loading">Hoje</button>
+          <button class="btn btn-primary" type="button" (click)="searchDate()" [disabled]="loading">Buscar</button>
+        </div>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando gestão do colaborador...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && management">
+        <div class="management-top-actions mb-3">
+          <button class="btn btn-outline-secondary" type="button" (click)="openHistoryModal()">Histórico de tarefas</button>
+        </div>
+
+        <div class="config-section mb-3">
+          <h6 class="mb-2">Configurações das metas</h6>
+
+          <div class="config-grid">
+            <div class="config-card">
+              <h6 class="mb-2">Meta diária (pessoas respondidas)</h6>
+              <div class="input-group mb-2">
+                <input type="number" min="0" class="form-control" [(ngModel)]="dailyGoalDraft" />
+                <button class="btn btn-outline-primary" type="button" [disabled]="savingDailyGoal" (click)="saveDailyGoal()">Salvar</button>
+              </div>
+              <small class="text-muted">Atual: {{ management.dailyAnsweredContacts }}/{{ management.dailyGoalContacts }}</small>
+            </div>
+
+            <div class="config-card">
+              <h6 class="mb-2">Meta mensal</h6>
+              <div class="mb-2">
+                <label class="form-label mb-1" for="monthRef">Mês de referência</label>
+                <input id="monthRef" type="month" class="form-control" [(ngModel)]="selectedMonth" />
+              </div>
+              <div class="mb-2">
+                <label class="form-label mb-1">Meta mensal de pessoas respondidas</label>
+                <input type="number" min="0" class="form-control" [(ngModel)]="monthlyAnsweredGoalDraft" />
+              </div>
+              <div class="mb-2">
+                <label class="form-label mb-1">Meta mensal de vendas</label>
+                <input type="number" min="0" class="form-control" [(ngModel)]="monthlySalesGoalDraft" />
+              </div>
+              <button class="btn btn-outline-primary" type="button" [disabled]="savingMonthlyGoal" (click)="saveMonthlyGoal()">Salvar meta mensal</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-grid mb-3">
+          <div class="kpi-box">
+            <span class="kpi-label">Meta diária (respondidas)</span>
+            <strong class="kpi-value">{{ management.dailyAnsweredContacts }}/{{ management.dailyGoalContacts }}</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Meta mensal (respondidas)</span>
+            <strong class="kpi-value">{{ management.monthlyAnsweredContacts }}/{{ management.monthlyGoalAnsweredContacts }}</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Meta mensal (vendas)</span>
+            <strong class="kpi-value">{{ management.monthlySalesAmount }}/{{ management.monthlyGoalSalesAmount }}</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Conclusão de tarefas</span>
+            <strong class="kpi-value">Diárias {{ management.dailyTasksCompletionPercent }}% • Geral {{ management.allTasksCompletionPercent }}%</strong>
+          </div>
+        </div>
+
+        <div class="tasks-grid mb-3">
+          <div class="task-board">
+            <h6 class="mb-2">Tarefas diárias</h6>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" [(ngModel)]="newDailyTaskTitle" placeholder="Nova tarefa diária" />
+              <button class="btn btn-primary" type="button" [disabled]="addingDailyTask" (click)="addDailyTask()">Adicionar</button>
+            </div>
+
+            <div class="task-list" *ngIf="management.dailyTasks.length > 0; else noDailyTasks">
+              <div class="task-item" *ngFor="let task of management.dailyTasks">
+                <label class="task-toggle mb-0">
+                  <input
+                    type="checkbox"
+                    [checked]="task.completed"
+                    [disabled]="togglingTaskId === task.id"
+                    (change)="toggleTask(task, $any($event.target).checked)"
+                  />
+                  <span [class.task-completed]="task.completed">{{ task.title }}</span>
+                </label>
+                <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="deletingTaskId === task.id" (click)="openDeleteConfirm(task)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </div>
+            </div>
+            <ng-template #noDailyTasks>
+              <p class="text-muted mb-0">Sem tarefas diárias.</p>
+            </ng-template>
+          </div>
+
+          <div class="task-board">
+            <h6 class="mb-2">Tarefas</h6>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" [(ngModel)]="newGeneralTaskTitle" placeholder="Nova tarefa" />
+              <button class="btn btn-primary" type="button" [disabled]="addingGeneralTask" (click)="addGeneralTask()">Adicionar</button>
+            </div>
+
+            <div class="task-list" *ngIf="management.generalTasks.length > 0; else noGeneralTasks">
+              <div class="task-item" *ngFor="let task of management.generalTasks">
+                <label class="task-toggle mb-0">
+                  <input
+                    type="checkbox"
+                    [checked]="task.completed"
+                    [disabled]="togglingTaskId === task.id"
+                    (change)="toggleTask(task, $any($event.target).checked)"
+                  />
+                  <span [class.task-completed]="task.completed">{{ task.title }}</span>
+                </label>
+                <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="deletingTaskId === task.id" (click)="openDeleteConfirm(task)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </div>
+            </div>
+            <ng-template #noGeneralTasks>
+              <p class="text-muted mb-0">Sem tarefas.</p>
+            </ng-template>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h6 class="mb-2">Histórico mensal • Pessoas respondidas</h6>
+            <div class="chart-list" *ngIf="management.monthlyHistory.length > 0">
+              <div class="chart-row" *ngFor="let month of management.monthlyHistory">
+                <span class="chart-label">{{ month.referenceMonth | date: 'MM/yyyy' }}</span>
+                <div class="chart-bar-bg">
+                  <div class="chart-bar" [style.width.%]="getAnsweredMonthPercent(month)"></div>
+                </div>
+                <span class="chart-value">{{ month.answeredContacts }}/{{ month.targetAnsweredContacts }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h6 class="mb-2">Histórico mensal • Vendas</h6>
+            <div class="chart-list" *ngIf="management.monthlyHistory.length > 0">
+              <div class="chart-row" *ngFor="let month of management.monthlyHistory">
+                <span class="chart-label">{{ month.referenceMonth | date: 'MM/yyyy' }}</span>
+                <div class="chart-bar-bg">
+                  <div class="chart-bar chart-bar-secondary" [style.width.%]="getSalesMonthPercent(month)"></div>
+                </div>
+                <span class="chart-value">{{ month.salesAmount }}/{{ month.targetSalesAmount }}</span>
+              </div>
+            </div>
+            <small class="text-muted">Gráfico pronto para evolução da meta de vendas.</small>
+          </div>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="confirmDeleteModalOpen">
+  <div class="delete-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-task-title" (click)="closeDeleteConfirm()">
+    <div class="delete-modal" (click)="$event.stopPropagation()">
+      <button class="delete-close-btn" type="button" aria-label="Fechar confirmação" [disabled]="deletingTaskId !== null" (click)="closeDeleteConfirm()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="delete-header mb-3">
+        <div class="delete-avatar">
+          <i class="ti ti-alert-triangle"></i>
+        </div>
+        <div>
+          <h6 id="delete-task-title" class="mb-1">Confirmar exclusão</h6>
+          <small class="text-muted">Essa ação remove a tarefa selecionada.</small>
+        </div>
+      </div>
+
+      <div class="alert alert-warning mb-3" role="alert">
+        Deseja realmente excluir a tarefa
+        <strong>{{ taskPendingDelete?.title }}</strong>?
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline-danger" type="button" [disabled]="deletingTaskId !== null" (click)="closeDeleteConfirm()">Cancelar</button>
+        <button class="btn btn-danger" type="button" [disabled]="deletingTaskId !== null" (click)="confirmDeleteTask()">Confirmar exclusão</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="historyModalOpen">
+  <div class="delete-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="history-task-title" (click)="closeHistoryModal()">
+    <div class="delete-modal" (click)="$event.stopPropagation()">
+      <button class="delete-close-btn" type="button" aria-label="Fechar histórico" [disabled]="historyLoading" (click)="closeHistoryModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="delete-header mb-3">
+        <div class="delete-avatar delete-avatar-history">
+          <i class="ti ti-history"></i>
+        </div>
+        <div>
+          <h6 id="history-task-title" class="mb-1">Histórico de tarefas</h6>
+          <small class="text-muted">{{ management?.fullName }}</small>
+        </div>
+      </div>
+
+      <ng-container *ngIf="historyLoading">
+        <p class="mb-0">Carregando histórico...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!historyLoading && historyTasks.length === 0">
+        <p class="text-muted mb-0">Sem histórico de tarefas.</p>
+      </ng-container>
+
+      <div class="history-list" *ngIf="!historyLoading && historyTasks.length > 0">
+        <div class="history-item" *ngFor="let task of historyTasks">
+          <div class="history-main">
+            <strong>{{ task.title }}</strong>
+            <small class="text-muted">{{ task.taskType === 'DAILY' ? 'Diária' : 'Geral' }} • Criada em {{ task.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+            <small class="text-muted">
+              Concluída em
+              {{ task.completedAt ? (task.completedAt | date: 'dd/MM/yyyy HH:mm') : '—' }}
+            </small>
+          </div>
+          <span class="badge" [class.text-bg-success]="task.completed" [class.text-bg-secondary]="!task.completed">
+            {{ task.completed ? 'Concluída' : 'Pendente' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="history-pagination mt-3" *ngIf="!historyLoading && historyTotalPages > 0">
+        <small class="text-muted">
+          Página {{ historyPage + 1 }} de {{ historyTotalPages }} • {{ historyTotalElements }} tarefas
+        </small>
+        <div class="history-pagination-actions">
+          <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="historyLoading || historyPage === 0" (click)="loadPreviousHistoryPage()">
+            Anterior
+          </button>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            type="button"
+            [disabled]="historyLoading || historyPage >= historyTotalPages - 1"
+            (click)="loadNextHistoryPage()"
+          >
+            Próxima
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>

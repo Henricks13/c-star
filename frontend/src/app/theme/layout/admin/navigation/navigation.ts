@@ -27,7 +27,15 @@ export const NavigationItems: NavigationItem[] = [
         title: 'Dashboard',
         type: 'item',
         url: '/default',
-        icon: 'ti ti-layout-dashboard'
+        icon: 'ti ti-layout-dashboard',
+        role: ['MASTER_ADMIN', 'DEV_SUPORTE']
+      },
+      {
+        id: 'my-panel',
+        title: 'Meu Painel',
+        type: 'item',
+        url: '/meu-painel',
+        icon: 'ti ti-checkup-list'
       },
       {
         id: 'contacts',
@@ -183,6 +191,14 @@ export const NavigationItems: NavigationItem[] = [
         type: 'item',
         url: '/users',
         icon: 'ti ti-users-group'
+      },
+      {
+        id: 'collaborators',
+        title: 'Colaboradores',
+        type: 'item',
+        url: '/collaborators',
+        icon: 'ti ti-user-star',
+        role: ['MASTER_ADMIN', 'DEV_SUPORTE']
       },
       {
         id: 'settings',
