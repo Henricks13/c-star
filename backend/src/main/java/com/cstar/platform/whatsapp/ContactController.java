@@ -78,7 +78,8 @@ public class ContactController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "geral") String view,
             @RequestParam(required = false) String stage,
-            @RequestParam(required = false) String period
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) String query
     ) {
         contactLifecycleService.refreshStagesByOutboundRecency();
 
@@ -90,11 +91,13 @@ public class ContactController {
         ContactStage stageFilter = parseStage(stage);
         String normalizedView = normalizeView(view);
         UnreadPeriodFilter periodFilter = parseUnreadPeriod(period);
+        String normalizedQuery = normalizeSearchText(query);
 
         List<Contact> filtered = all.stream()
                 .filter(contact -> matchesView(contact, normalizedView))
                 .filter(contact -> stageFilter == null || contact.getStage() == stageFilter)
             .filter(contact -> matchesUnreadPeriod(contact, normalizedView, periodFilter))
+            .filter(contact -> matchesSearch(contact, normalizedQuery))
                 .toList();
 
         if ("nao-lidas".equals(normalizedView)) {
@@ -270,6 +273,41 @@ public class ContactController {
         }
 
         return true;
+    }
+
+    private boolean matchesSearch(Contact contact, String normalizedQuery) {
+        if (normalizedQuery == null) {
+            return true;
+        }
+
+        String fullName = normalizeSearchText(contact.getFullName());
+        if (fullName != null && fullName.contains(normalizedQuery)) {
+            return true;
+        }
+
+        String phoneDigits = digitsOnly(contact.getWhatsappPhoneE164());
+        String queryDigits = digitsOnly(normalizedQuery);
+        return phoneDigits != null && queryDigits != null && phoneDigits.contains(queryDigits);
+    }
+
+    private String normalizeSearchText(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim().toLowerCase();
+    }
+
+    private String digitsOnly(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String digits = value.replaceAll("[^0-9]", "");
+        if (digits.isBlank()) {
+            return null;
+        }
+
+        return digits;
     }
 
     private UnreadPeriodFilter parseUnreadPeriod(String period) {

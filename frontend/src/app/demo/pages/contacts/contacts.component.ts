@@ -31,8 +31,12 @@ export class ContactsComponent implements OnInit {
   totalPages = 0;
   selectedStageDraft = 'ALL';
   selectedStage = 'ALL';
+  selectedInProgressStageDraft = 'ALL';
+  selectedInProgressStage = 'ALL';
   selectedUnreadPeriodDraft = 'ALL';
   selectedUnreadPeriod = 'ALL';
+  searchQueryDraft = '';
+  searchQuery = '';
   readonly stageOptions: Array<{ value: string; label: string }> = [
     { value: 'ALL', label: 'Todos' },
     { value: 'LEAD', label: 'Lead' },
@@ -49,6 +53,11 @@ export class ContactsComponent implements OnInit {
     { value: 'UP_TO_WEEK', label: 'Não lidos há até 1 semana' },
     { value: 'OLDER_THAN_MONTH', label: 'Não lidos há mais de 1 mês' },
     { value: 'UP_TO_MONTH', label: 'Não lidos há até 1 mês' }
+  ];
+  readonly inProgressStageOptions: Array<{ value: string; label: string }> = [
+    { value: 'ALL', label: 'Todos' },
+    { value: 'RESCUING', label: 'Resgatando' },
+    { value: 'RECENTLY_RESCUED', label: 'Resgatado recentemente' }
   ];
 
   loading = false;
@@ -72,6 +81,7 @@ export class ContactsComponent implements OnInit {
   modalError: string | null = null;
   selectedContact: ContactView | null = null;
   selectedMessages: ContactMessage[] = [];
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly contactsService: ContactsService,
@@ -117,10 +127,10 @@ export class ContactsComponent implements OnInit {
 
   private loadContacts(): void {
     this.loading = true;
-    const stageFilter = this.viewMode === 'geral' ? this.selectedStage : undefined;
+    const stageFilter = this.resolveStageFilter();
     const unreadPeriodFilter = this.viewMode === 'nao-lidas' ? this.selectedUnreadPeriod : undefined;
 
-    this.contactsService.listPaged(this.currentPage, this.pageSize, this.viewMode, stageFilter, unreadPeriodFilter).subscribe({
+    this.contactsService.listPaged(this.currentPage, this.pageSize, this.viewMode, stageFilter, unreadPeriodFilter, this.searchQuery).subscribe({
       next: (response) => {
         this.contacts = response.content;
         this.currentPage = response.page;
@@ -363,22 +373,48 @@ export class ContactsComponent implements OnInit {
     this.loadContacts();
   }
 
-  searchStage(): void {
-    this.onStageChange(this.selectedStageDraft || 'ALL');
+  onSearchQueryInput(): void {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+
+    this.searchDebounceTimer = setTimeout(() => {
+      this.searchQuery = (this.searchQueryDraft || '').trim();
+      this.currentPage = 0;
+      this.loadContacts();
+    }, 350);
   }
 
-  clearStageFilter(): void {
-    this.selectedStageDraft = 'ALL';
-    this.onStageChange('ALL');
+  onStageFilterChange(): void {
+    this.selectedStage = this.selectedStageDraft || 'ALL';
+    this.currentPage = 0;
+    this.loadContacts();
   }
 
-  searchUnreadPeriod(): void {
+  onInProgressStageFilterChange(): void {
+    this.selectedInProgressStage = this.selectedInProgressStageDraft || 'ALL';
+    this.currentPage = 0;
+    this.loadContacts();
+  }
+
+  onUnreadPeriodFilterChange(): void {
     this.selectedUnreadPeriod = this.selectedUnreadPeriodDraft || 'ALL';
     this.currentPage = 0;
     this.loadContacts();
   }
 
-  clearUnreadPeriodFilter(): void {
+  clearFilters(): void {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+
+    this.searchQueryDraft = '';
+    this.searchQuery = '';
+    this.selectedStageDraft = 'ALL';
+    this.selectedStage = 'ALL';
+    this.selectedInProgressStageDraft = 'ALL';
+    this.selectedInProgressStage = 'ALL';
     this.selectedUnreadPeriodDraft = 'ALL';
     this.selectedUnreadPeriod = 'ALL';
     this.currentPage = 0;
@@ -441,6 +477,18 @@ export class ContactsComponent implements OnInit {
     const roles = (user.roles || []).map((role) => (role || '').trim().toUpperCase());
 
     this.canManualSync = email === 'carol@gmail.com' || roles.includes('DEV_SUPORTE') || roles.includes('MASTER_ADMIN');
+  }
+
+  private resolveStageFilter(): string | undefined {
+    if (this.viewMode === 'geral') {
+      return this.selectedStage;
+    }
+
+    if (this.viewMode === 'em-andamento') {
+      return this.selectedInProgressStage;
+    }
+
+    return undefined;
   }
 
   getDirectionLabel(direction: string): string {

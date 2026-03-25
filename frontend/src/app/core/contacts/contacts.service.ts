@@ -16,13 +16,16 @@ export class ContactsService {
     return this.http.get<ContactView[]>(this.apiBase);
   }
 
-  listPaged(page: number, size: number, view = 'geral', stage?: string, period?: string): Observable<ContactPageResponse> {
+  listPaged(page: number, size: number, view = 'geral', stage?: string, period?: string, query?: string): Observable<ContactPageResponse> {
     const params: Record<string, string | number> = { page, size, view };
     if (stage && stage !== 'ALL') {
       params['stage'] = stage;
     }
     if (period && period !== 'ALL') {
       params['period'] = period;
+    }
+    if (query && query.trim()) {
+      params['query'] = query.trim();
     }
 
     return this.http.get<ContactPageResponse>(`${this.apiBase}/paged`, {

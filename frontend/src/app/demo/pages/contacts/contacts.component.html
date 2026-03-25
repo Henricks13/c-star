@@ -2,52 +2,84 @@
   <div class="col-sm-12">
     <app-card [cardTitle]="'Contatos - ' + viewTitle">
       <div class="contacts-toolbar-top mb-3">
-        <div class="stage-search" *ngIf="viewMode === 'geral'">
-          <label class="mb-1" for="stageQuery">Filtrar por etapa</label>
-          <div class="stage-filter-actions">
+        <div class="contacts-filters">
+          <input
+            id="contactQuery"
+            type="text"
+            class="form-control form-control-sm"
+            [(ngModel)]="searchQueryDraft"
+            (ngModelChange)="onSearchQueryInput()"
+            placeholder="Buscar por nome ou número"
+          />
+
+          <div class="contacts-secondary-filters" *ngIf="viewMode === 'geral'">
             <ng-select
               id="stageQuery"
               class="cstar-ng-select cstar-ng-select-sm"
               [searchable]="false"
               [clearable]="false"
               [(ngModel)]="selectedStageDraft"
+              (ngModelChange)="onStageFilterChange()"
             >
               <ng-option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</ng-option>
             </ng-select>
-            <button class="btn btn-sm btn-primary btn-search" type="button" (click)="searchStage()">
-              <i class="ti ti-search"></i>
-              <span>Buscar</span>
-            </button>
-            <button class="btn btn-sm btn-danger btn-clear" type="button" (click)="clearStageFilter()">
+
+            <button
+              class="btn btn-sm btn-danger btn-clear"
+              type="button"
+              [disabled]="loading || syncing || resetting"
+              (click)="clearFilters()"
+            >
               <i class="ti ti-trash"></i>
               <span>Limpar</span>
             </button>
           </div>
-          <small class="text-muted">Filtro atual: {{ getStageLabel(selectedStage) }}</small>
-        </div>
 
-        <div class="stage-search" *ngIf="viewMode === 'nao-lidas'">
-          <label class="mb-1" for="periodQuery">Filtrar por período</label>
-          <div class="stage-filter-actions">
+          <div class="contacts-secondary-filters" *ngIf="viewMode === 'nao-lidas'">
             <ng-select
               id="periodQuery"
               class="cstar-ng-select cstar-ng-select-sm"
               [searchable]="false"
               [clearable]="false"
               [(ngModel)]="selectedUnreadPeriodDraft"
+              (ngModelChange)="onUnreadPeriodFilterChange()"
             >
               <ng-option *ngFor="let option of unreadPeriodOptions" [value]="option.value">{{ option.label }}</ng-option>
             </ng-select>
-            <button class="btn btn-sm btn-primary btn-search" type="button" (click)="searchUnreadPeriod()">
-              <i class="ti ti-search"></i>
-              <span>Buscar</span>
-            </button>
-            <button class="btn btn-sm btn-danger btn-clear" type="button" (click)="clearUnreadPeriodFilter()">
+
+            <button
+              class="btn btn-sm btn-danger btn-clear"
+              type="button"
+              [disabled]="loading || syncing || resetting"
+              (click)="clearFilters()"
+            >
               <i class="ti ti-trash"></i>
               <span>Limpar</span>
             </button>
           </div>
-          <small class="text-muted">Filtro atual: {{ getUnreadPeriodLabel(selectedUnreadPeriod) }}</small>
+
+          <div class="contacts-secondary-filters" *ngIf="viewMode === 'em-andamento'">
+            <ng-select
+              id="inProgressStageQuery"
+              class="cstar-ng-select cstar-ng-select-sm"
+              [searchable]="false"
+              [clearable]="false"
+              [(ngModel)]="selectedInProgressStageDraft"
+              (ngModelChange)="onInProgressStageFilterChange()"
+            >
+              <ng-option *ngFor="let option of inProgressStageOptions" [value]="option.value">{{ option.label }}</ng-option>
+            </ng-select>
+
+            <button
+              class="btn btn-sm btn-danger btn-clear"
+              type="button"
+              [disabled]="loading || syncing || resetting"
+              (click)="clearFilters()"
+            >
+              <i class="ti ti-trash"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
         </div>
 
       </div>
