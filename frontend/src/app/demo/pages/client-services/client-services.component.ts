@@ -98,6 +98,13 @@ export class ClientServicesComponent implements OnInit {
   routeClientId: string | null = null;
   routeOpenWizard = false;
 
+  private serviceById = new Map<string, ServiceItem>();
+  private productById = new Map<string, ProductItem>();
+  private selectedServicesCacheKey = '';
+  private selectedServicesCache: ServiceItem[] = [];
+  private requiredProductsCacheKey = '';
+  private requiredProductsCache: Array<{ product: ProductItem; requiredQty: number; availableQty: number; enough: boolean }> = [];
+
   readonly paymentMethodOptions: Array<{ value: ServicePaymentMethod; label: string }> = [
     { value: 'PIX', label: 'Pix' },
     { value: 'CREDIT_CARD', label: 'Cartão de crédito' },
@@ -131,11 +138,26 @@ export class ClientServicesComponent implements OnInit {
   }
 
   get selectedServices(): ServiceItem[] {
-    const selected = new Set(this.selectedServiceIds.filter((id) => !!id));
-    return this.availableServices.filter((service) => selected.has(service.id));
+    const key = this.selectedServiceIds.join('|');
+    if (this.selectedServicesCacheKey === key) {
+      return this.selectedServicesCache;
+    }
+
+    const resolved = this.selectedServiceIds
+      .map((id) => (id ? this.serviceById.get(id) : null))
+      .filter((service): service is ServiceItem => !!service);
+
+    this.selectedServicesCacheKey = key;
+    this.selectedServicesCache = resolved;
+    return resolved;
   }
 
   get requiredServiceProducts(): Array<{ product: ProductItem; requiredQty: number; availableQty: number; enough: boolean }> {
+    const key = `${this.selectedServiceIds.join('|')}::${this.availableProducts.length}`;
+    if (this.requiredProductsCacheKey === key) {
+      return this.requiredProductsCache;
+    }
+
     const requiredMap = new Map<string, number>();
 
     for (const service of this.selectedServices) {
@@ -146,7 +168,7 @@ export class ClientServicesComponent implements OnInit {
     }
 
     const allRows = Array.from(requiredMap.entries()).map(([productId, requiredQty]) => {
-      const product = this.availableProducts.find((item) => item.id === productId);
+      const product = this.productById.get(productId);
       const availableQty = Number(product?.stockQuantity || 0);
 
       return {
@@ -157,7 +179,10 @@ export class ClientServicesComponent implements OnInit {
       };
     });
 
-    return allRows.filter((row) => !!row.product);
+    const rows = allRows.filter((row) => !!row.product);
+    this.requiredProductsCacheKey = key;
+    this.requiredProductsCache = rows;
+    return rows;
   }
 
   get hasSufficientStock(): boolean {
@@ -171,11 +196,12 @@ export class ClientServicesComponent implements OnInit {
       }
 
       const product = this.availableProducts.find((item) => item.id === row.productId);
-      if (!product) {
+      const productById = this.productById.get(row.productId) || product;
+      if (!productById) {
         return false;
       }
 
-      const availableQty = Number(product.stockQuantity || 0);
+      const availableQty = Number(productById.stockQuantity || 0);
       const requiredQty = Number(row.quantityUsed || 0);
       if (requiredQty <= 0 || availableQty < requiredQty) {
         return false;
@@ -196,11 +222,12 @@ export class ClientServicesComponent implements OnInit {
       }
 
       const product = this.availableProducts.find((item) => item.id === row.productId);
-      if (!product) {
+      const productById = this.productById.get(row.productId) || product;
+      if (!productById) {
         return sum;
       }
 
-      return sum + Number(product.salePrice || 0) * Number(row.quantityUsed);
+      return sum + Number(productById.salePrice || 0) * Number(row.quantityUsed);
     }, 0);
   }
 
@@ -330,9 +357,13 @@ export class ClientServicesComponent implements OnInit {
         this.servicesService.list().subscribe({
           next: (services) => {
             this.availableServices = services.filter((item) => item.active);
+            this.serviceById = new Map(this.availableServices.map((item) => [item.id, item]));
+            this.invalidateServiceSelectionCaches();
             this.productsService.list().subscribe({
               next: (products) => {
                 this.availableProducts = products.filter((item) => item.active);
+                this.productById = new Map(this.availableProducts.map((item) => [item.id, item]));
+                this.invalidateServiceSelectionCaches();
                 this.applyRouteShortcut();
                 this.loadOrders();
               },
@@ -439,6 +470,7 @@ export class ClientServicesComponent implements OnInit {
 
   addServiceRow(): void {
     this.selectedServiceIds.push('');
+    this.invalidateServiceSelectionCaches();
   }
 
   removeServiceRow(index: number): void {
@@ -451,6 +483,7 @@ export class ClientServicesComponent implements OnInit {
     if (this.selectedServiceIds.length === 0) {
       this.selectedServiceIds = [''];
     }
+    this.invalidateServiceSelectionCaches();
   }
 
   onServiceSelectionChange(index: number, serviceId: string | null | undefined): void {
@@ -462,6 +495,7 @@ export class ClientServicesComponent implements OnInit {
     }
 
     this.selectedServiceIds[index] = nextServiceId;
+    this.invalidateServiceSelectionCaches();
   }
 
   getServicePrice(serviceId: string): number {
@@ -1237,6 +1271,14 @@ export class ClientServicesComponent implements OnInit {
     this.paymentPaid = false;
     this.paymentFirstInstallmentPaid = false;
     this.wizardServiceStatus = null;
+    this.invalidateServiceSelectionCaches();
+  }
+
+  private invalidateServiceSelectionCaches(): void {
+    this.selectedServicesCacheKey = '';
+    this.selectedServicesCache = [];
+    this.requiredProductsCacheKey = '';
+    this.requiredProductsCache = [];
   }
 
   private replaceOrder(updated: ClientServiceOrderItem): void {
