@@ -99,6 +99,48 @@ import { NotificationService } from 'src/app/core/notifications/notification.ser
         background: linear-gradient(135deg, #fffaf0 0%, #fff5e5 100%);
       }
 
+      :host-context(body.berry-dark) .toast-item {
+        background: #111a2c;
+        border-color: #334155;
+        box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+      }
+
+      :host-context(body.berry-dark) .toast-title {
+        color: #e6edf7;
+      }
+
+      :host-context(body.berry-dark) .toast-message {
+        color: #c7d3e3;
+      }
+
+      :host-context(body.berry-dark) .toast-close {
+        color: #94a3b8;
+      }
+
+      :host-context(body.berry-dark) .toast-success {
+        border-color: #365a46;
+        border-left-color: #22c55e;
+        background: linear-gradient(135deg, #13281f 0%, #183126 100%);
+      }
+
+      :host-context(body.berry-dark) .toast-error {
+        border-color: #6b2b35;
+        border-left-color: #ef4444;
+        background: linear-gradient(135deg, #2a151b 0%, #351920 100%);
+      }
+
+      :host-context(body.berry-dark) .toast-info {
+        border-color: #4a5a73;
+        border-left-color: #60a5fa;
+        background: linear-gradient(135deg, #172131 0%, #1d2738 100%);
+      }
+
+      :host-context(body.berry-dark) .toast-warning {
+        border-color: #655224;
+        border-left-color: #f59e0b;
+        background: linear-gradient(135deg, #2c2411 0%, #362c15 100%);
+      }
+
       @keyframes toast-in {
         from {
           opacity: 0;
@@ -280,7 +322,7 @@ export class ToastNotificationsComponent implements AfterViewInit, OnDestroy {
       return 'success';
     }
 
-    if (/(erro|falha|não foi possível|nao foi possivel|inválid|invalido|obrigatóri)/.test(text)) {
+    if (/(erro|falha|não foi possível|nao foi possivel|não é possível|nao e possivel|inválid|invalido|obrigatóri)/.test(text)) {
       return 'error';
     }
 

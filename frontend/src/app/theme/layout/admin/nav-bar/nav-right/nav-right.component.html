@@ -1,20 +1,16 @@
 <div class="ms-auto">
   <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
     <li>
-      <div class="dropdown pc-h-item header-user-profile" ngbDropdown>
+      <div class="dropdown pc-h-item header-user-profile" ngbDropdown autoClose="outside">
         <a
           class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
-          data-bs-toggle="dropdown"
           href="javascript:"
           ngbDropdownToggle
         >
           <img src="assets/images/user/avatar-2.jpg" alt="user-image" class="user-avtar" />
-          <span>
-            <i class="ti ti-settings"></i>
-          </span>
         </a>
 
-        <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown" ngbDropdownMenu>
+        <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown user-dropdown-menu" ngbDropdownMenu>
           <div class="dropdown-header">
             <h4>
               Olá,
@@ -26,6 +22,23 @@
               <i class="ti ti-settings"></i>
               <span>Conta</span>
             </a>
+
+            <div class="dropdown-item dropdown-theme-item" (click)="$event.stopPropagation()">
+              <div class="dropdown-theme-label">
+                <i class="ti" [ngClass]="isDarkMode ? 'ti-moon-stars' : 'ti-sun'"></i>
+                <span>Tema</span>
+              </div>
+              <label class="theme-switch" for="theme-toggle-user" aria-label="Alternar tema claro e escuro">
+                <input
+                  id="theme-toggle-user"
+                  type="checkbox"
+                  [checked]="isDarkMode"
+                  (change)="toggleTheme($event)"
+                />
+                <span class="theme-switch-slider"></span>
+              </label>
+            </div>
+
             <a href="javascript:" class="dropdown-item" (click)="logout()">
               <i class="ti ti-logout"></i>
               <span>Logout</span>

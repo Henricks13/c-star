@@ -1,3 +1,112 @@
 .me-0 {
-  margin: 0 0 0 16px !important;
+  margin: 0 !important;
+}
+
+.header-user-profile .pc-head-link {
+  width: 48px !important;
+  min-width: 48px;
+  height: 48px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-user-profile .pc-head-link .user-avtar {
+  margin-right: 0 !important;
+}
+
+.header-user-profile.pc-h-item {
+  position: relative;
+}
+
+.header-user-profile .user-dropdown-menu {
+  min-width: 260px;
+}
+
+.dropdown-theme-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dropdown-theme-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  width: 44px;
+  height: 24px;
+  margin: 0;
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.theme-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: rgba(148, 163, 184, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  transition: 0.2s;
+  border-radius: 999px;
+}
+
+.theme-switch-slider::before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  top: 2px;
+  background-color: #ffffff;
+  transition: 0.2s;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+}
+
+.theme-switch input:checked + .theme-switch-slider {
+  background-color: rgba(56, 189, 248, 0.25);
+  border-color: rgba(56, 189, 248, 0.65);
+}
+
+.theme-switch input:checked + .theme-switch-slider::before {
+  transform: translateX(20px);
+  background-color: #dbeafe;
+}
+
+body.berry-dark .theme-switch-slider {
+  background-color: rgba(71, 85, 105, 0.75);
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+body.berry-dark .theme-switch input:checked + .theme-switch-slider {
+  background-color: rgba(30, 64, 175, 0.6);
+  border-color: rgba(96, 165, 250, 0.7);
+}
+
+@media (max-width: 576px) {
+  .header-user-profile.pc-h-item {
+    position: relative !important;
+  }
+
+  .header-user-profile .user-dropdown-menu {
+    left: auto !important;
+    right: 8px !important;
+    min-width: min(280px, calc(100vw - 16px));
+    max-width: calc(100vw - 16px);
+  }
+
+  .dropdown-theme-item {
+    gap: 10px;
+  }
 }

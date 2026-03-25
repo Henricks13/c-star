@@ -1,1 +1,25 @@
-// This file is intentionally left empty to allow customers to add custom CSS if needed.
+.pc-container,
+.pc-footer {
+	margin-right: 0 !important;
+}
+
+@media (max-width: 1024px) {
+	.pc-container {
+		margin-left: 0 !important;
+		margin-right: 0 !important;
+		border-radius: 0 !important;
+		width: 100% !important;
+		overflow-x: hidden;
+	}
+
+	.pc-footer {
+		margin-left: 0 !important;
+		margin-right: 0 !important;
+		width: 100% !important;
+	}
+
+	.pc-footer .footer-wrapper {
+		padding-left: 12px !important;
+		padding-right: 12px !important;
+	}
+}
