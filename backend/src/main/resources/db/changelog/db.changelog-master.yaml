@@ -43,3 +43,5 @@ databaseChangeLog:
       file: db/changelog/021-collaborators-management-advanced.yaml
   - include:
       file: db/changelog/022-collaborator-task-completed-at.yaml
+  - include:
+      file: db/changelog/023-client-service-order-edit-audit-and-long-notes.yaml

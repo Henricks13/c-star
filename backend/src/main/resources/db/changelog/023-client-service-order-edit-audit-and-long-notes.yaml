@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 065-client-service-order-edit-audit-and-long-notes
+      author: cstar
+      changes:
+        - modifyDataType:
+            tableName: client_service_orders
+            columnName: notes
+            newDataType: TEXT
+
+        - modifyDataType:
+            tableName: client_service_order_observations
+            columnName: note
+            newDataType: TEXT
+
+        - addColumn:
+            tableName: client_service_orders
+            columns:
+              - column:
+                  name: last_edited_by_name
+                  type: VARCHAR(120)
+              - column:
+                  name: last_edited_at
+                  type: TIMESTAMP

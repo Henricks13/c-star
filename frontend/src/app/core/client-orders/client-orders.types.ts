@@ -101,6 +101,8 @@ export interface ClientServiceOrderItem {
   products: ClientServiceOrderProductItem[];
   observations: ClientServiceOrderObservationItem[];
   returns: ClientServiceOrderReturnItem[];
+  lastEditedByName: string | null;
+  lastEditedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

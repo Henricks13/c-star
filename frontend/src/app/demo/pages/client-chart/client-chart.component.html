@@ -198,6 +198,13 @@
                       <li *ngFor="let service of order.services">{{ service.serviceName }} - {{ service.servicePrice | currency: 'BRL' }}</li>
                     </ul>
                   </div>
+
+                  <div class="order-actions">
+                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openServiceForEdit(order.id)">
+                      <i class="ti ti-edit me-1"></i>
+                      Editar serviço
+                    </button>
+                  </div>
                 </div>
               </div>
               <ng-template #noInProgress>
@@ -241,6 +248,13 @@
                         {{ getOrderPotentialProfit(order) | currency: 'BRL' }}
                       </div>
                     </div>
+                  </div>
+
+                  <div class="order-actions">
+                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="openServiceForEdit(order.id)">
+                      <i class="ti ti-edit me-1"></i>
+                      Editar serviço
+                    </button>
                   </div>
                 </div>
               </div>

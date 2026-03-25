@@ -129,7 +129,7 @@ public class ClientServiceOrderService {
     }
 
     @Transactional
-    public ClientServiceOrderResponse create(CreateClientServiceOrderRequest request) {
+    public ClientServiceOrderResponse create(CreateClientServiceOrderRequest request, AuthUserPrincipal principal) {
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cliente não encontrado"));
 
@@ -193,6 +193,7 @@ public class ClientServiceOrderService {
                 finalTotal,
                 normalizeNotes(request.notes())
             );
+            order.registerBudgetEdition(resolveObservationAuthor(principal));
             order.clearServiceItems();
             order.clearProductItems();
         }
@@ -843,6 +844,8 @@ public class ClientServiceOrderService {
                 products,
                 observations,
                 returns,
+                order.getLastEditedByName(),
+                order.getLastEditedAt(),
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );

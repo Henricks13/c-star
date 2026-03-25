@@ -77,6 +77,11 @@ export class ClientChartComponent implements OnInit {
       return;
     }
 
+    const requestedTab = (this.route.snapshot.queryParamMap.get('tab') || '').trim().toLowerCase();
+    if (requestedTab === 'servicos' || requestedTab === 'observacoes' || requestedTab === 'geral') {
+      this.activeTab = requestedTab as ClientChartTab;
+    }
+
     this.loadData();
   }
 
@@ -214,6 +219,20 @@ export class ClientChartComponent implements OnInit {
       queryParams: {
         clientId: this.clientId,
         orderId: observation.orderId || null
+      }
+    });
+  }
+
+  openServiceForEdit(orderId: string | null | undefined): void {
+    if (!this.clientId || !(orderId || '').trim()) {
+      return;
+    }
+
+    this.router.navigate(['/clients/services'], {
+      queryParams: {
+        clientId: this.clientId,
+        orderId,
+        openWizard: '1'
       }
     });
   }

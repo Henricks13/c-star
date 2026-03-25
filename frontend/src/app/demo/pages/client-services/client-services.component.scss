@@ -31,7 +31,7 @@
 }
 
 .services-table {
-  min-width: 820px;
+  min-width: 980px;
 }
 
 .table-actions {
@@ -39,6 +39,12 @@
   gap: 0.35rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.service-composition-text {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--bs-body-color);
 }
 
 .services-thead th {
@@ -110,6 +116,23 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.client-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--bs-link-color);
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.client-link:hover {
+  color: var(--bs-link-hover-color);
 }
 
 .app-modal-backdrop {
@@ -275,6 +298,12 @@
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--bs-secondary-color);
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 .details-field {

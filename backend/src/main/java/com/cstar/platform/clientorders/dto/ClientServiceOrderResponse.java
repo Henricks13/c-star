@@ -29,6 +29,8 @@ public record ClientServiceOrderResponse(
         List<ClientServiceOrderProductItemResponse> products,
         List<ClientServiceOrderObservationResponse> observations,
         List<ClientServiceOrderReturnResponse> returns,
+        String lastEditedByName,
+        Instant lastEditedAt,
         Instant createdAt,
         Instant updatedAt
 ) {

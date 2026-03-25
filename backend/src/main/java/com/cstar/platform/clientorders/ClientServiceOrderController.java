@@ -32,8 +32,11 @@ public class ClientServiceOrderController {
     }
 
     @PostMapping("/client-service-orders")
-    public ClientServiceOrderResponse create(@RequestBody @Valid CreateClientServiceOrderRequest request) {
-        return clientServiceOrderService.create(request);
+    public ClientServiceOrderResponse create(
+            @AuthenticationPrincipal AuthUserPrincipal principal,
+            @RequestBody @Valid CreateClientServiceOrderRequest request
+    ) {
+        return clientServiceOrderService.create(request, principal);
     }
 
     @GetMapping("/client-service-orders")

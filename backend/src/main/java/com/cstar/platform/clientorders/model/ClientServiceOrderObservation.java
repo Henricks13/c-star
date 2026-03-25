@@ -26,7 +26,7 @@ public class ClientServiceOrderObservation {
     @JoinColumn(name = "order_id", nullable = false)
     private ClientServiceOrder order;
 
-    @Column(name = "note", nullable = false, length = 500)
+    @Column(name = "note", nullable = false, columnDefinition = "TEXT")
     private String note;
 
     @Column(name = "created_by_name", length = 120)

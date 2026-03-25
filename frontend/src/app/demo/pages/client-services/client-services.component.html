@@ -48,6 +48,7 @@
               <thead class="services-thead">
                 <tr>
                   <th>Cliente</th>
+                  <th>Procedimentos/Produtos</th>
                   <th>Status do serviço</th>
                   <th>Status pagamento</th>
                   <th>Valor</th>
@@ -59,11 +60,13 @@
               <tbody>
                 <tr *ngFor="let order of filteredOrders">
                   <td>
-                    <div class="fw-semibold">{{ order.clientName }}</div>
-                    <small class="text-muted">
-                      Procedimentos: {{ getProcedureNames(order) }}
-                      <ng-container *ngIf="hasAdditionalProducts(order)"> | Produtos: {{ getAdditionalProductNames(order) }}</ng-container>
-                    </small>
+                    <button class="client-link" type="button" (click)="openClientChart(order.clientId)">{{ order.clientName }}</button>
+                  </td>
+                  <td>
+                    <span class="service-composition-text">
+                      {{ getProcedureNames(order) }}
+                      <ng-container *ngIf="hasAdditionalProducts(order)"> | {{ getAdditionalProductNames(order) }}</ng-container>
+                    </span>
                   </td>
                   <td>
                     <span class="history-status" [class.quoted]="isStatusQuoted(order.serviceStatus)" [class.awaiting]="isStatusAwaiting(order.serviceStatus)" [class.paid]="isStatusPaid(order.serviceStatus)">
@@ -79,11 +82,21 @@
                       <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)" title="Detalhes" aria-label="Detalhes">
                         <i class="ti ti-eye"></i>
                       </button>
-                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openOrderPayments(order)" title="Pagamento" aria-label="Pagamento">
+                      <button class="btn btn-sm btn-outline-success" type="button" (click)="openOrderPayments(order)" title="Pagamento" aria-label="Pagamento">
                         <i class="ti ti-cash"></i>
                       </button>
                       <button
-                        class="btn btn-sm btn-outline-success"
+                        class="btn btn-sm btn-outline-primary"
+                        type="button"
+                        (click)="openEditService(order)"
+                        *ngIf="canEditService(order.serviceStatus)"
+                        title="Editar serviço"
+                        aria-label="Editar serviço"
+                      >
+                        <i class="ti ti-pencil"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-info"
                         type="button"
                         (click)="openScheduleAction(order)"
                         *ngIf="canScheduleService(order.serviceStatus)"
@@ -133,9 +146,14 @@
 
         <div class="mobile-list d-block d-md-none">
           <div class="mobile-service-card" *ngFor="let order of filteredOrders">
-            <div class="mobile-service-row"><span class="mobile-label">Cliente</span><span>{{ order.clientName }}</span></div>
-            <div class="mobile-service-row"><span class="mobile-label">Procedimentos</span><span>{{ getProcedureNames(order) }}</span></div>
-            <div class="mobile-service-row" *ngIf="hasAdditionalProducts(order)"><span class="mobile-label">Produtos</span><span>{{ getAdditionalProductNames(order) }}</span></div>
+            <div class="mobile-service-row"><span class="mobile-label">Cliente</span><button class="client-link" type="button" (click)="openClientChart(order.clientId)">{{ order.clientName }}</button></div>
+            <div class="mobile-service-row">
+              <span class="mobile-label">Proc/Prod</span>
+              <span>
+                {{ getProcedureNames(order) }}
+                <ng-container *ngIf="hasAdditionalProducts(order)"> | {{ getAdditionalProductNames(order) }}</ng-container>
+              </span>
+            </div>
             <div class="mobile-service-row"><span class="mobile-label">Status serviço</span><span>{{ getOrderStatusLabel(order.serviceStatus) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Status pagamento</span><span>{{ getPaymentStatusLabel(order.paymentStatus) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Valor</span><span>{{ order.finalTotal | currency: 'BRL' }}</span></div>
@@ -149,11 +167,15 @@
                 <i class="ti ti-eye me-1"></i>
                 Detalhes
               </button>
-              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openOrderPayments(order)">
+              <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openOrderPayments(order)">
                 <i class="ti ti-cash me-1"></i>
                 Pagamentos
               </button>
-              <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openScheduleAction(order)" *ngIf="canScheduleService(order.serviceStatus)">
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openEditService(order)" *ngIf="canEditService(order.serviceStatus)">
+                <i class="ti ti-pencil me-1"></i>
+                Editar serviço
+              </button>
+              <button class="btn btn-sm btn-outline-info w-100" type="button" (click)="openScheduleAction(order)" *ngIf="canScheduleService(order.serviceStatus)">
                 <i class="ti ti-calendar-plus me-1"></i>
                 Agendar
               </button>
@@ -194,8 +216,8 @@
         <i class="ti ti-plus"></i>
       </div>
       <div class="details-header-text">
-        <h5 class="mb-1">Novo serviço</h5>
-        <div class="details-subtitle">Cadastre o procedimento do cliente em etapas</div>
+        <h5 class="mb-1">{{ isEditingWizard ? 'Editar serviço' : 'Novo serviço' }}</h5>
+        <div class="details-subtitle">{{ isEditingWizard ? 'Atualize o procedimento do cliente em etapas' : 'Cadastre o procedimento do cliente em etapas' }}</div>
       </div>
     </div>
 
@@ -302,7 +324,7 @@
           <div class="details-grid">
             <div class="details-field">
               <span class="details-field-label">Cliente</span>
-              <span class="details-field-value">{{ selectedOrderForPayment.clientName }}</span>
+              <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ selectedOrderForPayment.clientName }}</button></span>
             </div>
             <div class="details-field">
               <span class="details-field-label">Valor total do serviço</span>
@@ -496,7 +518,7 @@
       </div>
       <div class="details-header-text">
         <h5 class="mb-1">Pagamento do serviço</h5>
-        <div class="details-subtitle">{{ selectedOrderForPayment.clientName }}</div>
+        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ selectedOrderForPayment.clientName }}</button></div>
       </div>
       <div class="details-tags">
         <span class="history-status" [class.paid]="selectedOrderForPayment.paymentStatus === 'PAGAMENTO_CONCLUIDO'">
@@ -518,7 +540,7 @@
         <div class="details-grid">
           <div class="details-field">
             <span class="details-field-label">Cliente</span>
-            <span class="details-field-value">{{ selectedOrderForPayment.clientName }}</span>
+            <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ selectedOrderForPayment.clientName }}</button></span>
           </div>
           <div class="details-field">
             <span class="details-field-label">Valor total do serviço</span>
@@ -722,7 +744,7 @@
       </div>
       <div class="details-header-text">
         <h5 class="mb-1">Detalhes do serviço</h5>
-        <div class="details-subtitle">{{ selectedOrderForDetails.clientName }}</div>
+        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForDetails.clientId)">{{ selectedOrderForDetails.clientName }}</button></div>
       </div>
       <div class="details-tags">
         <span
@@ -742,7 +764,7 @@
         <div class="details-grid">
           <div class="details-field">
             <span class="details-field-label">Cliente</span>
-            <span class="details-field-value">{{ selectedOrderForDetails.clientName }}</span>
+            <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForDetails.clientId)">{{ selectedOrderForDetails.clientName }}</button></span>
           </div>
           <div class="details-field">
             <span class="details-field-label">Status pagamento</span>
@@ -752,9 +774,9 @@
             <span class="details-field-label">Procedimentos</span>
             <span class="details-field-value">{{ getProcedureNames(selectedOrderForDetails) }}</span>
           </div>
-          <div class="details-field details-field-full">
+          <div class="details-field details-field-full" *ngIf="hasAdditionalProducts(selectedOrderForDetails)">
             <span class="details-field-label">Produtos</span>
-            <span class="details-field-value">{{ getProductNames(selectedOrderForDetails) }}</span>
+            <span class="details-field-value">{{ getAdditionalProductNames(selectedOrderForDetails) }}</span>
           </div>
           <div class="details-field">
             <span class="details-field-label">Valor total</span>
@@ -764,9 +786,17 @@
             <span class="details-field-label">Próximo retorno</span>
             <span class="details-field-value">{{ selectedOrderForDetails.nextReturnAt ? (selectedOrderForDetails.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</span>
           </div>
-          <div class="details-field details-field-full">
+          <div class="details-field">
             <span class="details-field-label">Criado em</span>
             <span class="details-field-value">{{ selectedOrderForDetails.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="details-field">
+            <span class="details-field-label">Última edição em</span>
+            <span class="details-field-value">{{ selectedOrderForDetails.lastEditedAt ? (selectedOrderForDetails.lastEditedAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</span>
+          </div>
+          <div class="details-field details-field-full">
+            <span class="details-field-label">Última edição por</span>
+            <span class="details-field-value">{{ selectedOrderForDetails.lastEditedByName || '-' }}</span>
           </div>
         </div>
       </div>
@@ -781,7 +811,7 @@
         <div class="history-list" *ngIf="selectedOrderForDetails.observations?.length; else noObs">
           <div class="history-item" *ngFor="let obs of selectedOrderForDetails.observations">
             <div>{{ obs.note }}</div>
-            <small class="text-muted">{{ obs.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+            <small class="text-muted">{{ obs.createdAt | date: 'dd/MM/yyyy HH:mm' }}<span *ngIf="obs.createdByName"> • {{ obs.createdByName }}</span></small>
           </div>
         </div>
       </div>
@@ -806,6 +836,15 @@
     <div class="app-modal-footer">
       <button
         class="btn btn-outline-primary"
+        type="button"
+        (click)="openEditFromDetails()"
+        *ngIf="canEditService(selectedOrderForDetails.serviceStatus)"
+      >
+        <i class="ti ti-pencil me-1"></i>
+        Editar serviço
+      </button>
+      <button
+        class="btn btn-outline-info"
         type="button"
         (click)="openScheduleFromDetails()"
         *ngIf="canScheduleService(selectedOrderForDetails.serviceStatus)"
@@ -836,7 +875,7 @@
       </div>
       <div class="details-header-text">
         <h5 class="mb-1">Ações do serviço</h5>
-        <div class="details-subtitle">{{ selectedOrderForManagement.clientName }}</div>
+        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForManagement.clientId)">{{ selectedOrderForManagement.clientName }}</button></div>
       </div>
       <div class="details-tags">
         <span
@@ -869,7 +908,7 @@
         <h6 class="details-section-title">Agendar serviço</h6>
         <div class="management-inline-action">
           <input class="form-control" type="datetime-local" [(ngModel)]="serviceManagementScheduleAt" />
-          <button class="btn btn-outline-primary" type="button" (click)="scheduleService()" [disabled]="saving">Agendar</button>
+          <button class="btn btn-outline-info" type="button" (click)="scheduleService()" [disabled]="saving">Agendar</button>
         </div>
       </div>
 

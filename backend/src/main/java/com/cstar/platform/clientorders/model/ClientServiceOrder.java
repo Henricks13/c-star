@@ -53,8 +53,14 @@ public class ClientServiceOrder {
     @Column(name = "final_total", nullable = false, precision = 15, scale = 2)
     private BigDecimal finalTotal;
 
-    @Column(name = "notes", length = 500)
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "last_edited_by_name", length = 120)
+    private String lastEditedByName;
+
+    @Column(name = "last_edited_at")
+    private Instant lastEditedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 40)
@@ -155,6 +161,11 @@ public class ClientServiceOrder {
         this.nextReturnAt = null;
         this.observations.clear();
         this.returns.clear();
+    }
+
+    public void registerBudgetEdition(String editedByName) {
+        this.lastEditedByName = editedByName;
+        this.lastEditedAt = Instant.now();
     }
 
     public void applyPaymentStatus(ServicePaymentMethod paymentMethod, int installmentCount, int paidInstallmentCount) {
@@ -326,6 +337,14 @@ public class ClientServiceOrder {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getLastEditedByName() {
+        return lastEditedByName;
+    }
+
+    public Instant getLastEditedAt() {
+        return lastEditedAt;
     }
 
     public List<ClientServiceOrderServiceItem> getServices() {

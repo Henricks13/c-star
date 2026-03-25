@@ -96,6 +96,7 @@ export class ClientServicesComponent implements OnInit {
   paymentPlanDownPaymentMethod: ServicePaymentMethod = 'PIX';
   paymentPlanRemainingPaymentMethod: ServicePaymentMethod = 'CREDIT_CARD';
   routeClientId: string | null = null;
+  routeOrderId: string | null = null;
   routeOpenWizard = false;
 
   private serviceById = new Map<string, ServiceItem>();
@@ -265,6 +266,10 @@ export class ClientServicesComponent implements OnInit {
     return !this.isWizardWaitingScheduling;
   }
 
+  get isEditingWizard(): boolean {
+    return !!this.serviceOrderId;
+  }
+
   canDeleteServiceOrders(): boolean {
     const user = this.authService.currentUser();
     if (!user) {
@@ -370,6 +375,7 @@ export class ClientServicesComponent implements OnInit {
     this.errorMessage = null;
 
     this.routeClientId = this.route.snapshot.queryParamMap.get('clientId');
+    this.routeOrderId = this.route.snapshot.queryParamMap.get('orderId');
     this.routeOpenWizard = this.route.snapshot.queryParamMap.get('openWizard') === '1';
 
     this.clientsService.list().subscribe({
@@ -416,6 +422,7 @@ export class ClientServicesComponent implements OnInit {
     this.clientOrdersService.listAll().subscribe({
       next: (response) => {
         this.orders = response;
+        this.applyRouteShortcut();
         this.loading = false;
       },
       error: () => {
@@ -430,7 +437,58 @@ export class ClientServicesComponent implements OnInit {
     this.createWizardOpen = true;
   }
 
+  openClientChart(clientId: string | null | undefined): void {
+    const normalizedId = (clientId || '').trim();
+    if (!normalizedId) {
+      return;
+    }
+
+    this.router.navigate(['/clients', normalizedId], {
+      queryParams: {
+        tab: 'servicos'
+      }
+    });
+  }
+
+  openEditService(order: ClientServiceOrderItem): void {
+    if (!order || !this.canEditService(order.serviceStatus)) {
+      return;
+    }
+
+    this.resetCreateWizard();
+    this.createWizardOpen = true;
+    this.createWizardStep = 1;
+    this.serviceOrderId = order.id;
+    this.selectedClientId = order.clientId;
+    this.selectedServiceIds = order.services?.length ? order.services.map((item) => item.serviceId) : [''];
+    this.extraProductRows = (order.products || [])
+      .filter((item) => item.source === 'EXTRA')
+      .map((item) => ({
+        productId: item.productId,
+        quantityUsed: Number(item.quantityUsed || 1)
+      }));
+    this.wizardDiscountAmount = Number(order.discountAmount || 0);
+    this.wizardCustomTotalEnabled = !!order.customTotalEnabled;
+    this.wizardCustomTotalValue = order.customTotalEnabled ? Number(order.customTotalValue || 0) : null;
+    this.wizardNotes = order.notes || '';
+    this.wizardServiceStatus = order.serviceStatus;
+    this.invalidateServiceSelectionCaches();
+    this.errorMessage = null;
+    this.infoMessage = 'Modo edição: ajuste os dados e avance para salvar.';
+  }
+
   private applyRouteShortcut(): void {
+    let handledOrderShortcut = false;
+
+    if (this.routeOrderId) {
+      const orderFromRoute = this.orders.find((item) => item.id === this.routeOrderId);
+      if (orderFromRoute) {
+        this.openEditService(orderFromRoute);
+        handledOrderShortcut = true;
+      }
+      this.routeOrderId = null;
+    }
+
     if (!this.routeClientId) {
       return;
     }
@@ -440,7 +498,7 @@ export class ClientServicesComponent implements OnInit {
       return;
     }
 
-    if (this.routeOpenWizard) {
+    if (this.routeOpenWizard && !handledOrderShortcut) {
       this.openCreateWizard();
     }
 
@@ -567,6 +625,7 @@ export class ClientServicesComponent implements OnInit {
     }
 
     const payload: CreateClientServiceOrderRequest = {
+      orderId: this.serviceOrderId || undefined,
       clientId: this.selectedClientId,
       serviceIds: this.selectedServices.map((service) => service.id),
       extraProducts: this.extraProductRows
@@ -587,6 +646,7 @@ export class ClientServicesComponent implements OnInit {
 
     this.clientOrdersService.create(payload).subscribe({
       next: (order) => {
+        const isEditing = !!payload.orderId;
         this.serviceOrderId = order.id;
         this.wizardServiceStatus = order.serviceStatus;
         this.hydratePaymentContextFromOrder(order);
@@ -594,7 +654,9 @@ export class ClientServicesComponent implements OnInit {
         this.errorMessage = null;
         this.infoMessage = moveToPaymentStep
           ? 'Orçamento salvo. Configure as faturas no passo de pagamento.'
-          : 'Orçamento salvo com sucesso.';
+          : isEditing
+            ? 'Serviço atualizado com sucesso.'
+            : 'Orçamento salvo com sucesso.';
         if (moveToPaymentStep) {
           this.createWizardStep = 4;
           this.loadPaymentInvoices();
@@ -737,6 +799,16 @@ export class ClientServicesComponent implements OnInit {
 
     this.openReturnAction(this.selectedOrderForDetails);
     this.closeOrderDetails();
+  }
+
+  openEditFromDetails(): void {
+    if (!this.selectedOrderForDetails) {
+      return;
+    }
+
+    const order = this.selectedOrderForDetails;
+    this.closeOrderDetails();
+    this.openEditService(order);
   }
 
   closeServiceManagementModal(): void {
@@ -1248,6 +1320,11 @@ export class ClientServicesComponent implements OnInit {
     return normalized === 'AGENDADO' || normalized === 'AGUARDANDO_RETORNO';
   }
 
+  canEditService(status: string | null | undefined): boolean {
+    const normalized = (status || '').trim().toUpperCase();
+    return normalized === 'ORCADO' || normalized === 'AGENDADO' || normalized === 'AGUARDANDO_RETORNO';
+  }
+
   isStatusQuoted(status: string): boolean {
     return status === 'ORCADO';
   }
@@ -1306,6 +1383,9 @@ export class ClientServicesComponent implements OnInit {
     this.orders = this.orders.map((item) => (item.id === updated.id ? updated : item));
     if (this.selectedOrderForDetails?.id === updated.id) {
       this.selectedOrderForDetails = updated;
+    }
+    if (this.selectedOrderForManagement?.id === updated.id) {
+      this.selectedOrderForManagement = updated;
     }
     if (this.selectedOrderForPayment?.id === updated.id) {
       this.selectedOrderForPayment = updated;
