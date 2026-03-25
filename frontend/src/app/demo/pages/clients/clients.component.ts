@@ -509,7 +509,13 @@ export class ClientsComponent implements OnInit {
   }
 
   canDeleteClient(): boolean {
-    return this.canDeleteOrderInvoices();
+    const user = this.authService.currentUser();
+    if (!user) {
+      return false;
+    }
+
+    const roles = (user.roles || []).map((role) => (role || '').trim().toUpperCase());
+    return roles.includes('DEV_SUPORTE') || roles.includes('MASTER_ADMIN');
   }
 
   deleteClient(client: ClientListItem): void {
