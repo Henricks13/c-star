@@ -30,7 +30,7 @@ export class ContactsService {
     });
   }
 
-  syncUnread(): Observable<ContactSyncResponse> {
+  syncAll(): Observable<ContactSyncResponse> {
     return this.http.post<ContactSyncResponse>(`${this.apiBase}/sync`, {});
   }
 

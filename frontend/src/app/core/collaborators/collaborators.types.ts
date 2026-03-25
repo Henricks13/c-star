@@ -27,6 +27,8 @@ export interface CollaboratorPanelItemView {
   monthlySalesProgress: number;
   dailyTasksCompletionPercent: number;
   allTasksCompletionPercent: number;
+  dailyTasks: CollaboratorTaskView[];
+  generalTasks: CollaboratorTaskView[];
 }
 
 export interface CollaboratorPanelView {

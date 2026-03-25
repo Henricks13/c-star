@@ -394,7 +394,21 @@ public class WhatsappSessionService {
     }
 
     private String normalizeFromJid(String jid) {
-        String head = jid.split("@")[0];
+        if (jid == null || jid.isBlank()) {
+            return null;
+        }
+
+        String head = jid;
+        int atIndex = head.indexOf('@');
+        if (atIndex >= 0) {
+            head = head.substring(0, atIndex);
+        }
+
+        int deviceSuffixIndex = head.indexOf(':');
+        if (deviceSuffixIndex >= 0) {
+            head = head.substring(0, deviceSuffixIndex);
+        }
+
         String digits = head.replaceAll("[^0-9]", "");
         if (digits.isBlank()) {
             return null;

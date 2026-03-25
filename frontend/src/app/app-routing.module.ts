@@ -23,7 +23,7 @@ const routes: Routes = [
       },
       {
         path: 'meu-painel',
-        loadComponent: () => import('./demo/pages/my-panel/my-panel.component').then((c) => c.MyPanelComponent)
+        loadComponent: () => import('./demo/pages/my-panel/my-panel-shell.component').then((c) => c.MyPanelShellComponent)
       },
       {
         path: 'typography',

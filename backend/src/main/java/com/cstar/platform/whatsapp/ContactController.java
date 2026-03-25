@@ -126,8 +126,8 @@ public class ContactController {
     }
 
     @PostMapping("/sync")
-    public ContactSyncResponse syncUnread(@AuthenticationPrincipal AuthUserPrincipal principal) {
-        return whatsappContactSyncService.syncUnreadConversations(principal);
+    public ContactSyncResponse syncAll(@AuthenticationPrincipal AuthUserPrincipal principal) {
+        return whatsappContactSyncService.syncAllConversations(principal);
     }
 
     @PostMapping("/reset-all")

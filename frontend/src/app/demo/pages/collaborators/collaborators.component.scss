@@ -62,8 +62,24 @@
   gap: 0.5rem;
 }
 
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.task-board {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.6rem;
+  padding: 0.65rem;
+}
+
 @media (max-width: 991.98px) {
   .collaborators-list {
+    grid-template-columns: 1fr;
+  }
+
+  .tasks-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -178,9 +178,9 @@ export class ContactsComponent implements OnInit {
     return Math.min((this.currentPage + 1) * this.pageSize, this.totalElements);
   }
 
-  syncUnread(): void {
+  syncAll(): void {
     if (!this.canShowManualActions) {
-      this.errorMessage = 'Conecte um WhatsApp para sincronizar novas conversas.';
+      this.errorMessage = 'Conecte um WhatsApp para sincronizar todos os contatos.';
       return;
     }
 
@@ -188,7 +188,7 @@ export class ContactsComponent implements OnInit {
     this.errorMessage = null;
     this.infoMessage = null;
 
-    this.contactsService.syncUnread().subscribe({
+    this.contactsService.syncAll().subscribe({
       next: (result) => {
         this.infoMessage = `Sincronização concluída: ${result.conversationsSynced} conversa(s) e ${result.messagesProcessed} mensagem(ns) processada(s).`;
         this.syncing = false;
@@ -196,7 +196,7 @@ export class ContactsComponent implements OnInit {
         this.loadContacts();
       },
       error: () => {
-        this.errorMessage = 'Não foi possível sincronizar conversas não lidas agora.';
+        this.errorMessage = 'Não foi possível sincronizar todos os contatos agora.';
         this.syncing = false;
       }
     });

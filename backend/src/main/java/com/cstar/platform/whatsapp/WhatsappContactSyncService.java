@@ -26,10 +26,11 @@ import java.util.stream.Collectors;
 public class WhatsappContactSyncService {
 
     private static final Logger log = LoggerFactory.getLogger(WhatsappContactSyncService.class);
+    private static final String GLOBAL_SESSION_KEY = "global";
     private static final int CHAT_PAGE_SIZE = 500;
-    private static final int CHAT_MAX_PAGES = 200;
+    private static final int CHAT_MAX_PAGES = Integer.MAX_VALUE;
     private static final int MESSAGE_PAGE_SIZE = 100;
-    private static final int MESSAGE_MAX_PAGES = 10_000;
+    private static final int MESSAGE_MAX_PAGES = Integer.MAX_VALUE;
 
     private final EvolutionApiClient evolutionApiClient;
     private final WhatsappIngestionService ingestionService;
@@ -54,7 +55,7 @@ public class WhatsappContactSyncService {
         this.contactLifecycleService = contactLifecycleService;
     }
 
-    public ContactSyncResponse syncUnreadConversations(AuthUserPrincipal principal) {
+    public ContactSyncResponse syncAllConversations(AuthUserPrincipal principal) {
         if (!"evolution".equalsIgnoreCase(properties.getProvider())) {
             return new ContactSyncResponse(0, 0);
         }
@@ -68,12 +69,10 @@ public class WhatsappContactSyncService {
         int messagesProcessed = 0;
         int skippedNoRemoteJid = 0;
         int skippedNoPhone = 0;
-        int skippedStage = 0;
-        int skippedNoInbound = 0;
 
         for (Map<String, Object> chat : chats) {
             String remoteJid = extractRemoteJid(chat);
-            if (remoteJid == null || remoteJid.isBlank() || remoteJid.endsWith("@g.us")) {
+            if (remoteJid == null || remoteJid.isBlank() || remoteJid.endsWith("@g.us") || !isPhoneJid(remoteJid)) {
                 skippedNoRemoteJid++;
                 continue;
             }
@@ -84,21 +83,7 @@ public class WhatsappContactSyncService {
                 continue;
             }
 
-            Contact existingContact = contactRepository.findByWhatsappPhoneE164(phone).orElse(null);
-            if (existingContact != null && existingContact.getStage() != ContactStage.LEAD) {
-                skippedStage++;
-                continue;
-            }
-
             List<Map<String, Object>> messages = fetchAllMessages(instanceName, remoteJid, MESSAGE_PAGE_SIZE, MESSAGE_MAX_PAGES);
-            int unreadCount = extractUnreadCount(chat);
-            boolean hasUnreadMessages = unreadCount > 0;
-            boolean hasInboundInConversation = messages.stream().anyMatch(message -> !isFromMe(message));
-
-            if (!hasUnreadMessages && !hasInboundInConversation) {
-                skippedNoInbound++;
-                continue;
-            }
 
             conversationsSynced++;
             String displayName = resolveDisplayName(chat, phone);
@@ -119,15 +104,13 @@ public class WhatsappContactSyncService {
         }
 
         log.info(
-                "Whatsapp sync completed for instance {}: chatsFetched={}, conversationsSynced={}, messagesProcessed={}, skippedNoRemoteJid={}, skippedNoPhone={}, skippedByStage={}, skippedNoInboundOrUnread={}",
+            "Whatsapp sync completed for instance {}: chatsFetched={}, conversationsSynced={}, messagesProcessed={}, skippedNoRemoteJid={}, skippedNoPhone={}",
                 instanceName,
                 chats.size(),
                 conversationsSynced,
                 messagesProcessed,
                 skippedNoRemoteJid,
-                skippedNoPhone,
-                skippedStage,
-                skippedNoInbound
+            skippedNoPhone
             );
 
         return new ContactSyncResponse(conversationsSynced, messagesProcessed);
@@ -138,14 +121,12 @@ public class WhatsappContactSyncService {
         int safeMaxPages = Math.max(1, maxPages);
 
         Map<String, Map<String, Object>> uniqueChatsByJid = new LinkedHashMap<>();
-        int pagesWithoutGrowth = 0;
         for (int page = 1; page <= safeMaxPages; page++) {
             List<Map<String, Object>> pageRecords = extractRecords(evolutionApiClient.findChats(instanceName, page, safePageSize));
             if (pageRecords.isEmpty()) {
                 break;
             }
 
-            int beforeCount = uniqueChatsByJid.size();
             for (Map<String, Object> chat : pageRecords) {
                 String remoteJid = extractRemoteJid(chat);
                 if (remoteJid == null || remoteJid.isBlank()) {
@@ -154,13 +135,7 @@ public class WhatsappContactSyncService {
                 uniqueChatsByJid.putIfAbsent(remoteJid, chat);
             }
 
-            if (uniqueChatsByJid.size() == beforeCount) {
-                pagesWithoutGrowth++;
-            } else {
-                pagesWithoutGrowth = 0;
-            }
-
-            if (pagesWithoutGrowth >= 2) {
+            if (pageRecords.size() < safePageSize) {
                 break;
             }
         }
@@ -173,7 +148,6 @@ public class WhatsappContactSyncService {
         int safeMaxPages = Math.max(1, maxPages);
 
         List<Map<String, Object>> allMessages = new ArrayList<>();
-        int pagesWithoutGrowth = 0;
 
         for (int page = 1; page <= safeMaxPages; page++) {
             List<Map<String, Object>> pageRecords = extractRecords(
@@ -183,17 +157,9 @@ public class WhatsappContactSyncService {
             if (pageRecords.isEmpty()) {
                 break;
             }
-
-            int beforeCount = allMessages.size();
             allMessages.addAll(pageRecords);
 
-            if (allMessages.size() == beforeCount) {
-                pagesWithoutGrowth++;
-            } else {
-                pagesWithoutGrowth = 0;
-            }
-
-            if (pagesWithoutGrowth >= 2 || pageRecords.size() < safePageSize) {
+            if (pageRecords.size() < safePageSize) {
                 break;
             }
         }
@@ -281,12 +247,7 @@ public class WhatsappContactSyncService {
     }
 
     private String resolveInstanceName(AuthUserPrincipal principal) {
-        String suffix = "default";
-        if (principal != null && principal.getUserId() != null) {
-            suffix = principal.getUserId().toString();
-        }
-        suffix = suffix.replaceAll("[^a-zA-Z0-9_-]", "");
-        return properties.getInstancePrefix() + "-" + suffix;
+        return properties.getInstancePrefix() + "-" + GLOBAL_SESSION_KEY;
     }
 
     private String extractMessageId(Map<String, Object> message) {
@@ -304,12 +265,32 @@ public class WhatsappContactSyncService {
         if (jid == null || jid.isBlank()) {
             return null;
         }
-        String head = jid.split("@")[0];
+
+        String head = jid;
+        int atIndex = head.indexOf('@');
+        if (atIndex >= 0) {
+            head = head.substring(0, atIndex);
+        }
+
+        int deviceSuffixIndex = head.indexOf(':');
+        if (deviceSuffixIndex >= 0) {
+            head = head.substring(0, deviceSuffixIndex);
+        }
+
         String digits = head.replaceAll("[^0-9]", "");
         if (digits.isBlank()) {
             return null;
         }
         return "+" + digits;
+    }
+
+    private boolean isPhoneJid(String jid) {
+        if (jid == null || jid.isBlank()) {
+            return false;
+        }
+
+        String normalized = jid.trim().toLowerCase();
+        return normalized.endsWith("@s.whatsapp.net") || normalized.endsWith("@c.us");
     }
 
     private String extractText(Map<String, Object> message) {
@@ -429,89 +410,36 @@ public class WhatsappContactSyncService {
 
     private String extractRemoteJid(Map<String, Object> chat) {
         String remoteJid = asString(chat.get("remoteJid"));
-        if (remoteJid != null && !remoteJid.isBlank()) {
+        if (isLikelyJid(remoteJid)) {
             return remoteJid;
         }
 
         String id = asString(chat.get("id"));
-        if (id != null && id.contains("@")) {
+        if (isLikelyJid(id)) {
             return id;
         }
 
         String jid = asString(chat.get("jid"));
-        if (jid != null && jid.contains("@")) {
+        if (isLikelyJid(jid)) {
             return jid;
         }
 
         Map<String, Object> key = asMap(chat.get("key"));
         String nestedRemoteJid = asString(key.get("remoteJid"));
-        if (nestedRemoteJid != null && nestedRemoteJid.contains("@")) {
+        if (isLikelyJid(nestedRemoteJid)) {
             return nestedRemoteJid;
         }
 
         String nestedId = asString(key.get("id"));
-        if (nestedId != null && nestedId.contains("@")) {
+        if (isLikelyJid(nestedId)) {
             return nestedId;
         }
 
         return null;
     }
 
-    private int extractUnreadCount(Map<String, Object> chat) {
-        int unreadCount = parseInteger(chat.get("unreadCount"));
-        if (unreadCount > 0) {
-            return unreadCount;
-        }
-
-        int unreadMessageCount = parseInteger(chat.get("unreadMessageCount"));
-        if (unreadMessageCount > 0) {
-            return unreadMessageCount;
-        }
-
-        int unreadMessages = parseInteger(chat.get("unreadMessages"));
-        if (unreadMessages > 0) {
-            return unreadMessages;
-        }
-
-        int unread = parseInteger(chat.get("unread"));
-        if (unread > 0) {
-            return unread;
-        }
-
-        Map<String, Object> stats = asMap(chat.get("stats"));
-        int statsUnread = parseInteger(stats.get("unread"));
-        if (statsUnread > 0) {
-            return statsUnread;
-        }
-
-        Map<String, Object> metadata = asMap(chat.get("metadata"));
-        return parseInteger(metadata.get("unreadCount"));
-    }
-
-    private int parseInteger(Object value) {
-        if (value == null) {
-            return 0;
-        }
-
-        if (value instanceof Number number) {
-            return Math.max(0, number.intValue());
-        }
-
-        String raw = asString(value);
-        if (raw == null || raw.isBlank()) {
-            return 0;
-        }
-
-        String digits = raw.replaceAll("[^0-9-]", "");
-        if (digits.isBlank()) {
-            return 0;
-        }
-
-        try {
-            return Math.max(0, Integer.parseInt(digits));
-        } catch (NumberFormatException ex) {
-            return 0;
-        }
+    private boolean isLikelyJid(String value) {
+        return value != null && !value.isBlank() && value.contains("@");
     }
 
     @SuppressWarnings("unchecked")

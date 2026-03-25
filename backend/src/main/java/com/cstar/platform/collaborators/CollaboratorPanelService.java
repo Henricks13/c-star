@@ -119,6 +119,18 @@ public class CollaboratorPanelService {
                             taskRepository.countByUserIdAndCompletedTrue(userId)
                     );
 
+                        List<CollaboratorDailyTaskResponse> dailyTasks = taskRepository
+                            .findByUserIdAndTaskTypeAndTaskDateOrderByCreatedAtAsc(userId, CollaboratorTaskType.DAILY, referenceDate)
+                            .stream()
+                            .map(this::mapTask)
+                            .toList();
+
+                        List<CollaboratorDailyTaskResponse> generalTasks = taskRepository
+                            .findByUserIdAndTaskTypeOrderByCreatedAtDesc(userId, CollaboratorTaskType.GENERAL)
+                            .stream()
+                            .map(this::mapTask)
+                            .toList();
+
                     return new CollaboratorPanelItemResponse(
                             userId,
                             user.getFullName(),
@@ -127,7 +139,9 @@ public class CollaboratorPanelService {
                             monthlySalesGoal,
                             monthlySalesProgress,
                             dailyTasksCompletionPercent,
-                            allTasksCompletionPercent
+                            allTasksCompletionPercent,
+                            dailyTasks,
+                            generalTasks
                     );
                 })
                 .sorted(Comparator.comparing(CollaboratorPanelItemResponse::fullName, String.CASE_INSENSITIVE_ORDER))

@@ -36,7 +36,7 @@ export const NavigationItems: NavigationItem[] = [
         type: 'item',
         url: '/meu-painel',
         icon: 'ti ti-checkup-list',
-        role: ['MASTER_ADMIN', 'DEV_SUPORTE']
+        role: ['MASTER_ADMIN', 'DEV_SUPORTE', 'COLABORADOR']
       },
       {
         id: 'contacts',
@@ -45,6 +45,13 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'ti ti-users',
         breadcrumbs: false,
         children: [
+          {
+            id: 'contacts-whatsapp',
+            title: 'WhatsApp',
+            type: 'item',
+            url: '/whatsapp',
+            breadcrumbs: false
+          },
           {
             id: 'contacts-geral',
             title: 'Geral',
@@ -178,13 +185,6 @@ export const NavigationItems: NavigationItem[] = [
             breadcrumbs: false
           }
         ]
-      },
-      {
-        id: 'whatsapp',
-        title: 'WhatsApp',
-        type: 'item',
-        url: '/whatsapp',
-        icon: 'ti ti-brand-whatsapp'
       },
       {
         id: 'users',

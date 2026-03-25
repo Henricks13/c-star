@@ -10,7 +10,9 @@ public record CollaboratorPanelItemResponse(
         int monthlySalesGoal,
         int monthlySalesProgress,
         int dailyTasksCompletionPercent,
-        int allTasksCompletionPercent
+        int allTasksCompletionPercent,
+        java.util.List<CollaboratorDailyTaskResponse> dailyTasks,
+        java.util.List<CollaboratorDailyTaskResponse> generalTasks
 ) {
 }
 

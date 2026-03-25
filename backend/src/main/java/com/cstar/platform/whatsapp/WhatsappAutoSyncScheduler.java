@@ -19,7 +19,7 @@ public class WhatsappAutoSyncScheduler {
     @Scheduled(cron = "0 0 0,6,12,18 * * *", zone = "America/Sao_Paulo")
     public void runScheduledSync() {
         try {
-            var result = whatsappContactSyncService.syncUnreadConversations(null);
+            var result = whatsappContactSyncService.syncAllConversations(null);
             LOGGER.info("Auto-sync WhatsApp concluído. conversas={}, mensagens={}", result.conversationsSynced(), result.messagesProcessed());
         } catch (Exception ex) {
             LOGGER.error("Falha no auto-sync WhatsApp agendado", ex);

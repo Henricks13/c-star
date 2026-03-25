@@ -84,9 +84,9 @@
               class="btn btn-sm btn-primary btn-sync-compact"
               type="button"
               [disabled]="syncing || loading || resetting"
-              (click)="syncUnread()"
+              (click)="syncAll()"
             >
-              <span *ngIf="!syncing">Sincronizar (Não lidas)</span>
+              <span *ngIf="!syncing">Sincronizar (Todos)</span>
               <span *ngIf="syncing" class="d-inline-flex align-items-center gap-2">
                 <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                 Sincronizando...
