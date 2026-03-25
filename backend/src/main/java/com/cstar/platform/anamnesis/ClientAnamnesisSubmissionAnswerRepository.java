@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface ClientAnamnesisSubmissionAnswerRepository extends JpaRepository<ClientAnamnesisSubmissionAnswer, UUID> {
 
     List<ClientAnamnesisSubmissionAnswer> findBySubmissionIdOrderByDisplayOrderAscCreatedAtAsc(UUID submissionId);
+
+    void deleteBySubmissionClientId(UUID clientId);
 }

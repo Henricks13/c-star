@@ -11,4 +11,6 @@ public interface FinanceIncomeRepository extends JpaRepository<FinanceIncome, UU
     List<FinanceIncome> findBySourceAndReferenceIdOrderByOccurredOnAscCreatedAtAsc(IncomeSource source, UUID referenceId);
 
     List<FinanceIncome> findByReferenceIdAndSourceOrderByOccurredOnAscCreatedAtAsc(UUID referenceId, IncomeSource source);
+
+    void deleteBySourceAndReferenceId(IncomeSource source, UUID referenceId);
 }

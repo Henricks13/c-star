@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface ClientObservationRepository extends JpaRepository<ClientObservation, UUID> {
 
     List<ClientObservation> findByClientIdOrderByCreatedAtDesc(UUID clientId);
+
+    void deleteByClientId(UUID clientId);
 }

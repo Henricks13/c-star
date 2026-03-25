@@ -14,6 +14,8 @@ public interface AgendaEventRepository extends JpaRepository<AgendaEvent, UUID> 
 
     List<AgendaEvent> findByStartAtBetweenOrderByStartAtAsc(Instant start, Instant end);
 
+    void deleteByClientId(UUID clientId);
+
         @Query(value = """
                         select *
                         from calendar_events e

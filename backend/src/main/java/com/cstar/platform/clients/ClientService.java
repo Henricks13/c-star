@@ -1,7 +1,12 @@
 package com.cstar.platform.clients;
 
+import com.cstar.platform.agenda.AgendaEventRepository;
+import com.cstar.platform.anamnesis.ClientAnamnesisSubmissionAnswerRepository;
+import com.cstar.platform.anamnesis.ClientAnamnesisSubmissionRepository;
+import com.cstar.platform.anamnesis.model.ClientAnamnesisSubmission;
 import com.cstar.platform.auth.security.AuthUserPrincipal;
 import com.cstar.platform.clientorders.ClientServiceOrderRepository;
+import com.cstar.platform.clientorders.model.ClientServiceOrder;
 import com.cstar.platform.clients.dto.AddClientObservationRequest;
 import com.cstar.platform.clients.dto.ClientObservationResponse;
 import com.cstar.platform.clients.dto.ClientListItemResponse;
@@ -10,6 +15,8 @@ import com.cstar.platform.clients.dto.UpdateClientRequest;
 import com.cstar.platform.clients.model.Client;
 import com.cstar.platform.clients.model.ClientObservation;
 import com.cstar.platform.clients.model.ClientOrigin;
+import com.cstar.platform.finance.FinanceIncomeRepository;
+import com.cstar.platform.finance.model.IncomeSource;
 import com.cstar.platform.whatsapp.model.Contact;
 import com.cstar.platform.whatsapp.model.ContactStage;
 import com.cstar.platform.whatsapp.repository.ContactRepository;
@@ -30,15 +37,27 @@ public class ClientService {
     private final ContactRepository contactRepository;
     private final ClientServiceOrderRepository clientServiceOrderRepository;
     private final ClientObservationRepository clientObservationRepository;
+    private final FinanceIncomeRepository financeIncomeRepository;
+    private final ClientAnamnesisSubmissionRepository clientAnamnesisSubmissionRepository;
+    private final ClientAnamnesisSubmissionAnswerRepository clientAnamnesisSubmissionAnswerRepository;
+    private final AgendaEventRepository agendaEventRepository;
 
     public ClientService(ClientRepository clientRepository,
                          ContactRepository contactRepository,
                          ClientServiceOrderRepository clientServiceOrderRepository,
-                         ClientObservationRepository clientObservationRepository) {
+                         ClientObservationRepository clientObservationRepository,
+                         FinanceIncomeRepository financeIncomeRepository,
+                         ClientAnamnesisSubmissionRepository clientAnamnesisSubmissionRepository,
+                         ClientAnamnesisSubmissionAnswerRepository clientAnamnesisSubmissionAnswerRepository,
+                         AgendaEventRepository agendaEventRepository) {
         this.clientRepository = clientRepository;
         this.contactRepository = contactRepository;
         this.clientServiceOrderRepository = clientServiceOrderRepository;
         this.clientObservationRepository = clientObservationRepository;
+        this.financeIncomeRepository = financeIncomeRepository;
+        this.clientAnamnesisSubmissionRepository = clientAnamnesisSubmissionRepository;
+        this.clientAnamnesisSubmissionAnswerRepository = clientAnamnesisSubmissionAnswerRepository;
+        this.agendaEventRepository = agendaEventRepository;
     }
 
     @Transactional(readOnly = true)
@@ -141,12 +160,29 @@ public class ClientService {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));
 
-        if (clientServiceOrderRepository.existsByClientId(clientId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Não é possível excluir cliente com serviços vinculados. Exclua os serviços primeiro.");
-        }
+        deleteClientDependencies(clientId);
 
         clientRepository.delete(client);
+    }
+
+    private void deleteClientDependencies(UUID clientId) {
+        agendaEventRepository.deleteByClientId(clientId);
+
+        clientObservationRepository.deleteByClientId(clientId);
+
+        List<ClientAnamnesisSubmission> submissions = clientAnamnesisSubmissionRepository.findAllByClientId(clientId);
+        if (!submissions.isEmpty()) {
+            clientAnamnesisSubmissionAnswerRepository.deleteBySubmissionClientId(clientId);
+            clientAnamnesisSubmissionRepository.deleteByClientId(clientId);
+        }
+
+        List<ClientServiceOrder> orders = clientServiceOrderRepository.findByClientIdOrderByCreatedAtDesc(clientId);
+        if (!orders.isEmpty()) {
+            for (ClientServiceOrder order : orders) {
+                financeIncomeRepository.deleteBySourceAndReferenceId(IncomeSource.SERVICE_ORDER, order.getId());
+            }
+            clientServiceOrderRepository.deleteAll(orders);
+        }
     }
 
     @Transactional(readOnly = true)
