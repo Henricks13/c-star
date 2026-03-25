@@ -67,6 +67,23 @@
   overflow-wrap: anywhere;
 }
 
+.client-name-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--bs-link-color);
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.client-name-link:hover {
+  color: var(--bs-link-hover-color);
+}
+
 .mobile-badges {
   display: flex;
   flex-wrap: wrap;

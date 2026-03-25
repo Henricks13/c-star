@@ -45,7 +45,9 @@
               </thead>
               <tbody>
                 <tr *ngFor="let client of clients">
-                  <td>{{ client.fullName }}</td>
+                  <td>
+                    <button class="client-name-link" type="button" (click)="openServiceWizard(client)">{{ client.fullName }}</button>
+                  </td>
                   <td>{{ client.phone }}</td>
                   <td>{{ client.cpf || '—' }}</td>
                   <td>{{ client.email || '—' }}</td>
@@ -87,7 +89,7 @@
               <div class="client-cell">
                 <div class="client-avatar">{{ getInitials(client.fullName) }}</div>
                 <div>
-                  <p class="client-name mb-0">{{ client.fullName || 'Não informado' }}</p>
+                  <button class="client-name client-name-link mb-0" type="button" (click)="openServiceWizard(client)">{{ client.fullName || 'Não informado' }}</button>
                   <small class="text-muted">ID: {{ client.id }}</small>
                   <div class="mobile-badges mt-1">
                     <span class="client-badge origin">{{ getOriginLabel(client.origin) }}</span>
