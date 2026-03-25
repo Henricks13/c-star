@@ -60,6 +60,8 @@ public class WhatsappContactSyncService {
             return new ContactSyncResponse(0, 0);
         }
 
+        evolutionApiClient.assertApiReachable();
+
         contactLifecycleService.refreshStagesByOutboundRecency();
 
         String instanceName = resolveInstanceName(principal);

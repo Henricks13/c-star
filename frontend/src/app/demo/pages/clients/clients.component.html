@@ -144,7 +144,7 @@
 </div>
 
 <ng-container *ngIf="modalOpen">
-  <div class="clients-modal-backdrop clients-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-client-title" (click)="closeModal()">
+  <div class="clients-modal-backdrop clients-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-client-title">
     <div class="clients-modal clients-details-modal create-client-modal" (click)="$event.stopPropagation()">
       <button class="client-details-close-btn" type="button" [attr.aria-label]="isEditingClient ? 'Fechar edição' : 'Fechar cadastro'" [disabled]="saving" (click)="closeModal()">
         <i class="ti ti-x"></i>

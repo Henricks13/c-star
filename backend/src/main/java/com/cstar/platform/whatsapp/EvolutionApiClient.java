@@ -3,11 +3,13 @@ package com.cstar.platform.whatsapp;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,6 +160,20 @@ public class EvolutionApiClient {
         payload.put("limit", safeLimit);
 
         return post(url, payload);
+    }
+
+    public void assertApiReachable() {
+        String url = properties.getEvolution().getBaseUrl() + "/instance/fetchInstances";
+        HttpEntity<Void> request = new HttpEntity<>(headers());
+        try {
+            restTemplate.exchange(url, HttpMethod.GET, request, Object.class);
+        } catch (RestClientException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Não foi possível conectar na Evolution API. Verifique EVOLUTION_BASE_URL e EVOLUTION_API_KEY.",
+                    ex
+            );
+        }
     }
 
     private Map<String, Object> get(String url) {

@@ -60,7 +60,10 @@
                 <tr *ngFor="let order of filteredOrders">
                   <td>
                     <div class="fw-semibold">{{ order.clientName }}</div>
-                    <small class="text-muted">Procedimentos: {{ getProcedureNames(order) }} | Produtos: {{ getProductNames(order) }}</small>
+                    <small class="text-muted">
+                      Procedimentos: {{ getProcedureNames(order) }}
+                      <ng-container *ngIf="hasAdditionalProducts(order)"> | Produtos: {{ getAdditionalProductNames(order) }}</ng-container>
+                    </small>
                   </td>
                   <td>
                     <span class="history-status" [class.quoted]="isStatusQuoted(order.serviceStatus)" [class.awaiting]="isStatusAwaiting(order.serviceStatus)" [class.paid]="isStatusPaid(order.serviceStatus)">
@@ -132,7 +135,7 @@
           <div class="mobile-service-card" *ngFor="let order of filteredOrders">
             <div class="mobile-service-row"><span class="mobile-label">Cliente</span><span>{{ order.clientName }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Procedimentos</span><span>{{ getProcedureNames(order) }}</span></div>
-            <div class="mobile-service-row"><span class="mobile-label">Produtos</span><span>{{ getProductNames(order) }}</span></div>
+            <div class="mobile-service-row" *ngIf="hasAdditionalProducts(order)"><span class="mobile-label">Produtos</span><span>{{ getAdditionalProductNames(order) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Status serviço</span><span>{{ getOrderStatusLabel(order.serviceStatus) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Status pagamento</span><span>{{ getPaymentStatusLabel(order.paymentStatus) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Valor</span><span>{{ order.finalTotal | currency: 'BRL' }}</span></div>
@@ -180,7 +183,7 @@
   </div>
 </div>
 
-<div class="app-modal-backdrop details-modal-backdrop create-wizard-backdrop" *ngIf="createWizardOpen" (click)="closeCreateWizard()">
+<div class="app-modal-backdrop details-modal-backdrop create-wizard-backdrop" *ngIf="createWizardOpen">
   <div class="app-modal app-modal-details create-wizard-modal" (click)="$event.stopPropagation()">
     <button class="details-close-btn" type="button" aria-label="Fechar novo serviço" (click)="closeCreateWizard()">
       <i class="ti ti-x"></i>

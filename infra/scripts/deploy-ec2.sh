@@ -48,6 +48,31 @@ if [ "${#missing_vars[@]}" -gt 0 ]; then
   exit 1
 fi
 
+normalize_var() {
+  echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+WHATSAPP_PUBLIC_BASE_URL_VALUE=$(grep -E '^WHATSAPP_PUBLIC_BASE_URL=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f2-)
+EVOLUTION_BASE_URL_VALUE=$(grep -E '^EVOLUTION_BASE_URL=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f2-)
+
+WHATSAPP_PUBLIC_BASE_URL_NORMALIZED=$(normalize_var "$WHATSAPP_PUBLIC_BASE_URL_VALUE")
+EVOLUTION_BASE_URL_NORMALIZED=$(normalize_var "$EVOLUTION_BASE_URL_VALUE")
+
+if [[ "$WHATSAPP_PUBLIC_BASE_URL_NORMALIZED" == *"localhost"* || "$WHATSAPP_PUBLIC_BASE_URL_NORMALIZED" == *"127.0.0.1"* ]]; then
+  echo "WHATSAPP_PUBLIC_BASE_URL inválido para servidor: '$WHATSAPP_PUBLIC_BASE_URL_VALUE'. Use domínio/IP público alcançável."
+  exit 1
+fi
+
+if [[ "$EVOLUTION_BASE_URL_NORMALIZED" == *"localhost"* || "$EVOLUTION_BASE_URL_NORMALIZED" == *"127.0.0.1"* ]]; then
+  echo "EVOLUTION_BASE_URL inválido para backend em Docker: '$EVOLUTION_BASE_URL_VALUE'. Use endereço de serviço interno (ex.: http://evolution:8080)."
+  exit 1
+fi
+
+if [[ ! "$WHATSAPP_PUBLIC_BASE_URL_NORMALIZED" =~ ^https?:// ]]; then
+  echo "WHATSAPP_PUBLIC_BASE_URL deve começar com http:// ou https://. Valor atual: '$WHATSAPP_PUBLIC_BASE_URL_VALUE'"
+  exit 1
+fi
+
 echo "[precheck] Uso de disco"
 df -h /
 

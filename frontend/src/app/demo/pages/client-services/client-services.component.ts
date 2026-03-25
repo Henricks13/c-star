@@ -344,6 +344,27 @@ export class ClientServicesComponent implements OnInit {
     return names.length > 0 ? names.join(', ') : 'Nenhum';
   }
 
+  getAdditionalProductNames(order: ClientServiceOrderItem): string {
+    if (!order?.products?.length) {
+      return '';
+    }
+
+    const names = Array.from(
+      new Set(
+        order.products
+          .filter((item) => item?.source === 'EXTRA')
+          .map((item) => (item?.productName || '').trim())
+          .filter((name) => !!name)
+      )
+    );
+
+    return names.join(', ');
+  }
+
+  hasAdditionalProducts(order: ClientServiceOrderItem): boolean {
+    return this.getAdditionalProductNames(order).length > 0;
+  }
+
   loadInitialData(): void {
     this.loading = true;
     this.errorMessage = null;
