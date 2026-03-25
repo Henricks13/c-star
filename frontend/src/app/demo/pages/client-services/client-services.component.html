@@ -60,7 +60,7 @@
                 <tr *ngFor="let order of filteredOrders">
                   <td>
                     <div class="fw-semibold">{{ order.clientName }}</div>
-                    <small class="text-muted">Serviços: {{ order.services.length }} | Produtos: {{ order.products.length }}</small>
+                    <small class="text-muted">Procedimentos: {{ getProcedureNames(order) }} | Produtos: {{ getProductNames(order) }}</small>
                   </td>
                   <td>
                     <span class="history-status" [class.quoted]="isStatusQuoted(order.serviceStatus)" [class.awaiting]="isStatusAwaiting(order.serviceStatus)" [class.paid]="isStatusPaid(order.serviceStatus)">
@@ -131,6 +131,8 @@
         <div class="mobile-list d-block d-md-none">
           <div class="mobile-service-card" *ngFor="let order of filteredOrders">
             <div class="mobile-service-row"><span class="mobile-label">Cliente</span><span>{{ order.clientName }}</span></div>
+            <div class="mobile-service-row"><span class="mobile-label">Procedimentos</span><span>{{ getProcedureNames(order) }}</span></div>
+            <div class="mobile-service-row"><span class="mobile-label">Produtos</span><span>{{ getProductNames(order) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Status serviço</span><span>{{ getOrderStatusLabel(order.serviceStatus) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Status pagamento</span><span>{{ getPaymentStatusLabel(order.paymentStatus) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Valor</span><span>{{ order.finalTotal | currency: 'BRL' }}</span></div>
@@ -190,14 +192,14 @@
       </div>
       <div class="details-header-text">
         <h5 class="mb-1">Novo serviço</h5>
-        <div class="details-subtitle">Cadastre o serviço do cliente em etapas</div>
+        <div class="details-subtitle">Cadastre o procedimento do cliente em etapas</div>
       </div>
     </div>
 
     <div class="app-modal-body details-modal-body">
       <div class="details-section mb-3 create-wizard-content">
       <div class="wizard-steps mb-3">
-        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 1" [class.btn-outline-secondary]="createWizardStep !== 1" (click)="goToWizardStep(1)">1. Cliente e serviços</button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 1" [class.btn-outline-secondary]="createWizardStep !== 1" (click)="goToWizardStep(1)">1. Cliente e procedimentos</button>
         <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 2" [class.btn-outline-secondary]="createWizardStep !== 2" (click)="goToWizardStep(2)">2. Produtos extras</button>
         <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 3" [class.btn-outline-secondary]="createWizardStep !== 3" (click)="goToWizardStep(3)">3. Orçamento</button>
         <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 4" [class.btn-outline-secondary]="createWizardStep !== 4" (click)="goToWizardStep(4)">4. Pagamento</button>
@@ -212,20 +214,20 @@
           </ng-select>
         </div>
 
-        <label class="form-label">Serviços</label>
+        <label class="form-label">Procedimentos</label>
         <div class="service-row mb-2" *ngFor="let serviceId of selectedServiceIds; let index = index">
           <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(index, $event)">
-            <ng-option [value]="''">Selecione o serviço</ng-option>
+            <ng-option [value]="''">Selecione o procedimento</ng-option>
             <ng-option *ngFor="let service of availableServices" [value]="service.id">
               {{ service.name }} - {{ service.price | currency: 'BRL' }}
             </ng-option>
           </ng-select>
           <button type="button" class="btn btn-outline-danger" (click)="removeServiceRow(index)">Remover</button>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-primary" (click)="addServiceRow()">Adicionar serviço</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="addServiceRow()">Adicionar procedimento</button>
 
         <div class="stock-box mt-3" *ngIf="requiredServiceProducts.length > 0">
-          <div class="fw-semibold mb-2">Consumo automático de estoque (serviços)</div>
+          <div class="fw-semibold mb-2">Consumo automático de estoque (procedimentos)</div>
           <div class="stock-row" *ngFor="let row of requiredServiceProducts">
             <span>{{ row.product.name }}</span>
             <span [class.text-danger]="!row.enough">Nec.: {{ row.requiredQty }} | Disp.: {{ row.availableQty }}</span>
@@ -742,6 +744,14 @@
           <div class="details-field">
             <span class="details-field-label">Status pagamento</span>
             <span class="details-field-value">{{ getPaymentStatusLabel(selectedOrderForDetails.paymentStatus) }}</span>
+          </div>
+          <div class="details-field details-field-full">
+            <span class="details-field-label">Procedimentos</span>
+            <span class="details-field-value">{{ getProcedureNames(selectedOrderForDetails) }}</span>
+          </div>
+          <div class="details-field details-field-full">
+            <span class="details-field-label">Produtos</span>
+            <span class="details-field-value">{{ getProductNames(selectedOrderForDetails) }}</span>
           </div>
           <div class="details-field">
             <span class="details-field-label">Valor total</span>

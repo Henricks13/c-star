@@ -285,6 +285,38 @@ export class ClientServicesComponent implements OnInit {
     return this.paymentTotalInvoiced - this.paymentTotalPaid;
   }
 
+  getProcedureNames(order: ClientServiceOrderItem): string {
+    if (!order?.services?.length) {
+      return 'Nenhum';
+    }
+
+    const names = Array.from(
+      new Set(
+        order.services
+          .map((item) => (item?.serviceName || '').trim())
+          .filter((name) => !!name)
+      )
+    );
+
+    return names.length > 0 ? names.join(', ') : 'Nenhum';
+  }
+
+  getProductNames(order: ClientServiceOrderItem): string {
+    if (!order?.products?.length) {
+      return 'Nenhum';
+    }
+
+    const names = Array.from(
+      new Set(
+        order.products
+          .map((item) => (item?.productName || '').trim())
+          .filter((name) => !!name)
+      )
+    );
+
+    return names.length > 0 ? names.join(', ') : 'Nenhum';
+  }
+
   loadInitialData(): void {
     this.loading = true;
     this.errorMessage = null;
