@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from 'src/app/core/auth/auth.service';
+import { ThemeModeService } from 'src/app/core/theme/theme-mode.service';
 
 @Component({
   selector: 'app-register',
@@ -16,6 +17,7 @@ export class RegisterComponent {
   private cd = inject(ChangeDetectorRef);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private readonly themeModeService = inject(ThemeModeService);
 
   submitted = signal(false);
   error = signal('');
@@ -62,5 +64,9 @@ export class RegisterComponent {
           this.cd.detectChanges();
         }
       });
+  }
+
+  get logoPath(): string {
+    return this.themeModeService.getCurrentMode() === 'dark' ? 'assets/images/logo-dark.svg' : 'assets/images/logo.svg';
   }
 }

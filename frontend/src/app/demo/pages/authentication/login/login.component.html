@@ -5,7 +5,7 @@
         <div class="card-body">
           <form (ngSubmit)="onSubmit($event)">
             <a href="#" class="d-flex justify-content-center auth-logo-link">
-              <img src="assets/images/logo.svg" alt="logo" class="auth-logo" />
+              <img [src]="logoPath" alt="logo" class="auth-logo" />
             </a>
             <div class="row">
               <div class="d-flex justify-content-center">
