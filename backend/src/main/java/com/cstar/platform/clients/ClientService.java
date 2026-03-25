@@ -316,11 +316,6 @@ public class ClientService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão para excluir cliente.");
         }
 
-        String email = principal.getUsername() == null ? "" : principal.getUsername().trim().toLowerCase();
-        if ("carol@gmail.com".equals(email)) {
-            return;
-        }
-
         boolean authorizedByRole = principal.getRoleCodes().stream()
                 .map(code -> code == null ? "" : code.trim().toUpperCase())
                 .anyMatch(code -> "DEV_SUPORTE".equals(code) || "MASTER_ADMIN".equals(code));
