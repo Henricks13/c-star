@@ -23,6 +23,7 @@ public class WhatsappSessionService {
     private static final String PROVIDER_NAME = "mock-local";
     private static final String DEFAULT_PHONE = "+55 11 99999-0000";
     private static final long QR_CACHE_TTL_SECONDS = 120;
+    private static final String GLOBAL_SESSION_KEY = "global";
 
     private final EvolutionApiClient evolutionApiClient;
     private final WhatsappIngestionService ingestionService;
@@ -96,7 +97,7 @@ public class WhatsappSessionService {
         SessionState state = sessions.computeIfAbsent(sessionKey, key -> SessionState.disconnected());
 
         state.connected = true;
-        state.displayName = principal != null ? principal.getFullName() : "Conta C-Star";
+        state.displayName = "Conta C-Star";
         state.phoneNumber = DEFAULT_PHONE;
         state.connectedAt = state.connectedAt == null ? Instant.now() : state.connectedAt;
         state.lastSyncAt = Instant.now();
@@ -201,15 +202,11 @@ public class WhatsappSessionService {
     }
 
     private String resolveSessionKey(AuthUserPrincipal principal) {
-        if (principal == null) {
-            return "default";
-        }
-        return principal.getUserId().toString();
+        return GLOBAL_SESSION_KEY;
     }
 
     private String resolveInstanceName(AuthUserPrincipal principal) {
-        String suffix = resolveSessionKey(principal).replaceAll("[^a-zA-Z0-9_-]", "");
-        return properties.getInstancePrefix() + "-" + suffix;
+        return properties.getInstancePrefix() + "-" + GLOBAL_SESSION_KEY;
     }
 
     private boolean isEvolutionProvider() {
@@ -229,7 +226,7 @@ public class WhatsappSessionService {
 
         String displayName = instanceInfo.displayName() != null && !instanceInfo.displayName().isBlank()
             ? instanceInfo.displayName()
-            : principal != null ? principal.getFullName() : "Conta C-Star";
+            : "Conta C-Star";
 
         String phoneNumber = connected ? instanceInfo.phoneNumber() : null;
 
