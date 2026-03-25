@@ -5,6 +5,11 @@
 	display: block;
 }
 
+:host {
+	position: relative;
+	z-index: 1;
+}
+
 .m-header {
 	padding-top: 6px;
 	padding-bottom: 6px;
@@ -45,14 +50,34 @@
 }
 
 @media (max-width: 1024px) {
+	:host {
+		position: absolute;
+		left: 0;
+		right: 0;
+		pointer-events: none;
+	}
+
 	.brand-logo {
 		height: 60px;
 	}
 
 	.m-header {
+		display: flex !important;
+		width: 100% !important;
 		min-height: 80px;
 		padding-top: 6px;
 		padding-bottom: 6px;
-		justify-content: flex-end;
+		padding-left: 56px;
+		padding-right: 56px;
+		justify-content: center;
+	}
+
+	.b-brand {
+		width: auto;
+		pointer-events: auto;
+	}
+
+	.pc-h-item {
+		display: none;
 	}
 }

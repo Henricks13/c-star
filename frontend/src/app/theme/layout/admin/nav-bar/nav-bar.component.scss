@@ -1,1 +1,21 @@
-// This file is intentionally left empty to allow customers to add custom CSS if needed.
+:host {
+	display: block;
+}
+
+@media (max-width: 1024px) {
+	.pc-header {
+		position: fixed;
+	}
+
+	.header-wrapper {
+		position: relative;
+		width: 100%;
+		z-index: 2;
+	}
+
+	app-nav-left,
+	app-nav-right {
+		position: relative;
+		z-index: 3;
+	}
+}

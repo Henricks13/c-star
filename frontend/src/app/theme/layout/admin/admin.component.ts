@@ -64,6 +64,6 @@ export class AdminComponent implements AfterViewInit {
   }
 
   closeMenu() {
-    this.layoutState.toggleNavCollapsedMob();
+    this.layoutState.closeNavCollapsedMob();
   }
 }
