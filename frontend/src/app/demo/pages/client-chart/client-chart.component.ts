@@ -237,6 +237,19 @@ export class ClientChartComponent implements OnInit {
     });
   }
 
+  openServicesScreen(orderId: string | null | undefined): void {
+    if (!this.clientId) {
+      return;
+    }
+
+    this.router.navigate(['/clients/services'], {
+      queryParams: {
+        clientId: this.clientId,
+        orderId: (orderId || '').trim() || null
+      }
+    });
+  }
+
   addObservation(): void {
     if (this.savingObservation) {
       return;
@@ -458,6 +471,18 @@ export class ClientChartComponent implements OnInit {
   getOriginLabel(origin: string | null | undefined): string {
     const normalized = (origin || '').trim().toUpperCase();
 
+    if (normalized === 'LEAD_TRAFEGO_PAGO') {
+      return 'Lead Tráfego Pago';
+    }
+    if (normalized === 'INDICACAO') {
+      return 'Indicação';
+    }
+    if (normalized === 'PACIENTE_ANTIGO') {
+      return 'Paciente Antigo';
+    }
+    if (normalized === 'REDES_SOCIAIS') {
+      return 'Redes Sociais';
+    }
     if (normalized === 'CADASTRO_MANUAL') {
       return 'Cadastrado Manual';
     }

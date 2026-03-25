@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 024-clients-origin-options-update
+      author: copilot
+      changes:
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              ALTER TABLE clients
+              DROP CONSTRAINT IF EXISTS ck_clients_origin;
+
+              ALTER TABLE clients
+              ADD CONSTRAINT ck_clients_origin
+              CHECK (
+                origin IN (
+                  'LEAD_TRAFEGO_PAGO',
+                  'INDICACAO',
+                  'PACIENTE_ANTIGO',
+                  'REDES_SOCIAIS',
+                  'RESGATE',
+                  'CADASTRO_MANUAL',
+                  'CADASTRO_INDICADO',
+                  'OUTROS'
+                )
+              );

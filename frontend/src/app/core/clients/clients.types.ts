@@ -1,4 +1,12 @@
-export type ClientOrigin = 'RESGATE' | 'CADASTRO_MANUAL' | 'CADASTRO_INDICADO' | 'OUTROS';
+export type ClientOrigin =
+  | 'LEAD_TRAFEGO_PAGO'
+  | 'INDICACAO'
+  | 'PACIENTE_ANTIGO'
+  | 'REDES_SOCIAIS'
+  | 'RESGATE'
+  | 'CADASTRO_MANUAL'
+  | 'CADASTRO_INDICADO'
+  | 'OUTROS';
 export type ClientBusinessStatus = 'NEGOCIACAO' | 'AVALIACAO_MARCADA' | 'NEGOCIO_FECHADO';
 
 export interface ClientOriginOption {
@@ -7,10 +15,10 @@ export interface ClientOriginOption {
 }
 
 export const CLIENT_ORIGIN_OPTIONS: ClientOriginOption[] = [
-  { value: 'RESGATE', label: 'Resgate' },
-  { value: 'CADASTRO_MANUAL', label: 'Cadastrado Manual' },
-  { value: 'CADASTRO_INDICADO', label: 'Cadastrado Indicado' },
-  { value: 'OUTROS', label: 'Outros' }
+  { value: 'LEAD_TRAFEGO_PAGO', label: 'Lead Tráfego Pago' },
+  { value: 'INDICACAO', label: 'Indicação' },
+  { value: 'PACIENTE_ANTIGO', label: 'Paciente Antigo' },
+  { value: 'REDES_SOCIAIS', label: 'Redes Sociais' }
 ];
 
 export interface ClientListItem {

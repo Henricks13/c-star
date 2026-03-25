@@ -297,11 +297,11 @@ public class ClientService {
 
     private ClientOrigin parseOrigin(String rawOrigin, boolean forceRescue) {
         if (forceRescue) {
-            return ClientOrigin.RESGATE;
+            return ClientOrigin.LEAD_TRAFEGO_PAGO;
         }
 
         if (rawOrigin == null || rawOrigin.isBlank()) {
-            return ClientOrigin.CADASTRO_MANUAL;
+            return ClientOrigin.LEAD_TRAFEGO_PAGO;
         }
 
         try {

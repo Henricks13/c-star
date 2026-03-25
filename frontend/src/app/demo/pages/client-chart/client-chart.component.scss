@@ -45,9 +45,9 @@
 }
 
 .chart-tab.active {
-  color: var(--bs-emphasis-color);
-  border-color: #d4b16b;
-  background: #fff8ea;
+  color: var(--bs-warning-text-emphasis);
+  border-color: var(--bs-warning-border-subtle);
+  background: var(--bs-warning-bg-subtle);
 }
 
 .kpi-grid {
@@ -242,6 +242,8 @@
   margin-top: 0.65rem;
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .service-groups {

@@ -108,7 +108,7 @@
             <div class="order-card" *ngFor="let order of ordersInProgress">
               <div class="order-header">
                 <div>
-                  <div class="fw-semibold">Serviço #{{ getOrderDisplayId(order.id) }}</div>
+                  <div class="fw-semibold">{{ getOrderServicesShortLabel(order) }}</div>
                   <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
                 </div>
                 <div class="order-statuses">
@@ -135,6 +135,11 @@
                   <div>{{ getOrderLastObservation(order)?.note || 'Sem observação' }}</div>
                 </div>
               </div>
+
+              <div class="order-section">
+                <small class="text-muted d-block mb-1">Planejamento</small>
+                <div>{{ order.notes || 'Sem planejamento registrado.' }}</div>
+              </div>
             </div>
           </div>
 
@@ -154,7 +159,7 @@
                 <div class="order-card" *ngFor="let order of ordersInProgress">
                   <div class="order-header">
                     <div>
-                      <div class="fw-semibold">Serviço #{{ getOrderDisplayId(order.id) }}</div>
+                      <div class="fw-semibold">{{ getOrderServicesShortLabel(order) }}</div>
                       <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
                     </div>
                     <div class="order-statuses">
@@ -193,16 +198,25 @@
                   </div>
 
                   <div class="order-section">
-                    <small class="text-muted d-block mb-1">Serviços</small>
+                    <small class="text-muted d-block mb-1">Procedimentos</small>
                     <ul class="mb-0 ps-3">
                       <li *ngFor="let service of order.services">{{ service.serviceName }} - {{ service.servicePrice | currency: 'BRL' }}</li>
                     </ul>
+                  </div>
+
+                  <div class="order-section">
+                    <small class="text-muted d-block mb-1">Planejamento</small>
+                    <div>{{ order.notes || 'Sem planejamento registrado.' }}</div>
                   </div>
 
                   <div class="order-actions">
                     <button class="btn btn-sm btn-outline-primary" type="button" (click)="openServiceForEdit(order.id)">
                       <i class="ti ti-edit me-1"></i>
                       Editar serviço
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openServicesScreen(order.id)">
+                      <i class="ti ti-external-link me-1"></i>
+                      Tela de serviços
                     </button>
                   </div>
                 </div>
@@ -220,7 +234,7 @@
                 <div class="order-card" *ngFor="let order of ordersBudgeted">
                   <div class="order-header">
                     <div>
-                      <div class="fw-semibold">Serviço #{{ getOrderDisplayId(order.id) }}</div>
+                      <div class="fw-semibold">{{ getOrderServicesShortLabel(order) }}</div>
                       <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
                     </div>
                     <div class="order-statuses">
@@ -250,10 +264,19 @@
                     </div>
                   </div>
 
+                  <div class="order-section">
+                    <small class="text-muted d-block mb-1">Planejamento</small>
+                    <div>{{ order.notes || 'Sem planejamento registrado.' }}</div>
+                  </div>
+
                   <div class="order-actions">
                     <button class="btn btn-sm btn-outline-primary" type="button" (click)="openServiceForEdit(order.id)">
                       <i class="ti ti-edit me-1"></i>
                       Editar serviço
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openServicesScreen(order.id)">
+                      <i class="ti ti-external-link me-1"></i>
+                      Tela de serviços
                     </button>
                   </div>
                 </div>
@@ -271,7 +294,7 @@
                 <div class="order-card" *ngFor="let order of ordersCompleted">
                   <div class="order-header">
                     <div>
-                      <div class="fw-semibold">Serviço #{{ getOrderDisplayId(order.id) }}</div>
+                      <div class="fw-semibold">{{ getOrderServicesShortLabel(order) }}</div>
                       <small class="text-muted">Criado em {{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
                     </div>
                     <div class="order-statuses">
@@ -289,6 +312,18 @@
                       <small class="text-muted">Já pago</small>
                       <div class="fw-semibold text-success">{{ getOrderPaidAmount(order) | currency: 'BRL' }}</div>
                     </div>
+                  </div>
+
+                  <div class="order-section">
+                    <small class="text-muted d-block mb-1">Planejamento</small>
+                    <div>{{ order.notes || 'Sem planejamento registrado.' }}</div>
+                  </div>
+
+                  <div class="order-actions">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openServicesScreen(order.id)">
+                      <i class="ti ti-external-link me-1"></i>
+                      Tela de serviços
+                    </button>
                   </div>
                 </div>
               </div>

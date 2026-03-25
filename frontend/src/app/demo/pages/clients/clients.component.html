@@ -39,7 +39,6 @@
                   <th>E-mail</th>
                   <th>Origem</th>
                   <th>Status</th>
-                  <th>Vínculo</th>
                   <th class="text-end">Ações</th>
                 </tr>
               </thead>
@@ -53,7 +52,6 @@
                   <td>{{ client.email || '—' }}</td>
                   <td>{{ getOriginLabel(client.origin) }}</td>
                   <td>{{ getBusinessStatusLabel(client.businessStatus) }}</td>
-                  <td>{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</td>
                   <td>
                     <div class="client-actions">
                       <button class="btn btn-sm btn-outline-success" type="button" (click)="openServiceWizard(client)" title="Ficha" aria-label="Ficha">
@@ -113,10 +111,6 @@
               <div class="mobile-client-row">
                 <span class="mobile-label">E-mail</span>
                 <span class="mobile-value">{{ client.email || '—' }}</span>
-              </div>
-              <div class="mobile-client-row">
-                <span class="mobile-label">Vínculo</span>
-                <span class="mobile-value">{{ client.sourceContactId ? 'Contato vinculado' : 'Sem vínculo' }}</span>
               </div>
             </div>
 

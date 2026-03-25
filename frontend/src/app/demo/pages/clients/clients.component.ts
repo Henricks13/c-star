@@ -316,11 +316,10 @@ export class ClientsComponent implements OnInit {
     };
 
     this.clientsService.create(payload).subscribe({
-      next: () => {
-        this.infoMessage = 'Cliente cadastrado com sucesso.';
+      next: (createdClient) => {
         this.saving = false;
         this.closeModal();
-        this.loadClients();
+        this.router.navigate(['/clients', createdClient.id]);
       },
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Não foi possível cadastrar o cliente.';
@@ -1061,7 +1060,7 @@ export class ClientsComponent implements OnInit {
       phone: '',
       cpf: '',
       email: '',
-      origin: 'CADASTRO_MANUAL',
+      origin: 'LEAD_TRAFEGO_PAGO',
       sourceContactId: null,
       notes: ''
     };

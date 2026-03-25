@@ -262,7 +262,7 @@ export class ContactsComponent implements OnInit {
       phone: (contact.phone || '').trim(),
       cpf: '',
       email: '',
-      origin: 'RESGATE',
+      origin: 'LEAD_TRAFEGO_PAGO',
       sourceContactId: contact.id,
       notes: ''
     };
@@ -291,7 +291,7 @@ export class ContactsComponent implements OnInit {
       phone: (this.clientForm.phone || '').trim(),
       cpf: (this.clientForm.cpf || '').trim() || null,
       email: (this.clientForm.email || '').trim().toLowerCase() || null,
-      origin: 'RESGATE',
+      origin: 'LEAD_TRAFEGO_PAGO',
       sourceContactId: this.clientForm.sourceContactId || this.convertingContact?.id || null,
       notes: (this.clientForm.notes || '').trim() || null
     };
@@ -306,11 +306,10 @@ export class ContactsComponent implements OnInit {
     this.infoMessage = null;
 
     this.clientsService.create(payload).subscribe({
-      next: () => {
+      next: (createdClient) => {
         this.clientSaving = false;
         this.closeClientModal();
-        this.infoMessage = 'Cliente criado com sucesso a partir do contato em andamento.';
-        this.loadContacts();
+        this.router.navigate(['/clients', createdClient.id]);
       },
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Não foi possível tornar este contato um cliente.';
@@ -615,7 +614,7 @@ export class ContactsComponent implements OnInit {
       phone: '',
       cpf: '',
       email: '',
-      origin: 'RESGATE',
+      origin: 'LEAD_TRAFEGO_PAGO',
       sourceContactId: null,
       notes: ''
     };
