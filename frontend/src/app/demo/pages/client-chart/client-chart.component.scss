@@ -246,6 +246,14 @@
   flex-wrap: wrap;
 }
 
+.orders-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.15rem;
+}
+
 .service-groups {
   display: flex;
   flex-direction: column;
@@ -376,6 +384,11 @@
   .order-header {
     flex-direction: column;
     margin-bottom: 0.55rem;
+  }
+
+  .orders-pagination {
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .order-statuses {

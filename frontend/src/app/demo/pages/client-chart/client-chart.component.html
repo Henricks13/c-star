@@ -156,7 +156,7 @@
             <section class="service-group">
               <h6 class="section-heading">Em andamento ({{ ordersInProgress.length }})</h6>
               <div class="orders-list" *ngIf="ordersInProgress.length > 0; else noInProgress">
-                <div class="order-card" *ngFor="let order of ordersInProgress">
+                <div class="order-card" *ngFor="let order of pagedOrdersInProgress">
                   <div class="order-header">
                     <div>
                       <div class="fw-semibold">{{ getOrderServicesShortLabel(order) }}</div>
@@ -220,6 +220,21 @@
                     </button>
                   </div>
                 </div>
+
+                <div class="orders-pagination" *ngIf="inProgressTotalPages > 1">
+                  <button class="btn btn-sm btn-outline-secondary" type="button" (click)="previousInProgressPage()" [disabled]="inProgressPage === 0">
+                    Anterior
+                  </button>
+                  <small class="text-muted">Página {{ inProgressPage + 1 }} de {{ inProgressTotalPages }}</small>
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    type="button"
+                    (click)="nextInProgressPage()"
+                    [disabled]="inProgressPage >= inProgressTotalPages - 1"
+                  >
+                    Próxima
+                  </button>
+                </div>
               </div>
               <ng-template #noInProgress>
                 <div class="empty-state compact">
@@ -231,7 +246,7 @@
             <section class="service-group">
               <h6 class="section-heading">Orçados ({{ ordersBudgeted.length }})</h6>
               <div class="orders-list" *ngIf="ordersBudgeted.length > 0; else noBudgeted">
-                <div class="order-card" *ngFor="let order of ordersBudgeted">
+                <div class="order-card" *ngFor="let order of pagedOrdersBudgeted">
                   <div class="order-header">
                     <div>
                       <div class="fw-semibold">{{ getOrderServicesShortLabel(order) }}</div>
@@ -280,6 +295,16 @@
                     </button>
                   </div>
                 </div>
+
+                <div class="orders-pagination" *ngIf="budgetedTotalPages > 1">
+                  <button class="btn btn-sm btn-outline-secondary" type="button" (click)="previousBudgetedPage()" [disabled]="budgetedPage === 0">
+                    Anterior
+                  </button>
+                  <small class="text-muted">Página {{ budgetedPage + 1 }} de {{ budgetedTotalPages }}</small>
+                  <button class="btn btn-sm btn-outline-secondary" type="button" (click)="nextBudgetedPage()" [disabled]="budgetedPage >= budgetedTotalPages - 1">
+                    Próxima
+                  </button>
+                </div>
               </div>
               <ng-template #noBudgeted>
                 <div class="empty-state compact">
@@ -291,7 +316,7 @@
             <section class="service-group">
               <h6 class="section-heading">Concluídos ({{ ordersCompleted.length }})</h6>
               <div class="orders-list" *ngIf="ordersCompleted.length > 0; else noCompleted">
-                <div class="order-card" *ngFor="let order of ordersCompleted">
+                <div class="order-card" *ngFor="let order of pagedOrdersCompleted">
                   <div class="order-header">
                     <div>
                       <div class="fw-semibold">{{ getOrderServicesShortLabel(order) }}</div>
@@ -325,6 +350,16 @@
                       Tela de serviços
                     </button>
                   </div>
+                </div>
+
+                <div class="orders-pagination" *ngIf="completedTotalPages > 1">
+                  <button class="btn btn-sm btn-outline-secondary" type="button" (click)="previousCompletedPage()" [disabled]="completedPage === 0">
+                    Anterior
+                  </button>
+                  <small class="text-muted">Página {{ completedPage + 1 }} de {{ completedTotalPages }}</small>
+                  <button class="btn btn-sm btn-outline-secondary" type="button" (click)="nextCompletedPage()" [disabled]="completedPage >= completedTotalPages - 1">
+                    Próxima
+                  </button>
                 </div>
               </div>
               <ng-template #noCompleted>
@@ -375,10 +410,10 @@
                 [items]="observationEligibleOrders"
                 bindLabel="id"
                 bindValue="id"
-                [clearable]="false"
+                [clearable]="true"
                 [searchable]="false"
                 [(ngModel)]="selectedObservationOrderId"
-                placeholder="Selecione o serviço"
+                placeholder="Selecione"
               >
                 <ng-template ng-label-tmp let-item="item">
                   {{ getObservationOrderDetailLabel(item) }}
@@ -396,6 +431,7 @@
               rows="3"
               [(ngModel)]="newObservation"
               [attr.placeholder]="isServiceObservation ? 'Digite a Observação do Serviço selecionado' : 'Digite a Observação Geral'"
+              [disabled]="isServiceObservation && !selectedObservationOrderId"
             ></textarea>
 
             <div class="mt-2 d-flex justify-content-end">
