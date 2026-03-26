@@ -360,7 +360,11 @@
                 <label class="form-check-label" for="serviceObservationToggle">Observação de serviço</label>
               </div>
               <small class="text-muted">
-                {{ isServiceObservation ? 'Observação vinculada a um serviço específico.' : 'Observação geral da cliente.' }}
+                {{
+                  isServiceObservation
+                    ? 'Observação vinculada a um serviço específico.'
+                    : 'Observação geral do cliente. Com essa opção desmarcada, a observação será adicionada ao cliente.'
+                }}
               </small>
             </div>
 
@@ -387,7 +391,12 @@
             </div>
 
             <label class="form-label">Observação</label>
-            <textarea class="form-control" rows="3" [(ngModel)]="newObservation" placeholder="Digite a observação clínica"></textarea>
+            <textarea
+              class="form-control"
+              rows="3"
+              [(ngModel)]="newObservation"
+              [attr.placeholder]="isServiceObservation ? 'Digite a Observação do Serviço selecionado' : 'Digite a Observação Geral'"
+            ></textarea>
 
             <div class="mt-2 d-flex justify-content-end">
               <button

@@ -392,7 +392,7 @@ export class ClientChartComponent implements OnInit {
     const serviceLabel = this.getOrderServicesShortLabel(order);
     const valueLabel = Number(order.finalTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const statusLabel = this.getServiceFlowStatusLabel(order);
-    return `Serviço: ${serviceLabel} | Valor: ${valueLabel} | Status: ${statusLabel} | ID: #${this.getOrderDisplayId(order.id)}`;
+    return `Serviço: ${serviceLabel} | Valor: ${valueLabel} | Status: ${statusLabel}`;
   }
 
   getOrderServicesShortLabel(order: ClientServiceOrderItem): string {
@@ -435,7 +435,12 @@ export class ClientChartComponent implements OnInit {
       return 'Cliente';
     }
 
-    return observation.orderId ? `Serviço #${this.getOrderDisplayId(observation.orderId)}` : 'Serviço';
+    const order = this.orders.find((item) => item.id === observation.orderId);
+    if (order) {
+      return `Serviço: ${this.getOrderServicesShortLabel(order)}`;
+    }
+
+    return 'Serviço';
   }
 
   getServiceFlowStatusLabel(order: ClientServiceOrderItem): string {
