@@ -330,8 +330,32 @@ export class ClientsComponent implements OnInit {
 
   getOriginLabel(origin: string | null | undefined): string {
     const value = (origin || '').trim().toUpperCase();
-    const found = this.originOptions.find((option) => option.value === value);
-    return found?.label || origin || 'Não informado';
+    if (!value) {
+      return 'Não informado';
+    }
+
+    const labelsByOrigin: Record<string, string> = {
+      LEAD_TRAFEGO_PAGO: 'Lead Tráfego Pago',
+      INDICACAO: 'Indicação',
+      PACIENTE_ANTIGO: 'Paciente Antigo',
+      REDES_SOCIAIS: 'Redes Sociais',
+      RESGATE: 'Resgate',
+      CADASTRO_MANUAL: 'Cadastro Manual',
+      CADASTRO_INDICADO: 'Cadastro Indicado',
+      OUTROS: 'Outros'
+    };
+
+    const mapped = labelsByOrigin[value];
+    if (mapped) {
+      return mapped;
+    }
+
+    return value
+      .toLowerCase()
+      .split('_')
+      .filter((part) => !!part)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   }
 
   getBusinessStatusLabel(status: string | null | undefined): string {
