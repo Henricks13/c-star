@@ -1,11 +1,12 @@
 // Angular import
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 // Project import
 import { NavigationItem } from '../../navigation';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
+import { LayoutStateService } from 'src/app/theme/shared/service/layout-state.service';
 
 @Component({
   selector: 'app-nav-item',
@@ -14,6 +15,8 @@ import { SharedModule } from 'src/app/theme/shared/shared.module';
   styleUrl: './nav-item.component.scss'
 })
 export class NavItemComponent {
+  private layoutState = inject(LayoutStateService);
+
   // public props
   item = input.required<NavigationItem>();
 
@@ -46,6 +49,8 @@ export class NavItemComponent {
         last_parent.classList.add('active');
       }
     }
+
+    this.layoutState.closeNavCollapsedMob();
 
   }
 }

@@ -242,7 +242,6 @@
                 <div class="contact-avatar">{{ getInitials(contact.fullName) }}</div>
                 <div>
                   <p class="contact-name mb-0">{{ contact.fullName || 'Não informado' }}</p>
-                  <small class="text-muted">ID: {{ contact.id }}</small>
                   <div class="mt-1">
                     <span class="stage-badge" [ngClass]="getStageClass(contact.stage)">{{ getStageLabel(contact.stage) }}</span>
                   </div>

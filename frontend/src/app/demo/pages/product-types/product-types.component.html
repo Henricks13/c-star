@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-12">
-    <app-card cardTitle="Tipos de Produto">
+    <app-card cardTitle="Gestão de Tipos de Produto">
       <div class="types-toolbar mb-3">
         <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
           <i class="ti ti-plus me-1"></i>
@@ -115,67 +115,99 @@
 </div>
 
 <ng-container *ngIf="createModalOpen">
-  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-type-title">
-    <div class="types-modal">
-      <h6 id="create-type-title" class="mb-3">Cadastrar tipo de produto</h6>
+  <div class="types-modal-backdrop types-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-type-title">
+    <div class="types-modal types-details-modal create-type-modal" (click)="$event.stopPropagation()">
+      <button class="type-details-close-btn" type="button" aria-label="Fechar cadastro" [disabled]="saving" (click)="closeCreateModal()">
+        <i class="ti ti-x"></i>
+      </button>
 
-      <div class="d-flex flex-column gap-2">
-        <div>
-          <label class="form-label" for="typeName">Nome</label>
-          <input id="typeName" class="form-control" [(ngModel)]="createForm.name" />
+      <div class="type-details-header create-type-header mb-3">
+        <div class="type-details-avatar">
+          <i class="ti ti-category-plus"></i>
         </div>
-        <div>
-          <label class="form-label" for="typeDescription">Descrição (opcional)</label>
-          <textarea id="typeDescription" class="form-control" rows="2" [(ngModel)]="createForm.description"></textarea>
-        </div>
-        <div class="form-check form-switch system-status-switch">
-          <input id="typeActive" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="createForm.active" />
-          <label class="form-check-label" for="typeActive">Ativo</label>
+        <div class="type-details-header-text">
+          <h5 id="create-type-title" class="mb-1">Cadastrar tipo de produto</h5>
+          <div class="type-details-subtitle">Defina uma categoria para organizar os produtos</div>
         </div>
       </div>
 
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createType()">Salvar</button>
+      <div class="type-details-section mb-3">
+        <h6 class="type-details-section-title">Dados do tipo</h6>
+        <ng-container *ngTemplateOutlet="typeFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createType()">
+          <span *ngIf="!saving">Cadastrar</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
       </div>
     </div>
   </div>
 </ng-container>
 
 <ng-container *ngIf="editModalOpen">
-  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-type-title">
-    <div class="types-modal">
-      <h6 id="edit-type-title" class="mb-3">Editar tipo de produto</h6>
+  <div class="types-modal-backdrop types-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-type-title">
+    <div class="types-modal types-details-modal create-type-modal" (click)="$event.stopPropagation()">
+      <button class="type-details-close-btn" type="button" aria-label="Fechar edição" [disabled]="saving" (click)="closeEditModal()">
+        <i class="ti ti-x"></i>
+      </button>
 
-      <div class="d-flex flex-column gap-2">
-        <div>
-          <label class="form-label" for="editTypeName">Nome</label>
-          <input id="editTypeName" class="form-control" [(ngModel)]="editForm.name" />
+      <div class="type-details-header create-type-header mb-3">
+        <div class="type-details-avatar">
+          <i class="ti ti-pencil"></i>
         </div>
-        <div>
-          <label class="form-label" for="editTypeDescription">Descrição (opcional)</label>
-          <textarea id="editTypeDescription" class="form-control" rows="2" [(ngModel)]="editForm.description"></textarea>
-        </div>
-        <div class="form-check form-switch system-status-switch">
-          <input id="editTypeActive" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="editForm.active" />
-          <label class="form-check-label" for="editTypeActive">Ativo</label>
+        <div class="type-details-header-text">
+          <h5 id="edit-type-title" class="mb-1">Editar tipo de produto</h5>
+          <div class="type-details-subtitle">Atualize os dados da categoria</div>
         </div>
       </div>
 
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateType()">Salvar</button>
+      <div class="type-details-section mb-3">
+        <h6 class="type-details-section-title">Dados do tipo</h6>
+        <ng-container *ngTemplateOutlet="typeFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateType()">
+          <span *ngIf="!saving">Salvar edição</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
       </div>
     </div>
   </div>
 </ng-container>
 
 <ng-container *ngIf="deleteModalOpen && selectedTypeForDeletion">
-  <div class="types-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-type-title">
-    <div class="types-modal">
-      <h6 id="delete-type-title" class="mb-3">Confirmar exclusão</h6>
-      <p class="mb-3">Deseja excluir o tipo <strong>{{ selectedTypeForDeletion.name }}</strong>?</p>
-      <div class="d-flex justify-content-end gap-2 mt-3">
+  <div class="types-modal-backdrop types-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-type-title">
+    <div class="types-modal types-details-modal delete-type-modal" (click)="$event.stopPropagation()">
+      <button class="type-details-close-btn" type="button" aria-label="Fechar exclusão" [disabled]="saving" (click)="closeDeleteModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="type-details-header delete-type-header mb-3">
+        <div class="type-details-avatar delete-type-avatar">
+          <i class="ti ti-trash"></i>
+        </div>
+        <div class="type-details-header-text">
+          <h5 id="delete-type-title" class="mb-1">Excluir tipo de produto</h5>
+          <div class="type-details-subtitle">Esta ação não pode ser desfeita</div>
+        </div>
+      </div>
+
+      <div class="type-details-section mb-3">
+        <p class="delete-type-message mb-0">Deseja excluir o tipo <strong>{{ selectedTypeForDeletion.name }}</strong>?</p>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
         <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
         <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteType()">
           <span *ngIf="!saving">Excluir tipo</span>
@@ -188,3 +220,24 @@
     </div>
   </div>
 </ng-container>
+
+<ng-template #typeFormTemplate let-formModel="formModel" let-editing="editing">
+  <div class="create-type-grid">
+    <div class="create-type-field create-type-field-full">
+      <label class="form-label" [for]="editing ? 'editTypeName' : 'typeName'">Nome</label>
+      <input [id]="editing ? 'editTypeName' : 'typeName'" class="form-control" [(ngModel)]="formModel.name" />
+    </div>
+
+    <div class="create-type-field create-type-field-full">
+      <label class="form-label" [for]="editing ? 'editTypeDescription' : 'typeDescription'">Descrição (opcional)</label>
+      <textarea [id]="editing ? 'editTypeDescription' : 'typeDescription'" class="form-control" rows="2" [(ngModel)]="formModel.description"></textarea>
+    </div>
+
+    <div class="create-type-field" *ngIf="!editing">
+      <label class="form-label" [for]="editing ? 'editTypeActive' : 'typeActive'">Ativo?</label>
+      <div class="form-check mt-1 mb-1">
+        <input [id]="editing ? 'editTypeActive' : 'typeActive'" class="form-check-input" type="checkbox" [(ngModel)]="formModel.active" />
+      </div>
+    </div>
+  </div>
+</ng-template>

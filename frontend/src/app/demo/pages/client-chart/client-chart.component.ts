@@ -36,6 +36,8 @@ interface ClientObservationTimelineItem {
   styleUrls: ['./client-chart.component.scss']
 })
 export class ClientChartComponent implements OnInit {
+  private readonly ordersPageSize = 2;
+
   loading = false;
   errorMessage: string | null = null;
   infoMessage: string | null = null;
@@ -60,6 +62,10 @@ export class ClientChartComponent implements OnInit {
   selectedObservationOrderId: string | null = null;
   observationErrorMessage: string | null = null;
   observationInfoMessage: string | null = null;
+
+  inProgressPage = 0;
+  budgetedPage = 0;
+  completedPage = 0;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -103,6 +109,42 @@ export class ClientChartComponent implements OnInit {
 
   get observationEligibleOrders(): ClientServiceOrderItem[] {
     return this.orders;
+  }
+
+  get sortedOrdersInProgress(): ClientServiceOrderItem[] {
+    return this.sortOrdersByMostRecent(this.ordersInProgress);
+  }
+
+  get sortedOrdersBudgeted(): ClientServiceOrderItem[] {
+    return this.sortOrdersByMostRecent(this.ordersBudgeted);
+  }
+
+  get sortedOrdersCompleted(): ClientServiceOrderItem[] {
+    return this.sortOrdersByMostRecent(this.ordersCompleted);
+  }
+
+  get pagedOrdersInProgress(): ClientServiceOrderItem[] {
+    return this.getPageSlice(this.sortedOrdersInProgress, this.inProgressPage);
+  }
+
+  get pagedOrdersBudgeted(): ClientServiceOrderItem[] {
+    return this.getPageSlice(this.sortedOrdersBudgeted, this.budgetedPage);
+  }
+
+  get pagedOrdersCompleted(): ClientServiceOrderItem[] {
+    return this.getPageSlice(this.sortedOrdersCompleted, this.completedPage);
+  }
+
+  get inProgressTotalPages(): number {
+    return this.getTotalPages(this.sortedOrdersInProgress.length);
+  }
+
+  get budgetedTotalPages(): number {
+    return this.getTotalPages(this.sortedOrdersBudgeted.length);
+  }
+
+  get completedTotalPages(): number {
+    return this.getTotalPages(this.sortedOrdersCompleted.length);
   }
 
   get totalPaidAmount(): number {
@@ -173,6 +215,7 @@ export class ClientChartComponent implements OnInit {
             this.rebuildProductCostMap();
             this.rebuildObservationsTimeline();
             this.ensureObservationOrderSelection();
+            this.resetOrdersPagination();
 
             this.loading = false;
           },
@@ -208,6 +251,42 @@ export class ClientChartComponent implements OnInit {
 
   setActiveTab(tab: ClientChartTab): void {
     this.activeTab = tab;
+  }
+
+  previousInProgressPage(): void {
+    if (this.inProgressPage > 0) {
+      this.inProgressPage -= 1;
+    }
+  }
+
+  nextInProgressPage(): void {
+    if (this.inProgressPage < this.inProgressTotalPages - 1) {
+      this.inProgressPage += 1;
+    }
+  }
+
+  previousBudgetedPage(): void {
+    if (this.budgetedPage > 0) {
+      this.budgetedPage -= 1;
+    }
+  }
+
+  nextBudgetedPage(): void {
+    if (this.budgetedPage < this.budgetedTotalPages - 1) {
+      this.budgetedPage += 1;
+    }
+  }
+
+  previousCompletedPage(): void {
+    if (this.completedPage > 0) {
+      this.completedPage -= 1;
+    }
+  }
+
+  nextCompletedPage(): void {
+    if (this.completedPage < this.completedTotalPages - 1) {
+      this.completedPage += 1;
+    }
   }
 
   openServicesFromObservation(observation: ClientObservationTimelineItem): void {
@@ -310,6 +389,7 @@ export class ClientChartComponent implements OnInit {
     this.observationErrorMessage = null;
     this.observationInfoMessage = null;
     if (isServiceObservation) {
+      this.selectedObservationOrderId = null;
       this.ensureObservationOrderSelection();
     }
   }
@@ -392,7 +472,8 @@ export class ClientChartComponent implements OnInit {
     const serviceLabel = this.getOrderServicesShortLabel(order);
     const valueLabel = Number(order.finalTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const statusLabel = this.getServiceFlowStatusLabel(order);
-    return `Serviço: ${serviceLabel} | Valor: ${valueLabel} | Status: ${statusLabel}`;
+    const createdAtLabel = this.formatDateTime(order.createdAt);
+    return `Serviço: ${serviceLabel} | Criado em: ${createdAtLabel} | Valor: ${valueLabel} | Status: ${statusLabel}`;
   }
 
   getOrderServicesShortLabel(order: ClientServiceOrderItem): string {
@@ -437,7 +518,8 @@ export class ClientChartComponent implements OnInit {
 
     const order = this.orders.find((item) => item.id === observation.orderId);
     if (order) {
-      return `Serviço: ${this.getOrderServicesShortLabel(order)}`;
+      const createdAtLabel = this.formatDateTime(order.createdAt);
+      return `Serviço: ${this.getOrderServicesShortLabel(order)} • ${createdAtLabel}`;
     }
 
     return 'Serviço';
@@ -575,7 +657,59 @@ export class ClientChartComponent implements OnInit {
     const current = this.selectedObservationOrderId;
     const stillValid = current && this.observationEligibleOrders.some((item) => item.id === current);
     if (!stillValid) {
-      this.selectedObservationOrderId = this.observationEligibleOrders[0].id;
+      this.selectedObservationOrderId = null;
     }
+  }
+
+  private formatDateTime(rawValue: string | null | undefined): string {
+    if (!rawValue) {
+      return '-';
+    }
+
+    const parsed = new Date(rawValue);
+    if (Number.isNaN(parsed.getTime())) {
+      return '-';
+    }
+
+    return parsed.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  private sortOrdersByMostRecent(orders: ClientServiceOrderItem[]): ClientServiceOrderItem[] {
+    return [...orders].sort((first, second) => this.parseDateTime(second.createdAt) - this.parseDateTime(first.createdAt));
+  }
+
+  private getPageSlice(orders: ClientServiceOrderItem[], page: number): ClientServiceOrderItem[] {
+    const safePage = page < 0 ? 0 : page;
+    const start = safePage * this.ordersPageSize;
+    return orders.slice(start, start + this.ordersPageSize);
+  }
+
+  private getTotalPages(totalItems: number): number {
+    if (totalItems <= 0) {
+      return 0;
+    }
+
+    return Math.ceil(totalItems / this.ordersPageSize);
+  }
+
+  private resetOrdersPagination(): void {
+    this.inProgressPage = 0;
+    this.budgetedPage = 0;
+    this.completedPage = 0;
+  }
+
+  private parseDateTime(rawValue: string | null | undefined): number {
+    if (!rawValue) {
+      return 0;
+    }
+
+    const parsed = new Date(rawValue).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
   }
 }

@@ -303,6 +303,21 @@ export class ProductsComponent implements OnInit {
     return Number(product.stockQuantity) <= Number(product.minimumStock);
   }
 
+  getStockLevelClass(product: ProductItem): string {
+    const stock = Number(product.stockQuantity);
+    const minimum = Number(product.minimumStock);
+
+    if (stock <= minimum) {
+      return 'stock-level-low';
+    }
+
+    if (stock === minimum + 1) {
+      return 'stock-level-warning';
+    }
+
+    return '';
+  }
+
   adjustmentOperationLabel(operation: StockAdjustmentOperation | null): string {
     if (operation === 'ADD') {
       return 'Adição';

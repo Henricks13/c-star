@@ -14,7 +14,7 @@
 }
 @if (item().url && item().external) {
   <li [ngClass]="item().classes!" [routerLinkActive]="['active']">
-    <a [target]="item().target ? '_blank' : '_self'" [href]="item().url">
+    <a class="nav-link" [target]="item().target ? '_blank' : '_self'" [href]="item().url" (click)="closeOtherMenu($event)">
       @if (item().icon) {
         <span class="coded-micon"><i [ngClass]="item().icon"></i></span>
       }

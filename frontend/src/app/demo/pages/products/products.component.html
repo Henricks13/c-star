@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-12">
-    <app-card cardTitle="Produtos">
+    <app-card cardTitle="Gestão de Produtos">
       <div class="products-toolbar mb-3">
         <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
           <i class="ti ti-plus me-1"></i>
@@ -50,11 +50,11 @@
                   </td>
                   <td>{{ product.productTypeName }}</td>
                   <td>
-                    <div>Compra: {{ product.purchasePrice | currency: 'BRL' }}</div>
-                    <div>Venda: {{ product.salePrice | currency: 'BRL' }}</div>
+                    <div class="price-buy">Compra: {{ product.purchasePrice | currency: 'BRL' }}</div>
+                    <div class="price-sell">Venda: {{ product.salePrice | currency: 'BRL' }}</div>
                   </td>
                   <td>
-                    <span [ngClass]="isLowStock(product) ? 'text-danger fw-semibold' : ''">{{ product.stockQuantity }}</span>
+                    <span [ngClass]="getStockLevelClass(product)">{{ product.stockQuantity }}</span>
                     <small class="text-muted d-block">Mínimo: {{ product.minimumStock }}</small>
                   </td>
                   <td>
@@ -115,15 +115,15 @@
             </div>
             <div class="mobile-product-row">
               <span class="mobile-label">Compra</span>
-              <span>{{ product.purchasePrice | currency: 'BRL' }}</span>
+              <span class="price-buy">{{ product.purchasePrice | currency: 'BRL' }}</span>
             </div>
             <div class="mobile-product-row">
               <span class="mobile-label">Venda</span>
-              <span>{{ product.salePrice | currency: 'BRL' }}</span>
+              <span class="price-sell">{{ product.salePrice | currency: 'BRL' }}</span>
             </div>
             <div class="mobile-product-row">
               <span class="mobile-label">Estoque</span>
-              <span [ngClass]="isLowStock(product) ? 'text-danger fw-semibold' : ''">{{ product.stockQuantity }} (mín: {{ product.minimumStock }})</span>
+              <span [ngClass]="getStockLevelClass(product)">{{ product.stockQuantity }} (mín: {{ product.minimumStock }})</span>
             </div>
             <div class="mobile-product-row">
               <span class="mobile-label">Último ajuste</span>
@@ -180,155 +180,252 @@
 </div>
 
 <ng-container *ngIf="createModalOpen">
-  <div class="products-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-product-title">
-    <div class="products-modal">
-      <h6 id="create-product-title" class="mb-3">Cadastrar produto</h6>
-      <ng-container *ngTemplateOutlet="productFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createProduct()">Salvar</button>
+  <div class="products-modal-backdrop products-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-product-title">
+    <div class="products-modal products-details-modal create-product-modal" (click)="$event.stopPropagation()">
+      <button class="product-details-close-btn" type="button" aria-label="Fechar cadastro" [disabled]="saving" (click)="closeCreateModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="product-details-header create-product-header mb-3">
+        <div class="product-details-avatar">
+          <i class="ti ti-package"></i>
+        </div>
+        <div class="product-details-header-text">
+          <h5 id="create-product-title" class="mb-1">Cadastrar produto</h5>
+          <div class="product-details-subtitle">Preencha os dados principais do item</div>
+        </div>
+      </div>
+
+      <div class="product-details-section mb-3">
+        <h6 class="product-details-section-title">Dados do produto</h6>
+        <ng-container *ngTemplateOutlet="productFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createProduct()">
+          <span *ngIf="!saving">Cadastrar</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
       </div>
     </div>
   </div>
 </ng-container>
 
 <ng-container *ngIf="stockModalOpen && selectedProductForStock">
-  <div class="products-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="stock-adjustment-title">
-    <div class="products-modal products-modal-sm">
-      <h6 id="stock-adjustment-title" class="mb-3">Ajustar estoque</h6>
+  <div class="products-modal-backdrop products-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="stock-adjustment-title">
+    <div class="products-modal products-details-modal stock-product-modal" (click)="$event.stopPropagation()">
+      <button class="product-details-close-btn" type="button" aria-label="Fechar ajuste de estoque" [disabled]="saving" (click)="closeStockModal()">
+        <i class="ti ti-x"></i>
+      </button>
 
-      <div class="mb-2">
-        <strong>{{ selectedProductForStock.name }}</strong>
-        <small class="text-muted d-block">Estoque atual: {{ selectedProductForStock.stockQuantity }}</small>
-      </div>
-
-      <div class="d-flex flex-column gap-2">
-        <div>
-          <label class="form-label">Operação</label>
-          <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [(ngModel)]="stockForm.operation" (ngModelChange)="onStockOperationChange()">
-            <ng-option value="ADD">Adicionar ao estoque</ng-option>
-            <ng-option value="REMOVE">Remover do estoque</ng-option>
-          </ng-select>
+      <div class="product-details-header stock-product-header mb-3">
+        <div class="product-details-avatar stock-product-avatar">
+          <i class="ti ti-box-seam"></i>
         </div>
-
-        <div>
-          <label class="form-label">Quantidade</label>
-          <input type="number" step="0.001" min="0.001" class="form-control" [(ngModel)]="stockForm.quantity" />
-        </div>
-
-        <div class="form-check form-switch system-status-switch">
-          <input id="stockCustomPriceEnabled" class="form-check-input system-status-switch-control" type="checkbox" [(ngModel)]="stockForm.customPriceEnabled" />
-          <label class="form-check-label" for="stockCustomPriceEnabled">Preço personalizado?</label>
-        </div>
-
-        <div *ngIf="stockForm.customPriceEnabled">
-          <label class="form-label">Preço unitário personalizado</label>
-          <input type="number" step="0.01" min="0" class="form-control" [(ngModel)]="stockForm.customUnitPrice" />
-        </div>
-
-        <div>
-          <label class="form-label">Observações (opcional)</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="stockForm.notes"></textarea>
+        <div class="product-details-header-text">
+          <h5 id="stock-adjustment-title" class="mb-1">Ajustar estoque</h5>
+          <div class="product-details-subtitle">Adição ou retirada com impacto financeiro</div>
         </div>
       </div>
 
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeStockModal()">Cancelar</button>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="applyStockAdjustment()">Confirmar ajuste</button>
+      <div class="product-details-section mb-3">
+        <h6 class="product-details-section-title">Produto selecionado</h6>
+        <div class="product-details-note mb-3">
+          <strong>{{ selectedProductForStock.name }}</strong>
+          <small class="text-muted d-block">Estoque atual: {{ selectedProductForStock.stockQuantity }}</small>
+        </div>
+
+        <div class="stock-adjust-grid">
+          <div class="create-product-field create-product-field-full">
+            <label class="form-label">Operação</label>
+            <ng-select class="cstar-ng-select" [searchable]="false" [clearable]="false" [(ngModel)]="stockForm.operation" (ngModelChange)="onStockOperationChange()">
+              <ng-option value="ADD">Adicionar ao estoque</ng-option>
+              <ng-option value="REMOVE">Remover do estoque</ng-option>
+            </ng-select>
+          </div>
+
+          <div class="create-product-field">
+            <label class="form-label">Quantidade</label>
+            <input type="number" step="0.001" min="0.001" class="form-control" [(ngModel)]="stockForm.quantity" />
+          </div>
+
+          <div class="create-product-field">
+            <label class="form-label">Preço personalizado?</label>
+            <div class="form-check mt-1 mb-1">
+              <input id="stockCustomPriceEnabled" class="form-check-input" type="checkbox" [(ngModel)]="stockForm.customPriceEnabled" />
+              <label class="form-check-label" for="stockCustomPriceEnabled">Usar valor diferente</label>
+            </div>
+            <small class="stock-custom-price-help">Marque só se o valor unitário for diferente do cadastro (ex.: desconto).</small>
+          </div>
+
+          <div class="create-product-field" *ngIf="stockForm.customPriceEnabled">
+            <label class="form-label">Preço unitário personalizado</label>
+            <input type="number" step="0.01" min="0" class="form-control" [(ngModel)]="stockForm.customUnitPrice" />
+          </div>
+
+          <div class="create-product-field create-product-field-full">
+            <label class="form-label">Observações (opcional)</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="stockForm.notes"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeStockModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="applyStockAdjustment()">
+          <span *ngIf="!saving">Confirmar ajuste</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
       </div>
     </div>
   </div>
 </ng-container>
 
 <ng-container *ngIf="deleteModalOpen && productPendingDelete">
-  <div class="products-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-product-title">
-    <div class="products-modal products-modal-sm">
-      <h6 id="delete-product-title" class="mb-2">Confirmar exclusão</h6>
-      <p class="mb-0">Deseja realmente excluir o produto <strong>{{ productPendingDelete.name }}</strong>?</p>
+  <div class="products-modal-backdrop products-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-product-title">
+    <div class="products-modal products-details-modal delete-product-modal" (click)="$event.stopPropagation()">
+      <button class="product-details-close-btn" type="button" aria-label="Fechar exclusão" [disabled]="saving" (click)="closeDeleteModal()">
+        <i class="ti ti-x"></i>
+      </button>
 
-      <div class="d-flex justify-content-end gap-2 mt-3">
+      <div class="product-details-header delete-product-header mb-3">
+        <div class="product-details-avatar delete-product-avatar">
+          <i class="ti ti-trash"></i>
+        </div>
+        <div class="product-details-header-text">
+          <h5 id="delete-product-title" class="mb-1">Excluir produto</h5>
+          <div class="product-details-subtitle">Esta ação não pode ser desfeita</div>
+        </div>
+      </div>
+
+      <div class="product-details-section mb-3">
+        <p class="delete-product-message mb-0">
+          Deseja realmente excluir o produto <strong>{{ productPendingDelete.name }}</strong>?
+        </p>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
         <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
-        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteProduct()">Excluir</button>
+        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteProduct()">
+          <span *ngIf="!saving">Excluir</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Excluindo...
+          </span>
+        </button>
       </div>
     </div>
   </div>
 </ng-container>
 
 <ng-container *ngIf="editModalOpen">
-  <div class="products-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-product-title">
-    <div class="products-modal">
-      <h6 id="edit-product-title" class="mb-3">Editar produto</h6>
-      <ng-container *ngTemplateOutlet="productFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
-        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateProduct()">Salvar</button>
+  <div class="products-modal-backdrop products-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-product-title">
+    <div class="products-modal products-details-modal create-product-modal" (click)="$event.stopPropagation()">
+      <button class="product-details-close-btn" type="button" aria-label="Fechar edição" [disabled]="saving" (click)="closeEditModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="product-details-header create-product-header mb-3">
+        <div class="product-details-avatar">
+          <i class="ti ti-pencil"></i>
+        </div>
+        <div class="product-details-header-text">
+          <h5 id="edit-product-title" class="mb-1">Editar produto</h5>
+          <div class="product-details-subtitle">Atualize os dados principais do item</div>
+        </div>
+      </div>
+
+      <div class="product-details-section mb-3">
+        <h6 class="product-details-section-title">Dados do produto</h6>
+        <ng-container *ngTemplateOutlet="productFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateProduct()">
+          <span *ngIf="!saving">Salvar edição</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
       </div>
     </div>
   </div>
 </ng-container>
 
 <ng-template #productFormTemplate let-formModel="formModel" let-editing="editing">
-  <div class="d-flex flex-column gap-2">
-    <div>
+  <div class="create-product-grid">
+    <div class="create-product-field create-product-field-full">
       <label class="form-label">Nome</label>
       <input class="form-control" [(ngModel)]="formModel.name" />
     </div>
 
-    <div>
+    <div class="create-product-field">
       <label class="form-label">SKU (opcional)</label>
       <input class="form-control" [(ngModel)]="formModel.sku" />
     </div>
 
-    <div>
+    <div class="create-product-field">
       <label class="form-label">Tipo de produto</label>
       <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="formModel.productTypeId">
         <ng-option *ngFor="let type of productTypes" [value]="type.id">{{ type.name }}</ng-option>
       </ng-select>
     </div>
 
-    <div class="row g-2">
-      <div class="col-sm-6">
+    <div class="create-product-field">
         <label class="form-label">Preço de compra</label>
         <input type="number" step="0.01" class="form-control" [(ngModel)]="formModel.purchasePrice" />
-      </div>
-      <div class="col-sm-6">
+    </div>
+
+    <div class="create-product-field">
         <label class="form-label">Preço de venda</label>
         <input type="number" step="0.01" class="form-control" [(ngModel)]="formModel.salePrice" />
-      </div>
     </div>
 
-    <div class="row g-2">
-      <div class="col-sm-6">
+    <div class="create-product-field">
         <label class="form-label">Estoque atual</label>
         <input type="number" step="0.001" class="form-control" [(ngModel)]="formModel.stockQuantity" />
-      </div>
-      <div class="col-sm-6">
+    </div>
+
+    <div class="create-product-field">
         <label class="form-label">Estoque mínimo</label>
         <input type="number" step="0.001" class="form-control" [(ngModel)]="formModel.minimumStock" />
+    </div>
+
+    <div class="create-product-field">
+      <label class="form-label">Produto perecível</label>
+      <div class="form-check mt-1 mb-1">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          [id]="editing ? 'edit-perishable' : 'create-perishable'"
+          [(ngModel)]="formModel.perishable"
+        />
+        <label class="form-check-label" [for]="editing ? 'edit-perishable' : 'create-perishable'">Marcar como perecível</label>
       </div>
     </div>
 
-    <div class="form-check form-switch system-status-switch">
-      <input
-        class="form-check-input system-status-switch-control"
-        type="checkbox"
-        [id]="editing ? 'edit-perishable' : 'create-perishable'"
-        [(ngModel)]="formModel.perishable"
-      />
-      <label class="form-check-label" [for]="editing ? 'edit-perishable' : 'create-perishable'">Produto perecível</label>
-    </div>
-
-    <div *ngIf="formModel.perishable">
+    <div class="create-product-field" *ngIf="formModel.perishable">
       <label class="form-label">Data de validade</label>
       <input type="date" class="form-control" [(ngModel)]="formModel.expirationDate" />
     </div>
 
-    <div class="form-check form-switch system-status-switch">
-      <input class="form-check-input system-status-switch-control" type="checkbox" [id]="editing ? 'edit-active' : 'create-active'" [(ngModel)]="formModel.active" />
-      <label class="form-check-label" [for]="editing ? 'edit-active' : 'create-active'">Produto ativo</label>
+    <div class="create-product-field">
+      <label class="form-label" [for]="editing ? 'edit-active' : 'create-active'">Ativo?</label>
+      <div class="form-check mt-1 mb-1">
+        <input class="form-check-input" type="checkbox" [id]="editing ? 'edit-active' : 'create-active'" [(ngModel)]="formModel.active" />
+      </div>
     </div>
 
-    <div>
+    <div class="create-product-field create-product-field-full">
       <label class="form-label">Observações (opcional)</label>
       <textarea class="form-control" rows="2" [(ngModel)]="formModel.notes"></textarea>
     </div>

@@ -88,7 +88,6 @@
                 <div class="client-avatar">{{ getInitials(client.fullName) }}</div>
                 <div>
                   <button class="client-name client-name-link mb-0" type="button" (click)="openServiceWizard(client)">{{ client.fullName || 'Não informado' }}</button>
-                  <small class="text-muted">ID: {{ client.id }}</small>
                   <div class="mobile-badges mt-1">
                     <span class="client-badge origin">{{ getOriginLabel(client.origin) }}</span>
                     <span class="client-badge status" [class.is-closed]="client.businessStatus === 'NEGOCIO_FECHADO'">
