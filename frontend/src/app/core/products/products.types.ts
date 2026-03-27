@@ -21,7 +21,6 @@ export interface ProductItem {
 
 export interface CreateProductRequest {
   name: string;
-  sku?: string | null;
   productTypeId: string;
   purchasePrice: number;
   salePrice: number;
@@ -35,7 +34,6 @@ export interface CreateProductRequest {
 
 export interface UpdateProductRequest {
   name: string;
-  sku?: string | null;
   productTypeId: string;
   purchasePrice: number;
   salePrice: number;
@@ -53,5 +51,6 @@ export interface StockAdjustmentRequest {
   operation: StockAdjustmentOperation;
   quantity: number;
   customUnitPrice?: number | null;
+  expirationDate?: string | null;
   notes?: string | null;
 }

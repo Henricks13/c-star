@@ -20,6 +20,7 @@ interface StockAdjustmentFormModel {
   quantity: number;
   customPriceEnabled: boolean;
   customUnitPrice: number | null;
+  expirationDate: string | null;
   notes: string;
 }
 
@@ -80,7 +81,7 @@ export class ProductsComponent implements OnInit {
         });
       },
       error: () => {
-        this.errorMessage = 'Não foi possível carregar os tipos de produto.';
+        this.errorMessage = 'Não foi possível carregar as categorias de produto.';
         this.loading = false;
       }
     });
@@ -88,7 +89,7 @@ export class ProductsComponent implements OnInit {
 
   openCreateModal(): void {
     if (this.productTypes.length === 0) {
-      this.errorMessage = 'Cadastre ao menos um tipo de produto ativo antes de criar produtos.';
+      this.errorMessage = 'Cadastre ao menos uma categoria ativa antes de criar produtos.';
       return;
     }
 
@@ -134,7 +135,6 @@ export class ProductsComponent implements OnInit {
     this.selectedProduct = product;
     this.editForm = {
       name: product.name,
-      sku: product.sku || '',
       productTypeId: product.productTypeId,
       purchasePrice: product.purchasePrice,
       salePrice: product.salePrice,
@@ -270,7 +270,6 @@ export class ProductsComponent implements OnInit {
 
     const payload: UpdateProductRequest = {
       name: product.name,
-      sku: product.sku,
       productTypeId: product.productTypeId,
       purchasePrice: Number(product.purchasePrice),
       salePrice: Number(product.salePrice),
@@ -333,7 +332,6 @@ export class ProductsComponent implements OnInit {
   private normalizeCreatePayload(): CreateProductRequest | null {
     const payload: CreateProductRequest = {
       name: (this.createForm.name || '').trim(),
-      sku: (this.createForm.sku || '').trim() || null,
       productTypeId: this.createForm.productTypeId,
       purchasePrice: Number(this.createForm.purchasePrice),
       salePrice: Number(this.createForm.salePrice),
@@ -351,7 +349,6 @@ export class ProductsComponent implements OnInit {
   private normalizeUpdatePayload(): UpdateProductRequest | null {
     const payload: UpdateProductRequest = {
       name: (this.editForm.name || '').trim(),
-      sku: (this.editForm.sku || '').trim() || null,
       productTypeId: this.editForm.productTypeId,
       purchasePrice: Number(this.editForm.purchasePrice),
       salePrice: Number(this.editForm.salePrice),
@@ -368,7 +365,7 @@ export class ProductsComponent implements OnInit {
 
   private validatePayload<T extends CreateProductRequest | UpdateProductRequest>(payload: T): T | null {
     if (!payload.name || !payload.productTypeId) {
-      this.errorMessage = 'Preencha nome e tipo do produto.';
+      this.errorMessage = 'Preencha nome e categoria do produto.';
       return null;
     }
 
@@ -388,7 +385,6 @@ export class ProductsComponent implements OnInit {
   private defaultCreateForm(): CreateProductRequest {
     return {
       name: '',
-      sku: '',
       productTypeId: '',
       purchasePrice: 0,
       salePrice: 0,
@@ -404,7 +400,6 @@ export class ProductsComponent implements OnInit {
   private defaultEditForm(): UpdateProductRequest {
     return {
       name: '',
-      sku: '',
       productTypeId: '',
       purchasePrice: 0,
       salePrice: 0,
@@ -418,10 +413,12 @@ export class ProductsComponent implements OnInit {
   }
 
   private normalizeStockPayload(): StockAdjustmentRequest | null {
+    const selected = this.selectedProductForStock;
     const payload: StockAdjustmentRequest = {
       operation: this.stockForm.operation,
       quantity: Number(this.stockForm.quantity),
       customUnitPrice: this.stockForm.customPriceEnabled ? Number(this.stockForm.customUnitPrice) : null,
+      expirationDate: this.stockForm.expirationDate || null,
       notes: (this.stockForm.notes || '').trim() || null
     };
 
@@ -439,6 +436,15 @@ export class ProductsComponent implements OnInit {
       payload.customUnitPrice = customPrice;
     }
 
+    if (selected?.perishable && payload.operation === 'ADD' && !payload.expirationDate) {
+      this.errorMessage = 'Informe a validade do lote para entrada de produto perecível.';
+      return null;
+    }
+
+    if (payload.operation === 'REMOVE') {
+      payload.expirationDate = null;
+    }
+
     return payload;
   }
 
@@ -448,6 +454,7 @@ export class ProductsComponent implements OnInit {
       quantity: 1,
       customPriceEnabled: false,
       customUnitPrice: null,
+      expirationDate: null,
       notes: ''
     };
   }

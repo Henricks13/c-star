@@ -34,7 +34,7 @@
               <thead class="products-thead">
                 <tr>
                   <th>Nome</th>
-                  <th>Tipo</th>
+                  <th>Categoria</th>
                   <th>Preços</th>
                   <th>Estoque</th>
                   <th>Último ajuste</th>
@@ -46,7 +46,7 @@
                 <tr *ngFor="let product of products">
                   <td>
                     <div class="fw-semibold">{{ product.name }}</div>
-                    <small class="text-muted">SKU: {{ product.sku || '—' }}</small>
+                    <small class="text-muted">Categoria: {{ product.productTypeName }}</small>
                   </td>
                   <td>{{ product.productTypeName }}</td>
                   <td>
@@ -106,11 +106,7 @@
               <span>{{ product.name }}</span>
             </div>
             <div class="mobile-product-row">
-              <span class="mobile-label">SKU</span>
-              <span>{{ product.sku || '—' }}</span>
-            </div>
-            <div class="mobile-product-row">
-              <span class="mobile-label">Tipo</span>
+              <span class="mobile-label">Categoria</span>
               <span>{{ product.productTypeName }}</span>
             </div>
             <div class="mobile-product-row">
@@ -267,6 +263,12 @@
             <input type="number" step="0.01" min="0" class="form-control" [(ngModel)]="stockForm.customUnitPrice" />
           </div>
 
+          <div class="create-product-field" *ngIf="selectedProductForStock.perishable && stockForm.operation === 'ADD'">
+            <label class="form-label">Validade do lote (entrada)</label>
+            <input type="date" class="form-control" [(ngModel)]="stockForm.expirationDate" />
+            <small class="stock-custom-price-help">Cada nova entrada de perecível deve informar a data de validade do lote.</small>
+          </div>
+
           <div class="create-product-field create-product-field-full">
             <label class="form-label">Observações (opcional)</label>
             <textarea class="form-control" rows="2" [(ngModel)]="stockForm.notes"></textarea>
@@ -369,12 +371,7 @@
     </div>
 
     <div class="create-product-field">
-      <label class="form-label">SKU (opcional)</label>
-      <input class="form-control" [(ngModel)]="formModel.sku" />
-    </div>
-
-    <div class="create-product-field">
-      <label class="form-label">Tipo de produto</label>
+      <label class="form-label">Categoria</label>
       <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="formModel.productTypeId">
         <ng-option *ngFor="let type of productTypes" [value]="type.id">{{ type.name }}</ng-option>
       </ng-select>
