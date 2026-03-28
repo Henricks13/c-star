@@ -107,23 +107,23 @@ export const NavigationItems: NavigationItem[] = [
       },
       {
         id: 'products',
-        title: 'Gestão de Produtos',
+        title: 'Produtos',
         type: 'collapse',
         icon: 'ti ti-package',
         breadcrumbs: false,
         children: [
           {
             id: 'products-list',
-            title: 'Gestão de Produtos',
+            title: 'Produtos',
             type: 'item',
             url: '/products',
             breadcrumbs: false
           },
           {
-            id: 'products-types',
-            title: 'Tipos de Produto',
+            id: 'products-categories',
+            title: 'Categorias',
             type: 'item',
-            url: '/products/types',
+            url: '/products/categories',
             breadcrumbs: false
           }
         ]

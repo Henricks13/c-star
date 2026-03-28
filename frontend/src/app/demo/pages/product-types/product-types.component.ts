@@ -47,7 +47,7 @@ export class ProductTypesComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.errorMessage = 'Não foi possível carregar os tipos de produto.';
+        this.errorMessage = 'Não foi possível carregar as categorias de produto.';
         this.loading = false;
       }
     });
@@ -76,7 +76,7 @@ export class ProductTypesComponent implements OnInit {
     };
 
     if (!payload.name) {
-      this.errorMessage = 'Informe o nome do tipo de produto.';
+      this.errorMessage = 'Informe o nome da categoria.';
       return;
     }
 
@@ -87,11 +87,11 @@ export class ProductTypesComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.closeCreateModal();
-        this.infoMessage = 'Tipo de produto cadastrado com sucesso.';
+        this.infoMessage = 'Categoria cadastrada com sucesso.';
         this.loadTypes();
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Não foi possível cadastrar o tipo de produto.';
+        this.errorMessage = error?.error?.message || 'Não foi possível cadastrar a categoria.';
         this.saving = false;
       }
     });
@@ -126,7 +126,7 @@ export class ProductTypesComponent implements OnInit {
     };
 
     if (!payload.name) {
-      this.errorMessage = 'Informe o nome do tipo de produto.';
+      this.errorMessage = 'Informe o nome da categoria.';
       return;
     }
 
@@ -137,11 +137,11 @@ export class ProductTypesComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.closeEditModal();
-        this.infoMessage = 'Tipo de produto atualizado com sucesso.';
+        this.infoMessage = 'Categoria atualizada com sucesso.';
         this.loadTypes();
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Não foi possível atualizar o tipo de produto.';
+        this.errorMessage = error?.error?.message || 'Não foi possível atualizar a categoria.';
         this.saving = false;
       }
     });
@@ -177,12 +177,12 @@ export class ProductTypesComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.closeDeleteModal();
-        this.infoMessage = 'Tipo de produto removido com sucesso.';
+        this.infoMessage = 'Categoria removida com sucesso.';
         this.loadTypes();
       },
       error: (error) => {
         this.saving = false;
-        this.errorMessage = error?.error?.message || 'Não foi possível excluir o tipo de produto.';
+        this.errorMessage = error?.error?.message || 'Não foi possível excluir a categoria.';
       }
     });
   }
@@ -205,11 +205,11 @@ export class ProductTypesComponent implements OnInit {
     this.productTypesService.update(type.id, payload).subscribe({
       next: (updated) => {
         type.active = updated.active;
-        this.infoMessage = updated.active ? 'Tipo de produto ativado com sucesso.' : 'Tipo de produto desativado com sucesso.';
+        this.infoMessage = updated.active ? 'Categoria ativada com sucesso.' : 'Categoria desativada com sucesso.';
         this.togglingTypeId = null;
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Não foi possível alterar o status do tipo de produto.';
+        this.errorMessage = error?.error?.message || 'Não foi possível alterar o status da categoria.';
         this.togglingTypeId = null;
       }
     });

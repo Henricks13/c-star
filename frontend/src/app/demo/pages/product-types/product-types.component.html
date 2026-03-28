@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-12">
-    <app-card cardTitle="Gestão de Tipos de Produto">
+    <app-card cardTitle="Categorias">
       <div class="types-toolbar mb-3">
         <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
           <i class="ti ti-plus me-1"></i>
@@ -17,13 +17,13 @@
       </ng-container>
 
       <ng-container *ngIf="loading">
-        <p class="mb-0">Carregando tipos de produto...</p>
+        <p class="mb-0">Carregando categorias...</p>
       </ng-container>
 
       <ng-container *ngIf="!loading && types.length === 0">
         <div class="empty-state">
-          <p class="mb-2">Nenhum tipo de produto cadastrado.</p>
-          <small class="text-muted">Cadastre tipos para organizar os produtos.</small>
+          <p class="mb-2">Nenhuma categoria cadastrada.</p>
+          <small class="text-muted">Cadastre categorias para organizar os produtos.</small>
         </div>
       </ng-container>
 
@@ -50,7 +50,7 @@
                           type="checkbox"
                           [id]="'type-switch-' + type.id"
                           [checked]="type.active"
-                          [attr.aria-label]="type.active ? 'Desativar tipo de produto' : 'Ativar tipo de produto'"
+                          [attr.aria-label]="type.active ? 'Desativar categoria' : 'Ativar categoria'"
                           [title]="type.active ? 'Ativo' : 'Desativado'"
                           [disabled]="togglingTypeId === type.id"
                           (change)="toggleTypeActive(type, $any($event.target).checked)"
@@ -88,7 +88,7 @@
                   type="checkbox"
                   [id]="'mobile-type-switch-' + type.id"
                   [checked]="type.active"
-                  [attr.aria-label]="type.active ? 'Desativar tipo de produto' : 'Ativar tipo de produto'"
+                  [attr.aria-label]="type.active ? 'Desativar categoria' : 'Ativar categoria'"
                   [title]="type.active ? 'Ativo' : 'Desativado'"
                   [disabled]="togglingTypeId === type.id"
                   (change)="toggleTypeActive(type, $any($event.target).checked)"
@@ -126,13 +126,13 @@
           <i class="ti ti-category-plus"></i>
         </div>
         <div class="type-details-header-text">
-          <h5 id="create-type-title" class="mb-1">Cadastrar tipo de produto</h5>
-          <div class="type-details-subtitle">Defina uma categoria para organizar os produtos</div>
+          <h5 id="create-type-title" class="mb-1">Cadastrar categoria</h5>
+          <div class="type-details-subtitle">Defina categorias para organizar os produtos</div>
         </div>
       </div>
 
       <div class="type-details-section mb-3">
-        <h6 class="type-details-section-title">Dados do tipo</h6>
+        <h6 class="type-details-section-title">Dados da categoria</h6>
         <ng-container *ngTemplateOutlet="typeFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
       </div>
 
@@ -162,13 +162,13 @@
           <i class="ti ti-pencil"></i>
         </div>
         <div class="type-details-header-text">
-          <h5 id="edit-type-title" class="mb-1">Editar tipo de produto</h5>
+          <h5 id="edit-type-title" class="mb-1">Editar categoria</h5>
           <div class="type-details-subtitle">Atualize os dados da categoria</div>
         </div>
       </div>
 
       <div class="type-details-section mb-3">
-        <h6 class="type-details-section-title">Dados do tipo</h6>
+        <h6 class="type-details-section-title">Dados da categoria</h6>
         <ng-container *ngTemplateOutlet="typeFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
       </div>
 
@@ -198,19 +198,19 @@
           <i class="ti ti-trash"></i>
         </div>
         <div class="type-details-header-text">
-          <h5 id="delete-type-title" class="mb-1">Excluir tipo de produto</h5>
+          <h5 id="delete-type-title" class="mb-1">Excluir categoria</h5>
           <div class="type-details-subtitle">Esta ação não pode ser desfeita</div>
         </div>
       </div>
 
       <div class="type-details-section mb-3">
-        <p class="delete-type-message mb-0">Deseja excluir o tipo <strong>{{ selectedTypeForDeletion.name }}</strong>?</p>
+        <p class="delete-type-message mb-0">Deseja excluir a categoria <strong>{{ selectedTypeForDeletion.name }}</strong>?</p>
       </div>
 
       <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
         <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
         <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteType()">
-          <span *ngIf="!saving">Excluir tipo</span>
+          <span *ngIf="!saving">Excluir categoria</span>
           <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
             <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
             Excluindo...

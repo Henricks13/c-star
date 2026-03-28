@@ -97,6 +97,11 @@ const routes: Routes = [
       },
       {
         path: 'products/types',
+        redirectTo: '/products/categories',
+        pathMatch: 'full'
+      },
+      {
+        path: 'products/categories',
         loadComponent: () => import('./demo/pages/product-types/product-types.component').then((c) => c.ProductTypesComponent)
       },
       {
