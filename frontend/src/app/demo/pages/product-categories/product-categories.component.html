@@ -1,0 +1,243 @@
+<div class="row">
+  <div class="col-12">
+    <app-card cardTitle="Gestao de Categorias de Produto">
+      <div class="categories-toolbar mb-3">
+        <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+          <i class="ti ti-plus me-1"></i>
+          Cadastrar
+        </button>
+      </div>
+
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="loading">
+        <p class="mb-0">Carregando categorias de produto...</p>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && categories.length === 0">
+        <div class="empty-state">
+          <p class="mb-2">Nenhuma categoria de produto cadastrada.</p>
+          <small class="text-muted">Cadastre categorias para organizar os produtos.</small>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!loading && categories.length > 0">
+        <div class="desktop-list d-none d-md-block">
+          <div class="table-responsive categories-table-wrapper">
+            <table class="table table-hover align-middle categories-table mb-0">
+              <thead class="categories-thead">
+                <tr>
+                  <th>Nome</th>
+                  <th>Descricao</th>
+                  <th class="text-end">Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let category of categories">
+                  <td>{{ category.name }}</td>
+                  <td>{{ category.description || '-' }}</td>
+                  <td>
+                    <div class="category-actions">
+                      <div class="form-check form-switch system-status-switch mb-0">
+                        <input
+                          class="form-check-input system-status-switch-control"
+                          type="checkbox"
+                          [id]="'category-switch-' + category.id"
+                          [checked]="category.active"
+                          [attr.aria-label]="category.active ? 'Desativar categoria de produto' : 'Ativar categoria de produto'"
+                          [title]="category.active ? 'Ativo' : 'Desativado'"
+                          [disabled]="togglingCategoryId === category.id"
+                          (change)="toggleCategoryActive(category, $any($event.target).checked)"
+                        />
+                      </div>
+                      <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEditModal(category)" title="Editar" aria-label="Editar">
+                        <i class="ti ti-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteCategory(category)" title="Excluir" aria-label="Excluir">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-list d-block d-md-none">
+          <div class="mobile-category-card" *ngFor="let category of categories">
+            <div class="mobile-category-row">
+              <span class="mobile-label">Nome</span>
+              <span>{{ category.name }}</span>
+            </div>
+            <div class="mobile-category-row">
+              <span class="mobile-label">Descricao</span>
+              <span>{{ category.description || '-' }}</span>
+            </div>
+            <div class="mobile-category-row mobile-category-row-switch">
+              <span class="mobile-label">Ativo</span>
+              <div class="form-check form-switch system-status-switch mb-0">
+                <input
+                  class="form-check-input system-status-switch-control"
+                  type="checkbox"
+                  [id]="'mobile-category-switch-' + category.id"
+                  [checked]="category.active"
+                  [attr.aria-label]="category.active ? 'Desativar categoria de produto' : 'Ativar categoria de produto'"
+                  [title]="category.active ? 'Ativo' : 'Desativado'"
+                  [disabled]="togglingCategoryId === category.id"
+                  (change)="toggleCategoryActive(category, $any($event.target).checked)"
+                />
+              </div>
+            </div>
+            <div class="mobile-category-row">
+              <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openEditModal(category)">
+                <i class="ti ti-pencil me-1"></i>
+                Editar
+              </button>
+            </div>
+            <div class="mobile-category-row">
+              <button class="btn btn-sm btn-outline-danger w-100" type="button" (click)="deleteCategory(category)">
+                <i class="ti ti-trash me-1"></i>
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </app-card>
+  </div>
+</div>
+
+<ng-container *ngIf="createModalOpen">
+  <div class="categories-modal-backdrop categories-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-category-title">
+    <div class="categories-modal categories-details-modal create-category-modal" (click)="$event.stopPropagation()">
+      <button class="category-details-close-btn" type="button" aria-label="Fechar cadastro" [disabled]="saving" (click)="closeCreateModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="category-details-header create-category-header mb-3">
+        <div class="category-details-avatar">
+          <i class="ti ti-category-plus"></i>
+        </div>
+        <div class="category-details-header-text">
+          <h5 id="create-category-title" class="mb-1">Cadastrar categoria de produto</h5>
+          <div class="category-details-subtitle">Defina agrupamentos para organizar os produtos</div>
+        </div>
+      </div>
+
+      <div class="category-details-section mb-3">
+        <h6 class="category-details-section-title">Dados da categoria</h6>
+        <ng-container *ngTemplateOutlet="categoryFormTemplate; context: { formModel: createForm, editing: false }"></ng-container>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="createCategory()">
+          <span *ngIf="!saving">Cadastrar</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="editModalOpen">
+  <div class="categories-modal-backdrop categories-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="edit-category-title">
+    <div class="categories-modal categories-details-modal create-category-modal" (click)="$event.stopPropagation()">
+      <button class="category-details-close-btn" type="button" aria-label="Fechar edicao" [disabled]="saving" (click)="closeEditModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="category-details-header create-category-header mb-3">
+        <div class="category-details-avatar">
+          <i class="ti ti-pencil"></i>
+        </div>
+        <div class="category-details-header-text">
+          <h5 id="edit-category-title" class="mb-1">Editar categoria de produto</h5>
+          <div class="category-details-subtitle">Atualize os dados da categoria</div>
+        </div>
+      </div>
+
+      <div class="category-details-section mb-3">
+        <h6 class="category-details-section-title">Dados da categoria</h6>
+        <ng-container *ngTemplateOutlet="categoryFormTemplate; context: { formModel: editForm, editing: true }"></ng-container>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger" type="button" [disabled]="saving" (click)="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="saving" (click)="updateCategory()">
+          <span *ngIf="!saving">Salvar edicao</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Salvando...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="deleteModalOpen && selectedCategoryForDeletion">
+  <div class="categories-modal-backdrop categories-details-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-category-title">
+    <div class="categories-modal categories-details-modal delete-category-modal" (click)="$event.stopPropagation()">
+      <button class="category-details-close-btn" type="button" aria-label="Fechar exclusao" [disabled]="saving" (click)="closeDeleteModal()">
+        <i class="ti ti-x"></i>
+      </button>
+
+      <div class="category-details-header delete-category-header mb-3">
+        <div class="category-details-avatar delete-category-avatar">
+          <i class="ti ti-trash"></i>
+        </div>
+        <div class="category-details-header-text">
+          <h5 id="delete-category-title" class="mb-1">Excluir categoria de produto</h5>
+          <div class="category-details-subtitle">Esta acao nao pode ser desfeita</div>
+        </div>
+      </div>
+
+      <div class="category-details-section mb-3">
+        <p class="delete-category-message mb-0">Deseja excluir a categoria <strong>{{ selectedCategoryForDeletion.name }}</strong>?</p>
+      </div>
+
+      <div class="create-modal-actions d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn btn-danger" type="button" [disabled]="saving" (click)="confirmDeleteCategory()">
+          <span *ngIf="!saving">Excluir categoria</span>
+          <span *ngIf="saving" class="d-inline-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Excluindo...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #categoryFormTemplate let-formModel="formModel" let-editing="editing">
+  <div class="create-category-grid">
+    <div class="create-category-field create-category-field-full">
+      <label class="form-label" [for]="editing ? 'editCategoryName' : 'categoryName'">Nome</label>
+      <input [id]="editing ? 'editCategoryName' : 'categoryName'" class="form-control" [(ngModel)]="formModel.name" />
+    </div>
+
+    <div class="create-category-field create-category-field-full">
+      <label class="form-label" [for]="editing ? 'editCategoryDescription' : 'categoryDescription'">Descricao (opcional)</label>
+      <textarea [id]="editing ? 'editCategoryDescription' : 'categoryDescription'" class="form-control" rows="2" [(ngModel)]="formModel.description"></textarea>
+    </div>
+
+    <div class="create-category-field" *ngIf="!editing">
+      <label class="form-label" [for]="editing ? 'editCategoryActive' : 'categoryActive'">Ativo?</label>
+      <div class="form-check mt-1 mb-1">
+        <input [id]="editing ? 'editCategoryActive' : 'categoryActive'" class="form-check-input" type="checkbox" [(ngModel)]="formModel.active" />
+      </div>
+    </div>
+  </div>
+</ng-template>
