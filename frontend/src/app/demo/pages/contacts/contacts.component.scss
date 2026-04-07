@@ -1,3 +1,31 @@
+:host {
+  --contacts-message-header-bg: var(--bs-tertiary-bg);
+  --contacts-message-list-bg: var(--bs-tertiary-bg);
+  --contacts-message-item-bg: var(--bs-body-bg);
+  --contacts-message-item-color: var(--bs-body-color);
+  --contacts-message-meta-color: var(--bs-secondary-color);
+  --contacts-message-inbound-bg: #fff7e6;
+  --contacts-message-inbound-border: #e1c988;
+  --contacts-message-inbound-color: #4a3a10;
+  --contacts-message-outbound-bg: #e8f7ee;
+  --contacts-message-outbound-border: #8dc8a0;
+  --contacts-message-outbound-color: #183c22;
+}
+
+:host-context(body.berry-dark) {
+  --contacts-message-header-bg: #182235;
+  --contacts-message-list-bg: #111a2a;
+  --contacts-message-item-bg: #152033;
+  --contacts-message-item-color: #eef4ff;
+  --contacts-message-meta-color: #a9bad4;
+  --contacts-message-inbound-bg: #3b2f17;
+  --contacts-message-inbound-border: #8b6d22;
+  --contacts-message-inbound-color: #f8e8ba;
+  --contacts-message-outbound-bg: #173428;
+  --contacts-message-outbound-border: #2e7d59;
+  --contacts-message-outbound-color: #d7f3e2;
+}
+
 .empty-state {
   padding: 1rem 0.5rem;
 }
@@ -229,12 +257,37 @@
 }
 
 .stage-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   padding: 0.25rem 0.6rem;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  line-height: 1.2;
+  max-width: min(100%, 12rem);
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.contact-stage-cell {
+  min-width: 0;
+}
+
+.stage-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.stage-owner-note {
+  color: var(--bs-secondary-color);
+  line-height: 1.3;
 }
 
 .stage-lead {
@@ -327,7 +380,7 @@
   padding-right: 3rem;
   border: 1px solid var(--bs-border-color);
   border-radius: 12px;
-  background: var(--bs-tertiary-bg);
+  background: var(--contacts-message-header-bg);
 }
 
 .messages-modern-avatar {
@@ -346,32 +399,40 @@
 .messages-modern-header-text h6 {
   font-size: 0.96rem;
   font-weight: 700;
+  color: var(--contacts-message-item-color);
+}
+
+.messages-modern-header-text small {
+  color: var(--contacts-message-meta-color) !important;
 }
 
 .messages-modern-list {
   border: 1px solid var(--bs-border-color);
   border-radius: 10px;
   padding: 0.45rem;
-  background: var(--bs-tertiary-bg);
+  background: var(--contacts-message-list-bg);
   max-height: 420px;
 }
 
 .messages-modern-list .message-item {
   border-radius: 10px;
-  background: var(--bs-body-bg);
+  background: var(--contacts-message-item-bg);
   border-left: 0;
   border: 1px solid var(--bs-border-color);
+  color: var(--contacts-message-item-color);
   padding: 0.55rem 0.65rem;
 }
 
 .messages-modern-list .message-item.msg-inbound {
-  background: #fffaf0;
-  border-color: #ead7ab;
+  background: var(--contacts-message-inbound-bg);
+  border-color: var(--contacts-message-inbound-border);
+  color: var(--contacts-message-inbound-color);
 }
 
 .messages-modern-list .message-item.msg-outbound {
-  background: #f2fbf5;
-  border-color: #bcdcc6;
+  background: var(--contacts-message-outbound-bg);
+  border-color: var(--contacts-message-outbound-border);
+  color: var(--contacts-message-outbound-color);
 }
 
 .message-author {
@@ -458,6 +519,7 @@
 }
 
 .message-item p {
+  color: inherit;
   overflow-wrap: anywhere;
 }
 
@@ -466,6 +528,12 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.2rem;
+  color: var(--contacts-message-meta-color);
+}
+
+.message-meta small,
+.message-meta .message-author {
+  color: inherit;
 }
 
 .msg-inbound {
@@ -630,5 +698,11 @@
   .messages-modal-actions .btn,
   .reset-modal-actions .btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 1366px) {
+  .stage-badge {
+    max-width: min(100%, 10rem);
   }
 }
