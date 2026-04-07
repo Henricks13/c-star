@@ -17,10 +17,6 @@
             <i class="ti ti-plus me-1"></i>
             Novo serviço
           </button>
-          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="loadOrders()">
-            <i class="ti ti-refresh me-1"></i>
-            Atualizar
-          </button>
         </div>
       </div>
 
@@ -48,11 +44,9 @@
               <thead class="services-thead">
                 <tr>
                   <th>Cliente</th>
-                  <th>Procedimentos/Produtos</th>
-                  <th>Status do serviço</th>
-                  <th>Status pagamento</th>
+                  <th>Proc/Prod</th>
+                  <th>Status serviço</th>
                   <th>Valor</th>
-                  <th>Próximo retorno</th>
                   <th>Criado em</th>
                   <th class="text-end">Ações</th>
                 </tr>
@@ -73,17 +67,12 @@
                       {{ getOrderStatusLabel(order.serviceStatus) }}
                     </span>
                   </td>
-                  <td>{{ getPaymentStatusLabel(order.paymentStatus) }}</td>
                   <td>{{ order.finalTotal | currency: 'BRL' }}</td>
-                  <td>{{ order.nextReturnAt ? (order.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</td>
                   <td>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
                   <td class="text-end">
                     <div class="table-actions">
                       <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)" title="Detalhes" aria-label="Detalhes">
                         <i class="ti ti-eye"></i>
-                      </button>
-                      <button class="btn btn-sm btn-outline-success" type="button" (click)="openOrderPayments(order)" title="Pagamento" aria-label="Pagamento">
-                        <i class="ti ti-cash"></i>
                       </button>
                       <button
                         class="btn btn-sm btn-outline-primary"
@@ -155,21 +144,12 @@
               </span>
             </div>
             <div class="mobile-service-row"><span class="mobile-label">Status serviço</span><span>{{ getOrderStatusLabel(order.serviceStatus) }}</span></div>
-            <div class="mobile-service-row"><span class="mobile-label">Status pagamento</span><span>{{ getPaymentStatusLabel(order.paymentStatus) }}</span></div>
             <div class="mobile-service-row"><span class="mobile-label">Valor</span><span>{{ order.finalTotal | currency: 'BRL' }}</span></div>
-            <div class="mobile-service-row">
-              <span class="mobile-label">Próx. retorno</span>
-              <span>{{ order.nextReturnAt ? (order.nextReturnAt | date: 'dd/MM/yyyy HH:mm') : 'Não agendado' }}</span>
-            </div>
             <div class="mobile-service-row"><span class="mobile-label">Criado em</span><span>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span></div>
             <div class="mobile-actions">
               <button class="btn btn-sm btn-outline-secondary w-100" type="button" (click)="openOrderDetails(order)">
                 <i class="ti ti-eye me-1"></i>
                 Detalhes
-              </button>
-              <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openOrderPayments(order)">
-                <i class="ti ti-cash me-1"></i>
-                Pagamentos
               </button>
               <button class="btn btn-sm btn-outline-primary w-100" type="button" (click)="openEditService(order)" *ngIf="canEditService(order.serviceStatus)">
                 <i class="ti ti-pencil me-1"></i>

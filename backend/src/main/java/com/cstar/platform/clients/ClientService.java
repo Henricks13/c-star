@@ -247,14 +247,23 @@ public class ClientService {
     private String normalizeName(String rawName, Contact sourceContact) {
         String candidate = rawName == null ? "" : rawName.trim().replaceAll("\\s+", " ");
         if (!candidate.isBlank()) {
+            validateNameWithoutDigits(candidate);
             return candidate;
         }
 
         if (sourceContact != null && sourceContact.getFullName() != null && !sourceContact.getFullName().isBlank()) {
-            return sourceContact.getFullName().trim().replaceAll("\\s+", " ");
+            String contactName = sourceContact.getFullName().trim().replaceAll("\\s+", " ");
+            validateNameWithoutDigits(contactName);
+            return contactName;
         }
 
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome é obrigatório");
+    }
+
+    private void validateNameWithoutDigits(String value) {
+        if (value != null && value.chars().anyMatch(Character::isDigit)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome não pode conter números");
+        }
     }
 
     private String normalizePhone(String rawPhone, Contact sourceContact) {

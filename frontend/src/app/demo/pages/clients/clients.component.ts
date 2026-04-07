@@ -15,7 +15,7 @@ import {
   ServicePaymentMethod
 } from 'src/app/core/client-orders/client-orders.types';
 import { ClientsService } from 'src/app/core/clients/clients.service';
-import { CLIENT_ORIGIN_OPTIONS, ClientListItem, CreateClientRequest, UpdateClientRequest } from 'src/app/core/clients/clients.types';
+import { CLIENT_ORIGIN_OPTIONS, ClientListItem, ClientOrigin, CreateClientRequest, UpdateClientRequest } from 'src/app/core/clients/clients.types';
 import { FinanceService } from 'src/app/core/finance/finance.service';
 import { ProductItem } from 'src/app/core/products/products.types';
 import { ProductsService } from 'src/app/core/products/products.service';
@@ -42,7 +42,20 @@ export class ClientsComponent implements OnInit {
   infoMessage: string | null = null;
 
   clients: ClientListItem[] = [];
+  filteredClients: ClientListItem[] = [];
   detailClient: ClientListItem | null = null;
+
+  filters: {
+    search: string;
+    cpf: string;
+    origins: ClientOrigin[];
+    email: string;
+  } = {
+    search: '',
+    cpf: '',
+    origins: [],
+    email: ''
+  };
 
   modalOpen = false;
   detailsModalOpen = false;
@@ -123,13 +136,53 @@ export class ClientsComponent implements OnInit {
     this.clientsService.list().subscribe({
       next: (response) => {
         this.clients = response;
+        this.applyFilters();
         this.loading = false;
       },
       error: () => {
         this.errorMessage = 'Não foi possível carregar os clientes.';
+        this.filteredClients = [];
         this.loading = false;
       }
     });
+  }
+
+  applyFilters(): void {
+    const searchQuery = this.normalizeNameForComparison(this.filters.search);
+    const searchDigits = (this.filters.search || '').replace(/\D/g, '');
+    const cpfQuery = this.normalizeCpfForComparison(this.filters.cpf);
+    const emailQuery = this.normalizeEmailForComparison(this.filters.email);
+    const selectedOrigins = new Set((this.filters.origins || []).map((origin) => (origin || '').trim().toUpperCase()));
+
+    this.filteredClients = this.clients.filter((client) => {
+      const matchesSearch = !searchQuery
+        || this.normalizeNameForComparison(client.fullName).includes(searchQuery)
+        || (!!searchDigits && this.getClientPhoneSuffix(client.phone).includes(searchDigits));
+
+      const matchesCpf = !cpfQuery || this.normalizeCpfForComparison(client.cpf).includes(cpfQuery);
+      const matchesEmail = !emailQuery || this.normalizeEmailForComparison(client.email).includes(emailQuery);
+      const matchesOrigin = selectedOrigins.size === 0 || selectedOrigins.has((client.origin || '').trim().toUpperCase());
+
+      return matchesSearch && matchesCpf && matchesEmail && matchesOrigin;
+    });
+  }
+
+  clearFilters(): void {
+    this.filters = {
+      search: '',
+      cpf: '',
+      origins: [],
+      email: ''
+    };
+    this.applyFilters();
+  }
+
+  hasActiveFilters(): boolean {
+    return !!this.filters.search.trim() || !!this.filters.cpf.trim() || !!this.filters.email.trim() || this.filters.origins.length > 0;
+  }
+
+  onFullNameInput(value: string | null | undefined): void {
+    this.form.fullName = this.sanitizeFullName(value);
   }
 
   openCreateModal(): void {
@@ -386,6 +439,25 @@ export class ClientsComponent implements OnInit {
     const first = parts[0]?.charAt(0) || '';
     const last = parts.length > 1 ? parts[parts.length - 1]?.charAt(0) || '' : '';
     return `${first}${last}`.toUpperCase() || source.slice(0, 2).toUpperCase();
+  }
+
+  getClientDisplayName(client: Pick<ClientListItem, 'fullName' | 'phone'>): string {
+    const name = (client.fullName || '').trim() || 'Não informado';
+    const suffix = this.getClientPhoneSuffix(client.phone);
+    return suffix ? `${name} - ${suffix}` : name;
+  }
+
+  private sanitizeFullName(value: string | null | undefined): string {
+    return (value || '').replace(/[0-9]+/g, '');
+  }
+
+  private getClientPhoneSuffix(phone: string | null | undefined): string {
+    const digits = (phone || '').replace(/\D/g, '');
+    if (!digits) {
+      return '';
+    }
+
+    return digits.slice(-4);
   }
 
   openServiceWizard(client: ClientListItem): void {
