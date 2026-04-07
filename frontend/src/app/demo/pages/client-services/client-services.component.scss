@@ -35,18 +35,11 @@
 }
 
 .table-actions {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   gap: 0.35rem;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.table-actions.table-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 0.35rem 0.4rem;
-  justify-content: end;
-  width: max-content;
   margin-left: auto;
 }
 

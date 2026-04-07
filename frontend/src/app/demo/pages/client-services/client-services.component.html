@@ -54,7 +54,7 @@
               <tbody>
                 <tr *ngFor="let order of filteredOrders">
                   <td>
-                    <button class="client-link" type="button" (click)="openClientChart(order.clientId)">{{ order.clientName }}</button>
+                    <button class="client-link" type="button" (click)="openClientChart(order.clientId)">{{ getOrderClientDisplayName(order) }}</button>
                   </td>
                   <td>
                     <span class="service-composition-text">
@@ -70,7 +70,7 @@
                   <td>{{ order.finalTotal | currency: 'BRL' }}</td>
                   <td>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
                   <td class="text-end">
-                    <div class="table-actions" [class.table-actions-grid]="getVisibleActionCount(order) === 4">
+                    <div class="table-actions">
                       <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)" title="Detalhes" aria-label="Detalhes">
                         <i class="ti ti-eye"></i>
                       </button>
@@ -135,7 +135,7 @@
 
         <div class="mobile-list d-block d-md-none">
           <div class="mobile-service-card" *ngFor="let order of filteredOrders">
-            <div class="mobile-service-row"><span class="mobile-label">Cliente</span><button class="client-link" type="button" (click)="openClientChart(order.clientId)">{{ order.clientName }}</button></div>
+            <div class="mobile-service-row"><span class="mobile-label">Cliente</span><button class="client-link" type="button" (click)="openClientChart(order.clientId)">{{ getOrderClientDisplayName(order) }}</button></div>
             <div class="mobile-service-row">
               <span class="mobile-label">Proc/Prod</span>
               <span>
@@ -215,13 +215,13 @@
           <label class="form-label">Cliente</label>
           <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="selectedClientId">
             <ng-option [value]="''">Selecione um cliente</ng-option>
-            <ng-option *ngFor="let client of clients" [value]="client.id">{{ client.fullName }}</ng-option>
+            <ng-option *ngFor="let client of clients" [value]="client.id">{{ getClientDisplayName(client) }}</ng-option>
           </ng-select>
         </div>
 
         <label class="form-label">Procedimentos</label>
         <div class="service-row mb-2" *ngFor="let serviceId of selectedServiceIds; let index = index">
-          <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(index, $event)">
+          <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [ngModel]="serviceId" (ngModelChange)="onServiceSelectionChange(index, $event)">
             <ng-option [value]="''">Selecione o procedimento</ng-option>
             <ng-option *ngFor="let service of availableServices" [value]="service.id">
               {{ service.name }} - {{ service.price | currency: 'BRL' }}
@@ -310,7 +310,7 @@
           <div class="details-grid">
             <div class="details-field">
               <span class="details-field-label">Cliente</span>
-              <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ selectedOrderForPayment.clientName }}</button></span>
+                <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ getOrderClientDisplayName(selectedOrderForPayment) }}</button></span>
             </div>
             <div class="details-field">
               <span class="details-field-label">Valor total do serviço</span>
@@ -504,7 +504,7 @@
       </div>
       <div class="details-header-text">
         <h5 class="mb-1">Pagamento do serviço</h5>
-        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ selectedOrderForPayment.clientName }}</button></div>
+        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ getOrderClientDisplayName(selectedOrderForPayment) }}</button></div>
       </div>
       <div class="details-tags">
         <span class="history-status" [class.paid]="selectedOrderForPayment.paymentStatus === 'PAGAMENTO_CONCLUIDO'">
@@ -526,7 +526,7 @@
         <div class="details-grid">
           <div class="details-field">
             <span class="details-field-label">Cliente</span>
-            <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ selectedOrderForPayment.clientName }}</button></span>
+            <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ getOrderClientDisplayName(selectedOrderForPayment) }}</button></span>
           </div>
           <div class="details-field">
             <span class="details-field-label">Valor total do serviço</span>
@@ -730,7 +730,7 @@
       </div>
       <div class="details-header-text">
         <h5 class="mb-1">Detalhes do serviço</h5>
-        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForDetails.clientId)">{{ selectedOrderForDetails.clientName }}</button></div>
+        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForDetails.clientId)">{{ getOrderClientDisplayName(selectedOrderForDetails) }}</button></div>
       </div>
       <div class="details-tags">
         <span
@@ -750,7 +750,7 @@
         <div class="details-grid">
           <div class="details-field">
             <span class="details-field-label">Cliente</span>
-            <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForDetails.clientId)">{{ selectedOrderForDetails.clientName }}</button></span>
+            <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForDetails.clientId)">{{ getOrderClientDisplayName(selectedOrderForDetails) }}</button></span>
           </div>
           <div class="details-field">
             <span class="details-field-label">Status pagamento</span>
@@ -866,7 +866,7 @@
       </div>
       <div class="details-header-text">
         <h5 class="mb-1">Ações do serviço</h5>
-        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForManagement.clientId)">{{ selectedOrderForManagement.clientName }}</button></div>
+        <div class="details-subtitle"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForManagement.clientId)">{{ getOrderClientDisplayName(selectedOrderForManagement) }}</button></div>
       </div>
       <div class="details-tags">
         <span

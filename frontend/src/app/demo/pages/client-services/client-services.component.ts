@@ -139,6 +139,25 @@ export class ClientServicesComponent implements OnInit {
     return this.clients.find((item) => item.id === this.selectedClientId) || null;
   }
 
+  getClientDisplayName(client: Pick<ClientListItem, 'fullName' | 'phone'>): string {
+    const name = (client.fullName || '').trim() || 'Não informado';
+    const suffix = this.getClientPhoneSuffix(client.phone);
+    return suffix ? `${name} - ${suffix}` : name;
+  }
+
+  getOrderClientDisplayName(order: Pick<ClientServiceOrderItem, 'clientId' | 'clientName'> | null | undefined): string {
+    if (!order) {
+      return 'Não informado';
+    }
+
+    const client = this.clients.find((item) => item.id === order.clientId);
+    if (client) {
+      return this.getClientDisplayName(client);
+    }
+
+    return (order.clientName || '').trim() || 'Não informado';
+  }
+
   get selectedServices(): ServiceItem[] {
     const key = this.selectedServiceIds.join('|');
     if (this.selectedServicesCacheKey === key) {
@@ -1439,6 +1458,15 @@ export class ClientServicesComponent implements OnInit {
     const result = new Date();
     result.setDate(result.getDate() + days);
     return result;
+  }
+
+  private getClientPhoneSuffix(phone: string | null | undefined): string {
+    const digits = (phone || '').replace(/\D/g, '');
+    if (!digits) {
+      return '';
+    }
+
+    return digits.slice(-4);
   }
 
   private addDays(base: Date, days: number): Date {
