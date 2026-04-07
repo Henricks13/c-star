@@ -8,10 +8,8 @@ import { ProductsService } from 'src/app/core/products/products.service';
 import { ServicesService } from 'src/app/core/services/services.service';
 import {
   CreateServiceRequest,
-  SERVICE_STAGE_OPTIONS,
   ServiceItem,
   ServiceProductUsageInput,
-  ServiceStage,
   UpdateServiceRequest
 } from 'src/app/core/services/services.types';
 import { CardComponent } from 'src/app/theme/shared/components/card/card.component';
@@ -19,7 +17,6 @@ import { ConfirmActionModalComponent } from 'src/app/theme/shared/components/con
 
 interface ServiceFormModel {
   name: string;
-  stage: ServiceStage;
   price: number;
   durationMinutes: number | null;
   active: boolean;
@@ -49,8 +46,6 @@ export class ServicesComponent implements OnInit {
   createModalOpen = false;
   editModalOpen = false;
   deleteModalOpen = false;
-
-  readonly stageOptions = SERVICE_STAGE_OPTIONS;
 
   createForm: ServiceFormModel = this.defaultForm();
   editForm: ServiceFormModel = this.defaultForm();
@@ -131,7 +126,6 @@ export class ServicesComponent implements OnInit {
     this.selectedService = service;
     this.editForm = {
       name: service.name,
-      stage: service.stage,
       price: Number(service.price),
       durationMinutes: service.durationMinutes,
       active: service.active,
@@ -226,7 +220,6 @@ export class ServicesComponent implements OnInit {
 
     const payload: UpdateServiceRequest = {
       name: service.name,
-      stage: service.stage,
       price: Number(service.price),
       durationMinutes: service.durationMinutes,
       active: nextActive,
@@ -254,12 +247,6 @@ export class ServicesComponent implements OnInit {
     });
   }
 
-  getStageLabel(stage: string | null | undefined): string {
-    const value = (stage || '').trim().toUpperCase();
-    const found = this.stageOptions.find((option) => option.value === value);
-    return found?.label || stage || 'Não informado';
-  }
-
   addConsumedProduct(formModel: ServiceFormModel): void {
     formModel.consumedProducts.push({
       productId: '',
@@ -281,7 +268,6 @@ export class ServicesComponent implements OnInit {
 
     const payload: CreateServiceRequest = {
       name: (formModel.name || '').trim(),
-      stage: formModel.stage,
       price: Number(formModel.price),
       durationMinutes: formModel.durationMinutes ? Number(formModel.durationMinutes) : null,
       active: formModel.active !== false,
@@ -293,8 +279,8 @@ export class ServicesComponent implements OnInit {
   }
 
   private validatePayload<T extends CreateServiceRequest | UpdateServiceRequest>(payload: T): T | null {
-    if (!payload.name || !payload.stage) {
-      this.errorMessage = 'Preencha nome e etapa do procedimento.';
+    if (!payload.name) {
+      this.errorMessage = 'Preencha o nome do procedimento.';
       return null;
     }
 
@@ -325,7 +311,6 @@ export class ServicesComponent implements OnInit {
   private defaultForm(): ServiceFormModel {
     return {
       name: '',
-      stage: 'ORCAMENTO',
       price: 0,
       durationMinutes: null,
       active: true,

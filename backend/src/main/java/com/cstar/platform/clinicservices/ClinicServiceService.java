@@ -7,7 +7,6 @@ import com.cstar.platform.clinicservices.dto.ServiceProductResponse;
 import com.cstar.platform.clinicservices.dto.UpdateClinicServiceRequest;
 import com.cstar.platform.clinicservices.model.ClinicService;
 import com.cstar.platform.clinicservices.model.ServiceProduct;
-import com.cstar.platform.clinicservices.model.ServiceStage;
 import com.cstar.platform.products.ProductRepository;
 import com.cstar.platform.products.model.Product;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -20,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -46,7 +44,6 @@ public class ClinicServiceService {
     @Transactional
     public ClinicServiceResponse create(CreateClinicServiceRequest request) {
         String name = normalizeName(request.name());
-        ServiceStage stage = parseStage(request.stage());
         BigDecimal price = ensurePrice(request.price());
         Integer durationMinutes = normalizeDuration(request.durationMinutes());
         boolean active = request.active() == null || request.active();
@@ -58,7 +55,6 @@ public class ClinicServiceService {
 
         ClinicService service = ClinicService.create(
                 name,
-                stage,
                 price,
                 durationMinutes,
                 active,
@@ -76,7 +72,6 @@ public class ClinicServiceService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serviço não encontrado"));
 
         String name = normalizeName(request.name());
-        ServiceStage stage = parseStage(request.stage());
         BigDecimal price = ensurePrice(request.price());
         Integer durationMinutes = normalizeDuration(request.durationMinutes());
         boolean active = request.active() == null || request.active();
@@ -86,7 +81,7 @@ public class ClinicServiceService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe serviço com este nome");
         }
 
-        current.update(name, stage, price, durationMinutes, active, notes);
+        current.update(name, price, durationMinutes, active, notes);
         replaceConsumedProducts(current, request.consumedProducts());
 
         ClinicService saved = clinicServiceRepository.save(current);
@@ -119,7 +114,6 @@ public class ClinicServiceService {
         return new ClinicServiceResponse(
                 service.getId(),
                 service.getName(),
-                service.getStage().name(),
                 service.getPrice(),
                 service.getDurationMinutes(),
                 service.isActive(),
@@ -159,18 +153,6 @@ public class ClinicServiceService {
         }
 
         return rawName.trim();
-    }
-
-    private ServiceStage parseStage(String rawStage) {
-        if (rawStage == null || rawStage.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Etapa do serviço é obrigatória");
-        }
-
-        try {
-            return ServiceStage.valueOf(rawStage.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Etapa de serviço inválida");
-        }
     }
 
     private BigDecimal ensurePrice(BigDecimal price) {

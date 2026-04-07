@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 025-remove-service-stage
+      author: copilot
+      changes:
+        - dropIndex:
+            tableName: services
+            indexName: idx_services_stage
+        - sql:
+            sql: |
+              ALTER TABLE services
+              DROP CONSTRAINT IF EXISTS ck_services_stage;
+        - dropColumn:
+            tableName: services
+            columnName: stage

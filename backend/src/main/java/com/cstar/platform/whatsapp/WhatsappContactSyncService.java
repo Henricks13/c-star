@@ -27,10 +27,9 @@ public class WhatsappContactSyncService {
 
     private static final Logger log = LoggerFactory.getLogger(WhatsappContactSyncService.class);
     private static final String GLOBAL_SESSION_KEY = "global";
-    private static final int CHAT_PAGE_SIZE = 500;
+    private static final int CHAT_PAGE_SIZE = 200;
     private static final int CHAT_MAX_PAGES = Integer.MAX_VALUE;
-    private static final int MESSAGE_PAGE_SIZE = 100;
-    private static final int MESSAGE_MAX_PAGES = Integer.MAX_VALUE;
+    private static final int MESSAGE_SYNC_LIMIT = 5;
 
     private final EvolutionApiClient evolutionApiClient;
     private final WhatsappIngestionService ingestionService;
@@ -85,7 +84,10 @@ public class WhatsappContactSyncService {
                 continue;
             }
 
-            List<Map<String, Object>> messages = fetchAllMessages(instanceName, remoteJid, MESSAGE_PAGE_SIZE, MESSAGE_MAX_PAGES);
+            List<Map<String, Object>> messages = fetchLatestMessages(instanceName, remoteJid, MESSAGE_SYNC_LIMIT);
+            if (messages.isEmpty()) {
+                continue;
+            }
 
             conversationsSynced++;
             String displayName = resolveDisplayName(chat, phone);
@@ -129,6 +131,7 @@ public class WhatsappContactSyncService {
                 break;
             }
 
+            int uniqueCountBeforePage = uniqueChatsByJid.size();
             for (Map<String, Object> chat : pageRecords) {
                 String remoteJid = extractRemoteJid(chat);
                 if (remoteJid == null || remoteJid.isBlank()) {
@@ -137,7 +140,7 @@ public class WhatsappContactSyncService {
                 uniqueChatsByJid.putIfAbsent(remoteJid, chat);
             }
 
-            if (pageRecords.size() < safePageSize) {
+            if (pageRecords.size() < safePageSize || uniqueChatsByJid.size() == uniqueCountBeforePage) {
                 break;
             }
         }
@@ -145,28 +148,9 @@ public class WhatsappContactSyncService {
         return new ArrayList<>(uniqueChatsByJid.values());
     }
 
-    private List<Map<String, Object>> fetchAllMessages(String instanceName, String remoteJid, int pageSize, int maxPages) {
-        int safePageSize = Math.max(1, Math.min(pageSize, 100));
-        int safeMaxPages = Math.max(1, maxPages);
-
-        List<Map<String, Object>> allMessages = new ArrayList<>();
-
-        for (int page = 1; page <= safeMaxPages; page++) {
-            List<Map<String, Object>> pageRecords = extractRecords(
-                    evolutionApiClient.findMessages(instanceName, remoteJid, page, safePageSize)
-            );
-
-            if (pageRecords.isEmpty()) {
-                break;
-            }
-            allMessages.addAll(pageRecords);
-
-            if (pageRecords.size() < safePageSize) {
-                break;
-            }
-        }
-
-        return allMessages;
+    private List<Map<String, Object>> fetchLatestMessages(String instanceName, String remoteJid, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        return extractRecords(evolutionApiClient.findMessages(instanceName, remoteJid, 1, safeLimit));
     }
 
     public List<ContactMessageItemResponse> getLatestMessages(UUID contactId, int limit) {

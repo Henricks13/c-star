@@ -34,7 +34,6 @@
               <thead class="services-thead">
                 <tr>
                   <th>Procedimento</th>
-                  <th>Etapa</th>
                   <th>Preço</th>
                   <th>Produtos usados</th>
                   <th class="text-end">Ações</th>
@@ -48,7 +47,6 @@
                       Duração: {{ service.durationMinutes ? (service.durationMinutes + ' min') : 'Não informada' }}
                     </small>
                   </td>
-                  <td>{{ getStageLabel(service.stage) }}</td>
                   <td>{{ service.price | currency: 'BRL' }}</td>
                   <td>
                     <ng-container *ngIf="service.consumedProducts.length > 0; else noProducts">
@@ -95,10 +93,6 @@
             <div class="mobile-service-row">
               <span class="mobile-label">Duração</span>
               <span>{{ service.durationMinutes ? (service.durationMinutes + ' min') : 'Não informada' }}</span>
-            </div>
-            <div class="mobile-service-row">
-              <span class="mobile-label">Etapa</span>
-              <span>{{ getStageLabel(service.stage) }}</span>
             </div>
             <div class="mobile-service-row">
               <span class="mobile-label">Preço</span>
@@ -246,19 +240,6 @@
     <div class="procedure-form-field procedure-form-field-full">
       <label class="form-label" [attr.for]="editing ? 'edit-procedure-name' : 'create-procedure-name'">Nome</label>
       <input [id]="editing ? 'edit-procedure-name' : 'create-procedure-name'" class="form-control" [(ngModel)]="formModel.name" />
-    </div>
-
-    <div class="procedure-form-field">
-      <label class="form-label" [attr.for]="editing ? 'edit-procedure-stage' : 'create-procedure-stage'">Etapa</label>
-      <ng-select
-        [id]="editing ? 'edit-procedure-stage' : 'create-procedure-stage'"
-        class="cstar-ng-select"
-        [searchable]="false"
-        [clearable]="false"
-        [(ngModel)]="formModel.stage"
-      >
-          <ng-option *ngFor="let option of stageOptions" [value]="option.value">{{ option.label }}</ng-option>
-        </ng-select>
     </div>
 
     <div class="procedure-form-field">

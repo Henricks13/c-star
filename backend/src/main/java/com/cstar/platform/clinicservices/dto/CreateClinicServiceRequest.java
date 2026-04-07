@@ -11,7 +11,6 @@ import java.util.List;
 
 public record CreateClinicServiceRequest(
         @NotBlank @Size(min = 2, max = 160) String name,
-        @NotBlank String stage,
         @NotNull @DecimalMin(value = "0.00") BigDecimal price,
         Integer durationMinutes,
         Boolean active,

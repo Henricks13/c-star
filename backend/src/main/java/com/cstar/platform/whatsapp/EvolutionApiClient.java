@@ -38,6 +38,7 @@ public class EvolutionApiClient {
         body.put("instanceName", instanceName);
         body.put("integration", "WHATSAPP-BAILEYS");
         body.put("qrcode", true);
+        body.put("syncFullHistory", true);
 
         Map<String, Object> webhook = new HashMap<>();
         webhook.put("url", webhookUrl);
@@ -134,8 +135,8 @@ public class EvolutionApiClient {
         int safePage = Math.max(1, page);
         int safeLimit = Math.max(1, Math.min(limit, 500));
         Map<String, Object> payload = new HashMap<>();
-        payload.put("page", safePage);
-        payload.put("limit", safeLimit);
+        payload.put("take", safeLimit);
+        payload.put("skip", (safePage - 1) * safeLimit);
         return post(url, payload);
     }
 
@@ -157,7 +158,7 @@ public class EvolutionApiClient {
         Map<String, Object> payload = new HashMap<>();
         payload.put("where", where);
         payload.put("page", safePage);
-        payload.put("limit", safeLimit);
+        payload.put("offset", safeLimit);
 
         return post(url, payload);
     }

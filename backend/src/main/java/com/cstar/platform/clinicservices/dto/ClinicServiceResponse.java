@@ -8,7 +8,6 @@ import java.util.UUID;
 public record ClinicServiceResponse(
         UUID id,
         String name,
-        String stage,
         BigDecimal price,
         Integer durationMinutes,
         boolean active,

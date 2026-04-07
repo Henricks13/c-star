@@ -288,6 +288,12 @@ export class ClientsComponent implements OnInit {
       return;
     }
 
+    const duplicateError = this.findDuplicateClientError(basePayload);
+    if (duplicateError) {
+      this.errorMessage = duplicateError;
+      return;
+    }
+
     this.saving = true;
     this.errorMessage = null;
     this.infoMessage = null;
@@ -1088,6 +1094,72 @@ export class ClientsComponent implements OnInit {
       sourceContactId: null,
       notes: ''
     };
+  }
+
+  private findDuplicateClientError(payload: {
+    fullName: string;
+    phone: string;
+    cpf: string | null;
+    email: string | null;
+  }): string | null {
+    const phone = this.normalizePhoneForComparison(payload.phone);
+    const cpf = this.normalizeCpfForComparison(payload.cpf);
+    const email = this.normalizeEmailForComparison(payload.email);
+    const fullName = this.normalizeNameForComparison(payload.fullName);
+
+    for (const client of this.clients) {
+      if (this.editingClientId && client.id === this.editingClientId) {
+        continue;
+      }
+
+      if (phone && this.normalizePhoneForComparison(client.phone) === phone) {
+        return 'Já existe cliente com este número.';
+      }
+
+      if (cpf && this.normalizeCpfForComparison(client.cpf) === cpf) {
+        return 'Já existe cliente com este CPF.';
+      }
+
+      if (email && this.normalizeEmailForComparison(client.email) === email) {
+        return 'Já existe cliente com este e-mail.';
+      }
+
+      if (fullName && this.normalizeNameForComparison(client.fullName) === fullName) {
+        return 'Já existe cliente com este nome.';
+      }
+    }
+
+    return null;
+  }
+
+  private normalizePhoneForComparison(value: string | null | undefined): string {
+    let digits = (value || '').replace(/\D/g, '');
+
+    if (!digits) {
+      return '';
+    }
+
+    if (digits.startsWith('00') && digits.length > 2) {
+      digits = digits.slice(2);
+    }
+
+    if (digits.length === 10 || digits.length === 11) {
+      digits = `55${digits}`;
+    }
+
+    return `+${digits}`;
+  }
+
+  private normalizeCpfForComparison(value: string | null | undefined): string {
+    return (value || '').replace(/\D/g, '');
+  }
+
+  private normalizeEmailForComparison(value: string | null | undefined): string {
+    return (value || '').trim().toLowerCase();
+  }
+
+  private normalizeNameForComparison(value: string | null | undefined): string {
+    return (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
   }
 
   private addDays(value: Date, days: number): Date {

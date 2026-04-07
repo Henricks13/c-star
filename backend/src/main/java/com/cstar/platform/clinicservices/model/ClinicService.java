@@ -3,8 +3,6 @@ package com.cstar.platform.clinicservices.model;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,10 +27,6 @@ public class ClinicService {
 
     @Column(nullable = false, length = 160)
     private String name;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "stage", nullable = false, length = 40)
-    private ServiceStage stage;
 
     @Column(name = "price", nullable = false, precision = 15, scale = 2)
     private BigDecimal price;
@@ -60,7 +54,6 @@ public class ClinicService {
 
     public static ClinicService create(
             String name,
-            ServiceStage stage,
             BigDecimal price,
             Integer durationMinutes,
             boolean active,
@@ -68,7 +61,6 @@ public class ClinicService {
     ) {
         ClinicService service = new ClinicService();
         service.name = name;
-        service.stage = stage;
         service.price = price;
         service.durationMinutes = durationMinutes;
         service.active = active;
@@ -90,14 +82,12 @@ public class ClinicService {
 
     public void update(
             String name,
-            ServiceStage stage,
             BigDecimal price,
             Integer durationMinutes,
             boolean active,
             String notes
     ) {
         this.name = name;
-        this.stage = stage;
         this.price = price;
         this.durationMinutes = durationMinutes;
         this.active = active;
@@ -118,10 +108,6 @@ public class ClinicService {
 
     public String getName() {
         return name;
-    }
-
-    public ServiceStage getStage() {
-        return stage;
     }
 
     public BigDecimal getPrice() {

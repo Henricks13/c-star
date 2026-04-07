@@ -90,6 +90,10 @@ public class ClientService {
 
         ClientOrigin origin = parseOrigin(request.origin(), sourceContactId != null);
 
+        if (clientRepository.existsByFullNameIgnoreCase(fullName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe cliente com este nome");
+        }
+
         if (clientRepository.existsByPhoneE164(phoneE164)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe cliente com este número");
         }
@@ -134,6 +138,11 @@ public class ClientService {
         String email = normalizeEmail(request.email());
         String notes = normalizeNotes(request.notes());
         ClientOrigin origin = parseOrigin(request.origin(), current.getSourceContactId() != null);
+
+        if (!sameNormalizedName(current.getFullName(), fullName)
+                && clientRepository.existsByFullNameIgnoreCaseAndIdNot(fullName, clientId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe cliente com este nome");
+        }
 
         if (clientRepository.existsByPhoneE164AndIdNot(phoneE164, clientId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe cliente com este número");
@@ -236,13 +245,13 @@ public class ClientService {
     }
 
     private String normalizeName(String rawName, Contact sourceContact) {
-        String candidate = rawName == null ? "" : rawName.trim();
+        String candidate = rawName == null ? "" : rawName.trim().replaceAll("\\s+", " ");
         if (!candidate.isBlank()) {
             return candidate;
         }
 
         if (sourceContact != null && sourceContact.getFullName() != null && !sourceContact.getFullName().isBlank()) {
-            return sourceContact.getFullName().trim();
+            return sourceContact.getFullName().trim().replaceAll("\\s+", " ");
         }
 
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome é obrigatório");
@@ -259,7 +268,27 @@ public class ClientService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Número é obrigatório");
         }
 
+        if (digits.startsWith("00") && digits.length() > 2) {
+            digits = digits.substring(2);
+        }
+
+        if (digits.length() == 10 || digits.length() == 11) {
+            digits = "55" + digits;
+        }
+
         return "+" + digits;
+    }
+
+    private boolean sameNormalizedName(String left, String right) {
+        return normalizeComparableName(left).equals(normalizeComparableName(right));
+    }
+
+    private String normalizeComparableName(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     private String normalizeCpf(String rawCpf) {

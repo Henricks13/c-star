@@ -47,3 +47,5 @@ databaseChangeLog:
       file: db/changelog/023-client-service-order-edit-audit-and-long-notes.yaml
   - include:
       file: db/changelog/024-clients-origin-options-update.yaml
+  - include:
+      file: db/changelog/025-remove-service-stage.yaml

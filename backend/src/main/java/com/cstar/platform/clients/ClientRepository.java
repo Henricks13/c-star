@@ -8,6 +8,10 @@ import java.util.UUID;
 
 public interface ClientRepository extends JpaRepository<Client, UUID> {
 
+    boolean existsByFullNameIgnoreCase(String fullName);
+
+    boolean existsByFullNameIgnoreCaseAndIdNot(String fullName, UUID id);
+
     boolean existsByPhoneE164(String phoneE164);
 
     boolean existsByPhoneE164AndIdNot(String phoneE164, UUID id);
