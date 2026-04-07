@@ -205,9 +205,8 @@
       <div class="details-section mb-3 create-wizard-content">
       <div class="wizard-steps mb-3">
         <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 1" [class.btn-outline-secondary]="createWizardStep !== 1" (click)="goToWizardStep(1)">1. Cliente e procedimentos</button>
-        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 2" [class.btn-outline-secondary]="createWizardStep !== 2" (click)="goToWizardStep(2)">2. Produtos extras</button>
-        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 3" [class.btn-outline-secondary]="createWizardStep !== 3" (click)="goToWizardStep(3)">3. Orçamento</button>
-        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 4" [class.btn-outline-secondary]="createWizardStep !== 4" (click)="goToWizardStep(4)">4. Pagamento</button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 2" [class.btn-outline-secondary]="createWizardStep !== 2" (click)="goToWizardStep(2)">2. Orçamento</button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="createWizardStep === 3" [class.btn-outline-secondary]="createWizardStep !== 3" (click)="goToWizardStep(3)">3. Pagamento</button>
       </div>
 
       <div *ngIf="createWizardStep === 1">
@@ -231,6 +230,37 @@
         </div>
         <button type="button" class="btn btn-sm btn-outline-primary" (click)="addServiceRow()">Adicionar procedimento</button>
 
+        <div class="extra-products-toggle mt-3">
+          <div class="form-check mb-0">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="extraProductsEnabled"
+              [ngModel]="extraProductsEnabled"
+              (ngModelChange)="onExtraProductsToggle($event)"
+            />
+            <label class="form-check-label" for="extraProductsEnabled">Produto extra?</label>
+          </div>
+        </div>
+
+        <div class="extra-products-section mt-3" *ngIf="extraProductsEnabled">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label mb-0">Produtos extras</label>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="addExtraProductRow()">Adicionar produto</button>
+          </div>
+
+          <div class="extra-product-row mb-2" *ngFor="let row of extraProductRows; let index = index">
+            <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [(ngModel)]="row.productId">
+              <ng-option [value]="''">Selecione o produto</ng-option>
+              <ng-option *ngFor="let product of availableProducts" [value]="product.id">
+                {{ product.name }} - Estoque {{ product.stockQuantity }} - {{ product.salePrice | currency: 'BRL' }}
+              </ng-option>
+            </ng-select>
+            <input class="form-control" type="number" min="1" [(ngModel)]="row.quantityUsed" />
+            <button type="button" class="btn btn-outline-danger" (click)="removeExtraProductRow(index)">Remover</button>
+          </div>
+        </div>
+
         <div class="stock-box mt-3" *ngIf="requiredServiceProducts.length > 0">
           <div class="fw-semibold mb-2">Consumo automático de estoque (procedimentos)</div>
           <div class="stock-row" *ngFor="let row of requiredServiceProducts">
@@ -241,24 +271,6 @@
       </div>
 
       <div *ngIf="createWizardStep === 2">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <label class="form-label mb-0">Produtos extras</label>
-          <button type="button" class="btn btn-sm btn-outline-primary" (click)="addExtraProductRow()">Adicionar produto</button>
-        </div>
-
-        <div class="extra-product-row mb-2" *ngFor="let row of extraProductRows; let index = index">
-          <ng-select class="cstar-ng-select" [searchable]="true" [clearable]="false" [appendTo]="'body'" [dropdownPosition]="'auto'" [(ngModel)]="row.productId">
-            <ng-option [value]="''">Selecione o produto</ng-option>
-            <ng-option *ngFor="let product of availableProducts" [value]="product.id">
-              {{ product.name }} - Estoque {{ product.stockQuantity }} - {{ product.salePrice | currency: 'BRL' }}
-            </ng-option>
-          </ng-select>
-          <input class="form-control" type="number" min="1" [(ngModel)]="row.quantityUsed" />
-          <button type="button" class="btn btn-outline-danger" (click)="removeExtraProductRow(index)">Remover</button>
-        </div>
-      </div>
-
-      <div *ngIf="createWizardStep === 3">
         <div class="summary-grid mb-3">
           <div>Subtotal serviços</div>
           <div>{{ subtotalServices | currency: 'BRL' }}</div>
@@ -304,13 +316,13 @@
         </div>
       </div>
 
-      <div *ngIf="createWizardStep === 4">
+      <div *ngIf="createWizardStep === 3">
         <div class="details-section mb-3" *ngIf="selectedOrderForPayment">
           <h6 class="details-section-title">Resumo do pagamento</h6>
           <div class="details-grid">
             <div class="details-field">
               <span class="details-field-label">Cliente</span>
-                <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ getOrderClientDisplayName(selectedOrderForPayment) }}</button></span>
+              <span class="details-field-value"><button class="client-link" type="button" (click)="openClientChart(selectedOrderForPayment.clientId)">{{ getOrderClientDisplayName(selectedOrderForPayment) }}</button></span>
             </div>
             <div class="details-field">
               <span class="details-field-label">Valor total do serviço</span>
@@ -477,15 +489,15 @@
         Voltar
       </button>
 
-      <button class="btn btn-primary" type="button" (click)="goToWizardStep(createWizardStep + 1)" *ngIf="createWizardStep < 4" [disabled]="saving || createWizardLoading">
+      <button class="btn btn-primary" type="button" (click)="goToWizardStep(createWizardStep + 1)" *ngIf="createWizardStep < 3" [disabled]="saving || createWizardLoading">
         Próximo
       </button>
 
-      <button class="btn btn-outline-primary" type="button" [disabled]="saving" (click)="goToFinanceFromPayment()" *ngIf="createWizardStep === 4 && hasPaymentInvoices">
+      <button class="btn btn-outline-primary" type="button" [disabled]="saving" (click)="goToFinanceFromPayment()" *ngIf="createWizardStep === 3 && hasPaymentInvoices">
         Abrir no Financeiro
       </button>
 
-      <button class="btn btn-primary" type="button" [disabled]="saving || !serviceOrderId" (click)="createPaymentPlanForOrder()" *ngIf="createWizardStep === 4 && !hasPaymentInvoices">
+      <button class="btn btn-primary" type="button" [disabled]="saving || !serviceOrderId" (click)="createPaymentPlanForOrder()" *ngIf="createWizardStep === 3 && !hasPaymentInvoices">
         Gerar Fatura(s)
       </button>
     </div>

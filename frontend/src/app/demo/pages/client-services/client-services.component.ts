@@ -58,6 +58,7 @@ export class ClientServicesComponent implements OnInit {
   selectedClientId = '';
   serviceOrderId: string | null = null;
   selectedServiceIds: string[] = [''];
+  extraProductsEnabled = false;
   extraProductRows: ExtraProductRow[] = [];
   wizardNotes = '';
   wizardInternalNotes = '';
@@ -488,6 +489,7 @@ export class ClientServicesComponent implements OnInit {
         productId: item.productId,
         quantityUsed: Number(item.quantityUsed || 1)
       }));
+    this.extraProductsEnabled = this.extraProductRows.length > 0;
     this.wizardDiscountAmount = Number(order.discountAmount || 0);
     this.wizardCustomTotalEnabled = !!order.customTotalEnabled;
     this.wizardCustomTotalValue = order.customTotalEnabled ? Number(order.customTotalValue || 0) : null;
@@ -537,12 +539,7 @@ export class ClientServicesComponent implements OnInit {
   }
 
   goToWizardStep(step: number): void {
-    if (step === 2 && (!this.selectedClientId || this.selectedServices.length === 0)) {
-      this.errorMessage = 'Selecione cliente e ao menos um serviço para continuar.';
-      return;
-    }
-
-    if (step === 3) {
+    if (step === 2) {
       if (!this.selectedClientId || this.selectedServices.length === 0) {
         this.errorMessage = 'Selecione cliente e ao menos um serviço para continuar.';
         return;
@@ -554,10 +551,10 @@ export class ClientServicesComponent implements OnInit {
       }
     }
 
-    if (step === 4) {
+    if (step === 3) {
       if (this.serviceOrderId && this.selectedOrderForPayment) {
         this.errorMessage = null;
-        this.createWizardStep = 4;
+        this.createWizardStep = 3;
         this.loadPaymentInvoices();
         return;
       }
@@ -615,8 +612,25 @@ export class ClientServicesComponent implements OnInit {
     });
   }
 
+  onExtraProductsToggle(enabled: boolean): void {
+    this.extraProductsEnabled = !!enabled;
+
+    if (this.extraProductsEnabled) {
+      if (this.extraProductRows.length === 0) {
+        this.addExtraProductRow();
+      }
+      return;
+    }
+
+    this.extraProductRows = [];
+  }
+
   removeExtraProductRow(index: number): void {
     this.extraProductRows.splice(index, 1);
+
+    if (this.extraProductRows.length === 0) {
+      this.extraProductsEnabled = false;
+    }
   }
 
   saveBudget(moveToPaymentStep = false): void {
@@ -681,7 +695,7 @@ export class ClientServicesComponent implements OnInit {
             ? 'Serviço atualizado com sucesso.'
             : 'Orçamento salvo com sucesso.';
         if (moveToPaymentStep) {
-          this.createWizardStep = 4;
+          this.createWizardStep = 3;
           this.loadPaymentInvoices();
         }
         this.loadOrders();
@@ -1408,6 +1422,7 @@ export class ClientServicesComponent implements OnInit {
     this.selectedClientId = '';
     this.serviceOrderId = null;
     this.selectedServiceIds = [''];
+    this.extraProductsEnabled = false;
     this.extraProductRows = [];
     this.wizardNotes = '';
     this.wizardInternalNotes = '';

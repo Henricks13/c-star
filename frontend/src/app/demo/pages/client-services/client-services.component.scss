@@ -427,6 +427,13 @@
   gap: 0.5rem;
 }
 
+.extra-products-toggle,
+.extra-products-section {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
 .extra-product-row {
   grid-template-columns: 1fr 130px auto;
 }
