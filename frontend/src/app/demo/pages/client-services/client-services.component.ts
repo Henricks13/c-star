@@ -1329,6 +1329,32 @@ export class ClientServicesComponent implements OnInit {
     return normalized === 'ORCADO' || normalized === 'AGENDADO' || normalized === 'AGUARDANDO_RETORNO';
   }
 
+  getVisibleActionCount(order: ClientServiceOrderItem): number {
+    let count = 1;
+
+    if (this.canEditService(order.serviceStatus)) {
+      count += 1;
+    }
+
+    if (this.canScheduleService(order.serviceStatus)) {
+      count += 1;
+    }
+
+    if (this.canScheduleServiceReturn(order.serviceStatus)) {
+      count += 1;
+    }
+
+    if (this.canFinalizeServiceLifecycle(order.serviceStatus)) {
+      count += 1;
+    }
+
+    if (this.canDeleteServiceOrders()) {
+      count += 1;
+    }
+
+    return count;
+  }
+
   isStatusQuoted(status: string): boolean {
     return status === 'ORCADO';
   }

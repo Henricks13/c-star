@@ -62,15 +62,15 @@
                       <ng-container *ngIf="hasAdditionalProducts(order)"> | {{ getAdditionalProductNames(order) }}</ng-container>
                     </span>
                   </td>
-                  <td>
-                    <span class="history-status" [class.quoted]="isStatusQuoted(order.serviceStatus)" [class.awaiting]="isStatusAwaiting(order.serviceStatus)" [class.paid]="isStatusPaid(order.serviceStatus)">
+                  <td class="service-status-cell">
+                    <span class="history-status service-status-chip" [class.quoted]="isStatusQuoted(order.serviceStatus)" [class.awaiting]="isStatusAwaiting(order.serviceStatus)" [class.paid]="isStatusPaid(order.serviceStatus)">
                       {{ getOrderStatusLabel(order.serviceStatus) }}
                     </span>
                   </td>
                   <td>{{ order.finalTotal | currency: 'BRL' }}</td>
                   <td>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
                   <td class="text-end">
-                    <div class="table-actions">
+                    <div class="table-actions" [class.table-actions-grid]="getVisibleActionCount(order) === 4">
                       <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openOrderDetails(order)" title="Detalhes" aria-label="Detalhes">
                         <i class="ti ti-eye"></i>
                       </button>

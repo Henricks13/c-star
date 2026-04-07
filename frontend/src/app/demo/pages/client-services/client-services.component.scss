@@ -41,6 +41,15 @@
   justify-content: flex-end;
 }
 
+.table-actions.table-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 0.35rem 0.4rem;
+  justify-content: end;
+  width: max-content;
+  margin-left: auto;
+}
+
 .service-composition-text {
   font-size: 0.95rem;
   font-weight: 400;
@@ -69,6 +78,18 @@
   font-size: 0.72rem;
   font-weight: 600;
   border: 1px solid var(--bs-border-color);
+}
+
+.service-status-cell {
+  min-width: 11rem;
+}
+
+.service-status-chip {
+  justify-content: center;
+  text-align: center;
+  min-width: 9.75rem;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .history-status.quoted {
