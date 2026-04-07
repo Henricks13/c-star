@@ -258,7 +258,7 @@ export class ContactsComponent implements OnInit {
 
     this.convertingContact = contact;
     this.clientForm = {
-      fullName: (contact.fullName || '').trim(),
+      fullName: this.getClientModalContactName(contact),
       phone: (contact.phone || '').trim(),
       cpf: '',
       email: '',
@@ -514,6 +514,20 @@ export class ContactsComponent implements OnInit {
       .slice(0, 2);
 
     return parts.map((part) => part[0].toUpperCase()).join('');
+  }
+
+  getClientModalContactName(contact: ContactView | null | undefined): string {
+    const fullName = (contact?.fullName || '').trim();
+    if (fullName) {
+      return fullName;
+    }
+
+    const digits = (contact?.phone || '').replace(/\D/g, '');
+    if (digits.length >= 4) {
+      return digits.slice(-4);
+    }
+
+    return digits || 'Sem nome';
   }
 
   getStageClass(stage: string): string {

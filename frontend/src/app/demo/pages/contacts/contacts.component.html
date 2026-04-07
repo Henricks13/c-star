@@ -212,7 +212,6 @@
                       <button
                         class="btn btn-sm btn-outline-warning"
                         type="button"
-                        *ngIf="viewMode === 'em-andamento'"
                         (click)="openCreateClientFromContact(contact)"
                         title="Tornar cliente"
                         aria-label="Tornar cliente"
@@ -275,7 +274,6 @@
               <button
                 class="btn btn-sm btn-outline-warning w-100"
                 type="button"
-                *ngIf="viewMode === 'em-andamento'"
                 (click)="openCreateClientFromContact(contact)"
               >
                 <i class="ti ti-user-check me-1"></i>
@@ -379,10 +377,10 @@
       </button>
 
       <div class="messages-modern-header client-modern-header mb-3">
-        <div class="messages-modern-avatar">{{ getInitials(convertingContact?.fullName || convertingContact?.phone || null) }}</div>
+        <div class="messages-modern-avatar">{{ getInitials(getClientModalContactName(convertingContact)) }}</div>
         <div class="messages-modern-header-text">
           <h6 id="client-title" class="mb-1">Tornar cliente</h6>
-          <small class="text-muted">Contato: {{ convertingContact?.fullName || convertingContact?.phone }}</small>
+          <small class="text-muted">Contato: {{ getClientModalContactName(convertingContact) }}</small>
         </div>
       </div>
 
