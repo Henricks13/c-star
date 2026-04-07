@@ -181,8 +181,24 @@ export class ClientsComponent implements OnInit {
     return !!this.filters.search.trim() || !!this.filters.cpf.trim() || !!this.filters.email.trim() || this.filters.origins.length > 0;
   }
 
-  onFullNameInput(value: string | null | undefined): void {
-    this.form.fullName = this.sanitizeFullName(value);
+  onFullNameFieldInput(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const sanitized = this.sanitizeFullName(input?.value);
+
+    this.form.fullName = sanitized;
+
+    if (input && input.value !== sanitized) {
+      input.value = sanitized;
+    }
+  }
+
+  onCpfInput(value: string | null | undefined): void {
+    this.form.cpf = this.formatCpf(value);
+  }
+
+  onCpfFilterInput(value: string | null | undefined): void {
+    this.filters.cpf = this.formatCpf(value);
+    this.applyFilters();
   }
 
   openCreateModal(): void {
@@ -202,7 +218,7 @@ export class ClientsComponent implements OnInit {
     this.form = {
       fullName: client.fullName || '',
       phone: client.phone || '',
-      cpf: client.cpf || '',
+      cpf: this.formatCpf(client.cpf),
       email: client.email || '',
       origin: client.origin,
       sourceContactId: client.sourceContactId || null,
@@ -447,6 +463,24 @@ export class ClientsComponent implements OnInit {
     return suffix ? `${name} - ${suffix}` : name;
   }
 
+  formatCpf(value: string | null | undefined): string {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+
+    if (digits.length <= 3) {
+      return digits;
+    }
+
+    if (digits.length <= 6) {
+      return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    }
+
+    if (digits.length <= 9) {
+      return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    }
+
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  }
+
   private sanitizeFullName(value: string | null | undefined): string {
     return (value || '').replace(/[0-9]+/g, '');
   }
@@ -462,6 +496,15 @@ export class ClientsComponent implements OnInit {
 
   openServiceWizard(client: ClientListItem): void {
     this.router.navigate(['/clients', client.id]);
+  }
+
+  openNewObservation(client: ClientListItem): void {
+    this.router.navigate(['/clients', client.id], {
+      queryParams: {
+        tab: 'observacoes',
+        composeObservation: '1'
+      }
+    });
   }
 
   closeServiceWizard(): void {

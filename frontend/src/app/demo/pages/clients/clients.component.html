@@ -26,8 +26,10 @@
             <input
               id="clientFilterCpf"
               class="form-control"
-              [(ngModel)]="filters.cpf"
-              (ngModelChange)="applyFilters()"
+              [ngModel]="filters.cpf"
+              (ngModelChange)="onCpfFilterInput($event)"
+              inputmode="numeric"
+              maxlength="14"
               placeholder="Digite o CPF"
             />
           </div>
@@ -114,13 +116,16 @@
                     <button class="client-name-link" type="button" (click)="openServiceWizard(client)">{{ getClientDisplayName(client) }}</button>
                   </td>
                   <td>{{ client.phone }}</td>
-                  <td>{{ client.cpf || '—' }}</td>
+                  <td>{{ formatCpf(client.cpf) || '—' }}</td>
                   <td>{{ client.email || '—' }}</td>
                   <td>{{ getOriginLabel(client.origin) }}</td>
                   <td>
                     <div class="client-actions">
                       <button class="btn btn-sm btn-outline-success" type="button" (click)="openServiceWizard(client)" title="Ficha" aria-label="Ficha">
                         <i class="ti ti-file-description"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-info" type="button" (click)="openNewObservation(client)" title="Nova observação" aria-label="Nova observação">
+                        <i class="ti ti-notes"></i>
                       </button>
                       <button class="btn btn-sm btn-outline-warning" type="button" (click)="openAnamnesis(client)" title="Anamnese" aria-label="Anamnese">
                         <i class="ti ti-clipboard-text"></i>
@@ -167,7 +172,7 @@
               </div>
               <div class="mobile-client-row">
                 <span class="mobile-label">CPF</span>
-                <span class="mobile-value">{{ client.cpf || '—' }}</span>
+                <span class="mobile-value">{{ formatCpf(client.cpf) || '—' }}</span>
               </div>
               <div class="mobile-client-row">
                 <span class="mobile-label">E-mail</span>
@@ -179,6 +184,10 @@
               <button class="btn btn-sm btn-outline-success w-100" type="button" (click)="openServiceWizard(client)">
                 <i class="ti ti-file-description me-1"></i>
                 Ficha
+              </button>
+              <button class="btn btn-sm btn-outline-info w-100" type="button" (click)="openNewObservation(client)">
+                <i class="ti ti-notes me-1"></i>
+                Nova observação
               </button>
               <button class="btn btn-sm btn-outline-warning w-100" type="button" (click)="openAnamnesis(client)">
                 <i class="ti ti-clipboard-text me-1"></i>
@@ -217,12 +226,21 @@
         </div>
       </div>
 
+      <ng-container *ngIf="errorMessage">
+        <div class="alert alert-danger py-2 mb-3" role="alert">{{ errorMessage }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="infoMessage">
+        <div class="alert alert-info py-2 mb-3" role="alert">{{ infoMessage }}</div>
+      </ng-container>
+
       <div class="client-details-section mb-3">
         <h6 class="client-details-section-title">Dados do cliente</h6>
         <div class="create-client-grid">
           <div class="create-client-field create-client-field-full">
             <label class="form-label" for="clientFullName">Nome completo</label>
-            <input id="clientFullName" class="form-control" [(ngModel)]="form.fullName" (ngModelChange)="onFullNameInput($event)" />
+            <input id="clientFullName" class="form-control" [ngModel]="form.fullName" (input)="onFullNameFieldInput($event)" inputmode="text" />
+            <small class="text-muted d-block mt-1">Somente letras são permitidas no nome.</small>
           </div>
 
           <div class="create-client-field">
@@ -232,7 +250,7 @@
 
           <div class="create-client-field">
             <label class="form-label" for="clientCpf">CPF (opcional)</label>
-            <input id="clientCpf" class="form-control" [(ngModel)]="form.cpf" />
+            <input id="clientCpf" class="form-control" [ngModel]="form.cpf" (ngModelChange)="onCpfInput($event)" inputmode="numeric" maxlength="14" />
           </div>
 
           <div class="create-client-field">
@@ -975,7 +993,7 @@
           </div>
           <div class="client-details-field">
             <span class="client-details-label">CPF</span>
-            <span class="client-details-value">{{ detailClient.cpf || '—' }}</span>
+            <span class="client-details-value">{{ formatCpf(detailClient.cpf) || '—' }}</span>
           </div>
           <div class="client-details-field client-details-field-full">
             <span class="client-details-label">E-mail</span>

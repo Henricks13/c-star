@@ -37,6 +37,7 @@ interface ClientObservationTimelineItem {
 })
 export class ClientChartComponent implements OnInit {
   private readonly ordersPageSize = 2;
+  private shouldFocusObservationComposer = false;
 
   loading = false;
   errorMessage: string | null = null;
@@ -86,6 +87,12 @@ export class ClientChartComponent implements OnInit {
     const requestedTab = (this.route.snapshot.queryParamMap.get('tab') || '').trim().toLowerCase();
     if (requestedTab === 'servicos' || requestedTab === 'observacoes' || requestedTab === 'geral') {
       this.activeTab = requestedTab as ClientChartTab;
+    }
+
+    const shouldComposeObservation = (this.route.snapshot.queryParamMap.get('composeObservation') || '').trim().toLowerCase();
+    if (shouldComposeObservation === '1' || shouldComposeObservation === 'true') {
+      this.activeTab = 'observacoes';
+      this.shouldFocusObservationComposer = true;
     }
 
     this.loadData();
@@ -207,6 +214,10 @@ export class ClientChartComponent implements OnInit {
         }).subscribe({
           next: ({ orders, clientObservations, incomes, products }) => {
             this.orders = orders;
+            if (!this.orders.length) {
+              this.isServiceObservation = false;
+              this.selectedObservationOrderId = null;
+            }
             this.clientObservations = clientObservations;
             this.allIncomes = incomes;
             this.productCatalog = products;
@@ -216,6 +227,7 @@ export class ClientChartComponent implements OnInit {
             this.rebuildObservationsTimeline();
             this.ensureObservationOrderSelection();
             this.resetOrdersPagination();
+            this.maybeFocusObservationComposer();
 
             this.loading = false;
           },
@@ -251,6 +263,7 @@ export class ClientChartComponent implements OnInit {
 
   setActiveTab(tab: ClientChartTab): void {
     this.activeTab = tab;
+    this.maybeFocusObservationComposer();
   }
 
   previousInProgressPage(): void {
@@ -385,6 +398,12 @@ export class ClientChartComponent implements OnInit {
   }
 
   setObservationMode(isServiceObservation: boolean): void {
+    if (isServiceObservation && !this.hasOrders) {
+      this.isServiceObservation = false;
+      this.selectedObservationOrderId = null;
+      return;
+    }
+
     this.isServiceObservation = isServiceObservation;
     this.observationErrorMessage = null;
     this.observationInfoMessage = null;
@@ -618,6 +637,26 @@ export class ClientChartComponent implements OnInit {
     this.productCatalog.forEach((product) => {
       this.productPurchasePriceById.set(product.id, Number(product.purchasePrice || 0));
     });
+  }
+
+  private maybeFocusObservationComposer(): void {
+    if (!this.shouldFocusObservationComposer || this.activeTab !== 'observacoes') {
+      return;
+    }
+
+    this.shouldFocusObservationComposer = false;
+
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    setTimeout(() => {
+      const card = document.getElementById('newObservationCard');
+      card?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      const field = document.getElementById('newObservationField') as HTMLTextAreaElement | null;
+      field?.focus();
+    }, 0);
   }
 
   private rebuildObservationsTimeline(): void {
