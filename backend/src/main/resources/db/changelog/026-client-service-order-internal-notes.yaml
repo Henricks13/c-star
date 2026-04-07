@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 066-client-service-order-internal-notes
+      author: cstar
+      changes:
+        - addColumn:
+            tableName: client_service_orders
+            columns:
+              - column:
+                  name: internal_notes
+                  type: TEXT

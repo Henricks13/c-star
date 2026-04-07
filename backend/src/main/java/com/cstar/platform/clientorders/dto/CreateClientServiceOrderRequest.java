@@ -17,6 +17,7 @@ public record CreateClientServiceOrderRequest(
         @DecimalMin(value = "0.00") BigDecimal discountAmount,
         Boolean customTotalEnabled,
         @DecimalMin(value = "0.00") BigDecimal customTotalValue,
-        String notes
+        String notes,
+        String internalNotes
 ) {
 }

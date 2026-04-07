@@ -292,9 +292,15 @@
           <strong>{{ calculatedTotal | currency: 'BRL' }}</strong>
         </div>
 
-        <div class="mt-3">
-          <label class="form-label">Planejamento</label>
-          <textarea class="form-control" rows="3" [(ngModel)]="wizardNotes" placeholder="Descreva o planejamento"></textarea>
+        <div class="mt-3 service-notes-grid">
+          <div>
+            <label class="form-label">Planejamento</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="wizardNotes" placeholder="Descreva o planejamento"></textarea>
+          </div>
+          <div>
+            <label class="form-label">Observações internas</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="wizardInternalNotes" placeholder="Registre observações internas do paciente"></textarea>
+          </div>
         </div>
       </div>
 
@@ -784,6 +790,11 @@
       <div class="details-section mb-3">
         <h6 class="details-section-title">Planejamento</h6>
         <div class="details-note">{{ selectedOrderForDetails.notes || '-' }}</div>
+      </div>
+
+      <div class="details-section mb-3">
+        <h6 class="details-section-title">Observações internas</h6>
+        <div class="details-note">{{ selectedOrderForDetails.internalNotes || '-' }}</div>
       </div>
 
       <div class="details-section mb-3">

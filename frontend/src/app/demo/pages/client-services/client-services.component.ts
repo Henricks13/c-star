@@ -60,6 +60,7 @@ export class ClientServicesComponent implements OnInit {
   selectedServiceIds: string[] = [''];
   extraProductRows: ExtraProductRow[] = [];
   wizardNotes = '';
+  wizardInternalNotes = '';
   wizardDiscountAmount = 0;
   wizardCustomTotalEnabled = false;
   wizardCustomTotalValue: number | null = null;
@@ -293,7 +294,8 @@ export class ClientServicesComponent implements OnInit {
       const matchesSearch =
         !normalizedSearch ||
         (order.clientName || '').toLowerCase().includes(normalizedSearch) ||
-        (order.notes || '').toLowerCase().includes(normalizedSearch);
+        (order.notes || '').toLowerCase().includes(normalizedSearch) ||
+        (order.internalNotes || '').toLowerCase().includes(normalizedSearch);
 
       return matchesStatus && matchesSearch;
     });
@@ -471,6 +473,7 @@ export class ClientServicesComponent implements OnInit {
     this.wizardCustomTotalEnabled = !!order.customTotalEnabled;
     this.wizardCustomTotalValue = order.customTotalEnabled ? Number(order.customTotalValue || 0) : null;
     this.wizardNotes = order.notes || '';
+    this.wizardInternalNotes = order.internalNotes || '';
     this.wizardServiceStatus = order.serviceStatus;
     this.invalidateServiceSelectionCaches();
     this.errorMessage = null;
@@ -637,7 +640,8 @@ export class ClientServicesComponent implements OnInit {
       discountAmount: discount,
       customTotalEnabled: this.wizardCustomTotalEnabled,
       customTotalValue: this.wizardCustomTotalEnabled ? Number(this.wizardCustomTotalValue || 0) : null,
-      notes: (this.wizardNotes || '').trim() || null
+      notes: (this.wizardNotes || '').trim() || null,
+      internalNotes: (this.wizardInternalNotes || '').trim() || null
     };
 
     this.saving = true;
@@ -1361,6 +1365,7 @@ export class ClientServicesComponent implements OnInit {
     this.selectedServiceIds = [''];
     this.extraProductRows = [];
     this.wizardNotes = '';
+    this.wizardInternalNotes = '';
     this.wizardDiscountAmount = 0;
     this.wizardCustomTotalEnabled = false;
     this.wizardCustomTotalValue = null;

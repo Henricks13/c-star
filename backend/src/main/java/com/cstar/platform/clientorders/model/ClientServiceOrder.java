@@ -56,6 +56,9 @@ public class ClientServiceOrder {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "internal_notes", columnDefinition = "TEXT")
+    private String internalNotes;
+
     @Column(name = "last_edited_by_name", length = 120)
     private String lastEditedByName;
 
@@ -118,7 +121,8 @@ public class ClientServiceOrder {
             boolean customTotalEnabled,
             BigDecimal customTotalValue,
             BigDecimal finalTotal,
-            String notes
+                String notes,
+                String internalNotes
     ) {
         ClientServiceOrder order = new ClientServiceOrder();
         order.client = client;
@@ -129,6 +133,7 @@ public class ClientServiceOrder {
         order.customTotalValue = customTotalValue;
         order.finalTotal = finalTotal;
         order.notes = notes;
+        order.internalNotes = internalNotes;
         order.status = ClientServiceOrderStatus.ORCADO;
         order.paymentStatus = ClientServiceOrderPaymentStatus.ORCADO;
         order.paidInstallmentCount = 0;
@@ -142,7 +147,8 @@ public class ClientServiceOrder {
             boolean customTotalEnabled,
             BigDecimal customTotalValue,
             BigDecimal finalTotal,
-            String notes
+                String notes,
+                String internalNotes
     ) {
         this.subtotalServices = subtotalServices;
         this.subtotalExtraProducts = subtotalExtraProducts;
@@ -151,6 +157,7 @@ public class ClientServiceOrder {
         this.customTotalValue = customTotalValue;
         this.finalTotal = finalTotal;
         this.notes = notes;
+        this.internalNotes = internalNotes;
         this.status = ClientServiceOrderStatus.ORCADO;
         this.paymentStatus = ClientServiceOrderPaymentStatus.ORCADO;
         this.paymentMethod = null;
@@ -297,6 +304,10 @@ public class ClientServiceOrder {
 
     public String getNotes() {
         return notes;
+    }
+
+    public String getInternalNotes() {
+        return internalNotes;
     }
 
     public ClientServiceOrderStatus getStatus() {

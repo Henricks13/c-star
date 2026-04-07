@@ -17,6 +17,7 @@ export interface CreateClientServiceOrderRequest {
   customTotalEnabled?: boolean;
   customTotalValue?: number | null;
   notes?: string | null;
+  internalNotes?: string | null;
 }
 
 export interface ConfirmClientServiceOrderPaymentRequest {
@@ -88,6 +89,7 @@ export interface ClientServiceOrderItem {
   customTotalValue: number | null;
   finalTotal: number;
   notes: string | null;
+  internalNotes: string | null;
   status: string;
   serviceStatus: ClientServiceOrderStatus;
   paymentStatus: ClientServiceOrderPaymentStatus;

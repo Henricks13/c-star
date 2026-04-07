@@ -16,6 +16,7 @@ public record ClientServiceOrderResponse(
         BigDecimal customTotalValue,
         BigDecimal finalTotal,
         String notes,
+        String internalNotes,
         String status,
         String serviceStatus,
         String paymentStatus,

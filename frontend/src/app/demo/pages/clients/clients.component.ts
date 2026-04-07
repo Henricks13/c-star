@@ -86,6 +86,7 @@ export class ClientsComponent implements OnInit {
   clientServiceHistory: ClientServiceOrderItem[] = [];
   serviceHistoryAccordionOpen = false;
   wizardNotes = '';
+  wizardInternalNotes = '';
   wizardDiscountAmount = 0;
   wizardCustomTotalEnabled = false;
   wizardCustomTotalValue: number | null = null;
@@ -1065,7 +1066,8 @@ export class ClientsComponent implements OnInit {
       discountAmount: discount,
       customTotalEnabled: this.wizardCustomTotalEnabled,
       customTotalValue: this.wizardCustomTotalEnabled ? Number(this.wizardCustomTotalValue || 0) : null,
-      notes: (this.wizardNotes || '').trim() || null
+      notes: (this.wizardNotes || '').trim() || null,
+      internalNotes: (this.wizardInternalNotes || '').trim() || null
     };
 
     this.saving = true;
@@ -1154,6 +1156,7 @@ export class ClientsComponent implements OnInit {
     this.wizardCustomTotalEnabled = !!order.customTotalEnabled;
     this.wizardCustomTotalValue = order.customTotalEnabled ? Number(order.customTotalValue || 0) : null;
     this.wizardNotes = order.notes || '';
+    this.wizardInternalNotes = order.internalNotes || '';
     this.paymentMethod = (order.paymentMethod as ServicePaymentMethod) || 'PIX';
     this.paymentInstallmentCount = Number(order.installmentCount || 1);
     if (this.paymentInstallmentCount < 1 || this.paymentInstallmentCount > 12) {

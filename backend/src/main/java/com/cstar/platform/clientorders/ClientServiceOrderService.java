@@ -181,7 +181,8 @@ public class ClientServiceOrderService {
                 customTotalEnabled,
                 customTotalValue,
                 finalTotal,
-                normalizeNotes(request.notes())
+                normalizeNotes(request.notes()),
+                normalizeNotes(request.internalNotes())
             );
         } else {
             order.updateBudget(
@@ -191,7 +192,8 @@ public class ClientServiceOrderService {
                 customTotalEnabled,
                 customTotalValue,
                 finalTotal,
-                normalizeNotes(request.notes())
+                normalizeNotes(request.notes()),
+                normalizeNotes(request.internalNotes())
             );
             order.registerBudgetEdition(resolveObservationAuthor(principal));
             order.clearServiceItems();
@@ -831,6 +833,7 @@ public class ClientServiceOrderService {
                 order.getCustomTotalValue(),
                 order.getFinalTotal(),
                 order.getNotes(),
+                order.getInternalNotes(),
                 order.getStatus().name(),
                 order.getStatus().name(),
                 order.getPaymentStatus().name(),
